@@ -267,6 +267,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\CMRenderer.hpp" />
+    <ClInclude Include="include\Core\CMMacros.hpp" />
     <ClInclude Include="include\Core\Utility.hpp" />
     <ClInclude Include="include\Internal\DirectX\DXContext.hpp" />
     <ClInclude Include="include\Internal\CMLogger.hpp" />

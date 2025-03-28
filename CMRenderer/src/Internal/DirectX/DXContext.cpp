@@ -32,6 +32,12 @@ namespace CMRenderer::DirectX
 		m_SwapChain.Create(hWnd, clientArea, m_Factory, m_Device, isFullscreen);
 		m_InfoQueue.Create(m_Device);
 		
+		if (!m_InfoQueue.IsCreated())
+		{
+			m_CMLoggerRef.LogFatal(L"DXContext [Init] | Failed to initialize info queue.\n"); 
+			return;
+		}
+
 		HRESULT hResult = S_OK;
 
 		// Get the back buffer.
@@ -44,6 +50,7 @@ namespace CMRenderer::DirectX
 				WindowsUtility::TranslateDWORDError(hResult) + L'\n';
 
 			m_CMLoggerRef.LogFatal(message);
+			return;
 		}
 
 		// Create the RTV.

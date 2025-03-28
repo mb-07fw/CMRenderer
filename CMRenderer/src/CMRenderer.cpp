@@ -3,6 +3,13 @@
 
 namespace CMRenderer
 {
+	CMRenderer::CMRenderer(CMRendererSettings settings) noexcept
+		: m_Settings(settings), m_CMLogger(S_LIFETIME_LOG_FILE_NAME), m_Window(m_Settings, m_CMLogger),
+		m_RenderContext(m_CMLogger)
+	{
+		m_CMLogger.LogInfo(L"CMRenderer [()] | CMRenderer : Initialized CMRenderer.\n");
+	}
+
 	CMRenderer::~CMRenderer() noexcept
 	{
 		if (!m_Shutdown)

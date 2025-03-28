@@ -89,6 +89,9 @@
     <ClInclude Include="include\Internal\DirectX\DXComponents.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\Core\CMMacros.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="resources\shaders\DefaultVS.hlsl" />

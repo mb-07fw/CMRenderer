@@ -84,6 +84,42 @@ namespace CMRenderer
 
 		m_CMLoggerRef.LogInfo(L"CMWindow [Shutdown] | Shutdown.\n");
 	}
+
+	void CMWindow::HandleMessages() noexcept
+	{
+		BOOL result = 0;
+		MSG msg;
+
+		// While there are messages to process. (Return value is non-zero)
+		while ((result = PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) > 0)
+		{
+			if (msg.message == WM_QUIT)
+			{
+				m_Running = false;
+
+				m_CMLoggerRef.LogInfo(L"CMWindow [HandleMessages] | Window shutdown has been requested.\n");
+
+				return;
+			}
+
+			// Translate any raw virtual-key messages in character messages. (e.g., 'w', 'a', 's', 'd', etc)
+			TranslateMessage(&msg);
+
+			// Forward the message to the current window procedure.
+			DispatchMessageW(&msg);
+		}
+	}
+
+	void CMWindow::Minimize() const noexcept
+	{
+		if (!m_Initialized)
+		{
+			m_CMLoggerRef.LogWarning(L"CMWindow [Minimize] | Attempted to minimize the window before initializing it.\n");
+			return;
+		}
+
+		ShowWindow(m_WindowHandle, SW_SHOWMINIMIZED);
+	}
 #pragma endregion
 
 #pragma region Private
@@ -144,8 +180,16 @@ namespace CMRenderer
 
 		int showCmd = m_WindowSettingsRef.Current.UseFullscreen ? SW_SHOWMAXIMIZED : SW_SHOW;
 
-		ShowWindow(m_WindowHandle, showCmd);
-		GetClientRect(m_WindowHandle, &m_ClientArea);
+		// If nonzero, the return value is nonzero. Otherwise, the window was previously hidden.
+		BOOL previouslyVisible = ShowWindow(m_WindowHandle, showCmd);
+
+		BOOL result = GetClientRect(m_WindowHandle, &m_ClientArea);
+
+		if (result == 0)
+		{
+			m_CMLoggerRef.LogFatal(L"CMWindow [Create] | Failed to update window size.\n");
+			return false;
+		}
 
 		m_Running = true;
 		return true;
@@ -177,31 +221,6 @@ namespace CMRenderer
 		}
 
 		return true;
-	}
-
-	void CMWindow::HandleMessages() noexcept
-	{
-		BOOL result = 0;
-		MSG msg;
-
-		// While there are messages to process. (Return value is non-zero)
-		while ((result = PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) > 0)
-		{
-			if (msg.message == WM_QUIT)
-			{
-				m_Running = false;
-
-				m_CMLoggerRef.LogInfo(L"CMWindow [HandleMessages] | Window shutdown has been requested.\n");
-
-				return;
-			}
-
-			// Translate any raw virtual-key messages in character messages. (e.g., 'w', 'a', 's', 'd', etc)
-			TranslateMessage(&msg);
-
-			// Forward the message to the current window procedure.
-			DispatchMessageW(&msg);
-		}
 	}
 
 	void CMWindow::ValidateSettings() noexcept

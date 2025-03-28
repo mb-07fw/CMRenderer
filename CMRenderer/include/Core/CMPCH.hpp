@@ -27,3 +27,4 @@
 #include <thread>
 #include <filesystem>
 #include <span>
+#include <functional>

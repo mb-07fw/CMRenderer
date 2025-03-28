@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Core/CMMacros.hpp"
+
 #include <string_view>
 #include <fstream>
 #include <type_traits>
@@ -133,7 +135,6 @@ namespace CMRenderer
 			LogFlag(message, "FATAL");
 		}
 
-		//__debugbreak();
 		exit(exitCode);
 	}
 
@@ -144,12 +145,12 @@ namespace CMRenderer
 		if (!m_LogStream.is_open() || !m_TargetFileSet)
 			return;
 
-#ifndef CM_DISTRIBUTION
-		if constexpr (S_IS_WIDE_LOGGER)
-			std::wcout << data.data();
-		else
-			std::cout << data.data();
-#endif
+		CM_IF_DEBUG(
+			if constexpr (S_IS_WIDE_LOGGER)
+				std::wcout << data.data();
+			else
+				std::cout << data.data();
+		);
 
 		m_LogStream << data.data();
 	}
@@ -174,7 +175,7 @@ namespace CMRenderer
 		if constexpr (S_IS_WIDE_LOGGER)
 			LogInfo(L"CMLogger [OpenStream] | Logger successfully opened the file.\n");
 		else
-			LogInfo("CMLogger [OpenStream] |Logger successfully opened the file.\n");
+			LogInfo("CMLogger [OpenStream] | Logger successfully opened the file.\n");
 	}
 
 	template <CMLoggerType EnumLoggerType, typename DataTy, typename StreamTy>
@@ -208,12 +209,12 @@ namespace CMRenderer
 		if (!m_LogStream.is_open() || !m_TargetFileSet)
 			return;
 
-#ifndef CM_DISTRIBUTION
-		if constexpr (S_IS_WIDE_LOGGER)
-			std::wcout << m_LogTag.data() << '(' << pFlag << ") " << data.data();
-		else
-			std::cout << m_LogTag.data() << '(' << pFlag << ") " << data.data();
-#endif
+		CM_IF_DEBUG(
+			if constexpr (S_IS_WIDE_LOGGER)
+				std::wcout << m_LogTag.data() << '(' << pFlag << ") " << data.data();
+			else
+				std::cout << m_LogTag.data() << '(' << pFlag << ") " << data.data();
+		);
 
 		m_LogStream << m_LogTag.data() << '(' << pFlag << ") " << data.data();
 	}

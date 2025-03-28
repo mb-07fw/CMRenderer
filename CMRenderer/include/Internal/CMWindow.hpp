@@ -18,6 +18,8 @@ namespace CMRenderer
 
 		void HandleMessages() noexcept;
 
+		void Minimize() const noexcept;
+
 		inline [[nodiscard]] bool IsInitialized() { return m_Initialized; }
 		inline [[nodiscard]] bool IsShutdown() { return m_Shutdown; }
 		inline [[nodiscard]] bool IsRunning() { return m_Running; }

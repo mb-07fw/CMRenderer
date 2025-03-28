@@ -16,6 +16,7 @@
 #pragma comment(lib, "DXGI.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
+#include "Core/CMMacros.hpp"
 #include "Internal/CMRendererSettings.hpp"
 #include "Internal/CMLogger.hpp"
 #include "Internal/CMWindow.hpp"
@@ -26,8 +27,7 @@ namespace CMRenderer
 	class CMRenderer
 	{
 	public:
-		/* The constructor is defined in the header file so previously defined macros such as CM_NO_DIRECTX are visible. */
-		inline CMRenderer(CMRendererSettings settings) noexcept;
+		CMRenderer(CMRendererSettings settings) noexcept;
 		~CMRenderer() noexcept;
 	public:
 		void Init() noexcept;
@@ -43,25 +43,4 @@ namespace CMRenderer
 		bool m_Initialized = false;
 		bool m_Shutdown = false;
 	};
-
-
-
-	inline CMRenderer::CMRenderer(CMRendererSettings settings) noexcept
-		: m_Settings(settings), m_CMLogger(S_LIFETIME_LOG_FILE_NAME), m_Window(m_Settings, m_CMLogger),
-		  m_RenderContext(m_CMLogger)
-	{
-#ifdef CM_NO_DIRECTX
-		m_CMLogger.LogInfo(L"CMRenderer [()] | DirectX has been defined to be excluded.\n");
-#endif
-
-#ifdef CM_NO_OPENGL
-		m_CMLogger.LogInfo(L"CMRenderer [()] | OpenGL has been defined to be excluded.\n");
-#endif
-
-#ifdef CM_NO_VULKAN
-		m_CMLogger.LogInfo(L"CMRenderer [()] | Vulkan has been defined to be excluded.\n");
-#endif
-
-		m_CMLogger.LogInfo(L"CMRenderer [()] | CMRenderer : Initialized CMRenderer.\n");
-	}
 }
