@@ -21,13 +21,13 @@ namespace CMRenderer::DirectX::Components
 	{
 		if (m_Created)
 		{
-			m_CMLoggerRef.LogWarning(L"DXDevice [Create] | Attempted tp create after DXDevice has already been created.\n");
+			m_CMLoggerRef.LogWarning(L"DXDevice [Create] | Attempted to create after DXDevice has already been created.\n");
 			return;
 		}
 
 		CreateDevice();
 
-		m_CMLoggerRef.LogInfo(L"DXDevice [Create] | Successfully created device.\n");
+		m_CMLoggerRef.LogInfo(L"DXDevice [Create] | Created.\n");
 
 		m_Created = true;
 		m_Released = false;
@@ -46,8 +46,10 @@ namespace CMRenderer::DirectX::Components
 			return;
 		}
 
-		mP_Device.Reset();
 		mP_Context.Reset();
+		mP_Device.Reset();
+
+		m_CMLoggerRef.LogInfo(L"DXDevice [Create] | Released.\n");
 
 		m_Created = false;
 		m_Released = true;
@@ -62,10 +64,10 @@ namespace CMRenderer::DirectX::Components
 	{
 		D3D11_CREATE_DEVICE_FLAG flags = D3D11_CREATE_DEVICE_SINGLETHREADED;
 
-#ifndef CM_DISTRIBUTION
-		flags = static_cast<D3D11_CREATE_DEVICE_FLAG>(D3D11_CREATE_DEVICE_SINGLETHREADED | D3D11_CREATE_DEVICE_DEBUG);
 		// flags | D3D11_CREATE_DEVICE_DEBUGGABLE // For complex debugging... more stuff here : https://learn.microsoft.com/en-us/windows/win32/api/d3d11/ne-d3d11-d3d11_create_device_flag
-#endif
+		CM_IF_DEBUG(
+			flags = static_cast<D3D11_CREATE_DEVICE_FLAG>(D3D11_CREATE_DEVICE_SINGLETHREADED | D3D11_CREATE_DEVICE_DEBUG)
+		);
 
 		D3D_FEATURE_LEVEL succeededLevel;
 		HRESULT hResult = S_OK;
@@ -82,21 +84,22 @@ namespace CMRenderer::DirectX::Components
 			&mP_Context
 		);
 
-		if (succeededLevel < D3D_FEATURE_LEVEL_11_0)
-		{
-			std::wstring message = L"DXDevice [Create] | DirectX Feature Level was less than 11.0 (" +
-				std::wstring(DirectX::Utility::D3DFeatureLevelToWStrView(succeededLevel).data()) +
-				L"), which is less than required for this program. Continuation will only result in errors.\n";
-
-			m_CMLoggerRef.LogFatal(message);
-		}
-
 		if (hResult != S_OK)
 		{
 			std::wstring message = L"DXDevice [Create] | Failed to create device : " +
 				WindowsUtility::TranslateDWORDError(hResult) + L'\n';
 
 			m_CMLoggerRef.LogFatal(message);
+			return;
+		}
+		else if (succeededLevel < D3D_FEATURE_LEVEL_11_0)
+		{
+			std::wstring message = L"DXDevice [Create] | DirectX Feature Level was less than 11.0 (" +
+				std::wstring(DirectX::Utility::D3DFeatureLevelToWStrView(succeededLevel).data()) +
+				L"), which is less than required for this program. Continuation will only result in errors.\n";
+
+			m_CMLoggerRef.LogFatal(message);
+			return;
 		}
 
 		std::wstring message = L"DXDevice [Create] | Feature level in use : " +
@@ -116,8 +119,6 @@ DXFactory::~DXFactory() noexcept
 {
 	if (m_Created)
 		Release();
-
-	m_CMLoggerRef.LogInfo(L"DXFactory [~()] | Destroyed.\n");
 }
 
 void DXFactory::Create(DXDevice& deviceRef) noexcept
@@ -129,7 +130,10 @@ void DXFactory::Create(DXDevice& deviceRef) noexcept
 	}
 
 	if (!deviceRef.IsCreated())
+	{
 		m_CMLoggerRef.LogFatal(L"DXFactory [Create] | Attempted to create factory before the provided DXDevice was created.\n");
+		return;
+	}
 
 	Microsoft::WRL::ComPtr<IDXGIDevice> pDXGIDevice;
 	HRESULT hResult = deviceRef->QueryInterface(IID_PPV_ARGS(&pDXGIDevice));
@@ -140,6 +144,7 @@ void DXFactory::Create(DXDevice& deviceRef) noexcept
 			WindowsUtility::TranslateDWORDError(hResult) + L'\n';
 
 		m_CMLoggerRef.LogFatal(message);
+		return;
 	}
 
 	Microsoft::WRL::ComPtr<IDXGIAdapter> pDXGIAdapter;
@@ -151,6 +156,7 @@ void DXFactory::Create(DXDevice& deviceRef) noexcept
 			WindowsUtility::TranslateDWORDError(hResult) + L'\n';
 
 		m_CMLoggerRef.LogFatal(message);
+		return;
 	}
 
 	hResult = pDXGIAdapter->GetParent(IID_PPV_ARGS(&mP_Factory));
@@ -161,7 +167,10 @@ void DXFactory::Create(DXDevice& deviceRef) noexcept
 			WindowsUtility::TranslateDWORDError(hResult) + L'\n';
 
 		m_CMLoggerRef.LogFatal(message);
+		return;
 	}
+
+	m_CMLoggerRef.LogInfo(L"DXFactory [Create] | Created.\n");
 
 	m_Created = true;
 	m_Released = false;
@@ -181,6 +190,8 @@ void DXFactory::Release() noexcept
 	}
 
 	mP_Factory.Reset();
+
+	m_CMLoggerRef.LogInfo(L"DXFactory [Release] | Released.\n");
 
 	m_Created = false;
 	m_Released = true;
@@ -206,6 +217,8 @@ DXSwapChain::DXSwapChain(CMLoggerWide& cmLoggerRef) noexcept
 
 	m_Desc.SampleDesc.Count = 1;
 	m_Desc.SampleDesc.Quality = 0;
+
+	m_Desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	
 	m_Desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	m_Desc.BufferCount = 2;
@@ -247,18 +260,24 @@ void DXSwapChain::Create(const HWND hWnd, const RECT clientArea, DXFactory& fact
 			WindowsUtility::TranslateDWORDError(hResult) + L'\n';
 
 		m_CMLoggerRef.LogFatal(message);
+		return;
 	}
 	
 	if (isFullscreen)
+	{
 		hResult = mP_SwapChain->SetFullscreenState(isFullscreen, nullptr);
 
-	if (hResult != S_OK)
-	{
-		std::wstring message = L"DXContext [Init] | Failed to set swap chain to fullscreen : " +
-			WindowsUtility::TranslateDWORDError(hResult) + L'\n';
+		if (hResult != S_OK)
+		{
+			std::wstring message = L"DXContext [Init] | Failed to set swap chain to fullscreen : " +
+				WindowsUtility::TranslateDWORDError(hResult) + L'\n';
 
-		m_CMLoggerRef.LogFatal(message);
+			m_CMLoggerRef.LogFatal(message);
+			return;
+		}
 	}
+
+	m_CMLoggerRef.LogInfo(L"DXSwapChain [Create] | Created.\n");
 
 	m_Created = true;
 	m_Released = false;
@@ -278,6 +297,8 @@ void DXSwapChain::Release() noexcept
 	}
 
 	mP_SwapChain.Reset();
+
+	m_CMLoggerRef.LogInfo(L"DXSwapChain [Release] | Released.\n");
 
 	m_Created = false;
 	m_Released = true;
@@ -316,18 +337,18 @@ IDXGISwapChain* DXSwapChain::operator->() noexcept
 		}
 
 		// Get the info queue interface.
-		HRESULT hResult = deviceRef.DeviceRaw()->QueryInterface(IID_PPV_ARGS(&mP_InfoQueue));
+		HRESULT hResult = deviceRef->QueryInterface(IID_PPV_ARGS(&mP_InfoQueue));
 
 		if (hResult != S_OK)
 		{
-			m_CMLoggerRef.LogWarning(L"DXInfoQueue [Create] | Failed to retrieve an ID3D11InfoQueue, meaning no debug output will be able to be generated.\n");
+			m_CMLoggerRef.LogWarning(L"DXInfoQueue [Create] | Failed to retrieve an ID3D11InfoQueue, meaning no debug output will be generated. Is the debug layer enabled?\n");
 			return;
 		}
 
+		m_CMLoggerRef.LogInfo(L"DXInfoQueue [Create] | Created.\n");
+
 		m_Created = true;
 		m_Released = false;
-
-		m_CMLoggerRef.LogInfo(L"DXInfoQueue [Create] | Created.\n");
 	}
 
 	void DXInfoQueue::Release() noexcept
@@ -345,10 +366,10 @@ IDXGISwapChain* DXSwapChain::operator->() noexcept
 
 		mP_InfoQueue.Reset();
 
+		m_CMLoggerRef.LogInfo(L"DXInfoQueue [Release] | Released.\n");
+
 		m_Created = false;
 		m_Released = true;
-
-		m_CMLoggerRef.LogInfo(L"DXInfoQueue [Release] | Released.\n");
 	}
 
 	void DXInfoQueue::LogMessages() noexcept
@@ -393,7 +414,13 @@ IDXGISwapChain* DXSwapChain::operator->() noexcept
 		for (size_t i = 0; i < mP_InfoQueue->GetNumStoredMessages(); i++)
 		{
 			// Get size of message.
-			mP_InfoQueue->GetMessageW(i, nullptr, &messageLength);
+			HRESULT hResult = mP_InfoQueue->GetMessageW(i, nullptr, &messageLength);
+
+			if (hResult != S_OK)
+			{
+				m_CMLoggerRef.LogWarning(L"DXInfoQueue [GetMessages] | Failed to retrieve message.\n");
+				continue;
+			}
 
 			if (messageLength == 0)
 				continue;

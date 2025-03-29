@@ -5,10 +5,12 @@
 #if defined(CM_DEBUG)
 
 #define CM_IF_DEBUG(x) x
+#define CM_IF_NDEBUG_REPLACE(x) x
 
 #else
 
 #define CM_IF_DEBUG(x) CM_NO_OP
+#define CM_IF_NDEBUG_REPLACE(x)
 
 #endif
 

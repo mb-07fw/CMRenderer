@@ -4,6 +4,8 @@
 
 #include <string_view>
 
+#include "Core/CMMacros.hpp"
+
 #include "Internal/CMLogger.hpp"
 #include "Internal/DirectX/DXComponents.hpp"
 #include "Internal/CMShaderLibrary.hpp"
@@ -20,31 +22,40 @@ namespace CMRenderer::DirectX
 		DXContext(CMLoggerWide& cmLoggerRef) noexcept;
 		~DXContext() noexcept;
 	public:
-		void Init(const HWND hWnd, const RECT clientArea, const bool isFullscreen) noexcept;
+		void Init(const HWND hWnd, RECT clientArea, bool isFullscreen) noexcept;
 		void Shutdown() noexcept;
 
 		void Clear(NormColor normColor) noexcept;
 		void Present() noexcept;
 
+		void ToggleFullscreen(bool state) noexcept;
+
+		//void ResizeTo(RECT newClientArea) noexcept;
+
 		template <size_t Elems>
-		void Draw(const std::array<float, Elems>& array, const UINT vertices) noexcept;
+		void Draw(const std::array<float, Elems>& array, UINT vertices) noexcept;
 
 		inline [[nodiscard]] bool IsInitialized() const noexcept { return m_Initialized; }
 		inline [[nodiscard]] bool IsShutdown() const noexcept { return m_Shutdown; }
+	private:
+		void CreateRTV() noexcept;
+		void SetViewport(float width, float height) noexcept;
+		void SetTopology() noexcept;
 	private:
 		CMLoggerWide& m_CMLoggerRef;
 		Components::DXDevice m_Device;
 		Components::DXFactory m_Factory;
 		Components::DXSwapChain m_SwapChain;
-		Components::DXInfoQueue m_InfoQueue;
-		CMShaderLibrary m_ShaderLibrary;
+		CM_IF_NDEBUG_REPLACE(Components::DXInfoQueue m_InfoQueue;)
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> mP_RTV;
+		CMShaderLibrary m_ShaderLibrary;
 		bool m_Initialized = false;
 		bool m_Shutdown = false;
+		bool m_Fullscreen = false;
 	};
 
 	template <size_t Elems>
-	void DXContext::Draw(const std::array<float, Elems>& array, const UINT vertices) noexcept
+	void DXContext::Draw(const std::array<float, Elems>& array, UINT vertices) noexcept
 	{
 		m_Device.Context()->OMSetRenderTargets(1, mP_RTV.GetAddressOf(), nullptr);
 
@@ -62,7 +73,7 @@ namespace CMRenderer::DirectX
 
 		if (hResult != S_OK)
 		{
-			m_InfoQueue.LogMessages();
+			CM_IF_DEBUG(m_InfoQueue.LogMessages());
 			m_CMLoggerRef.LogFatal(L"DXContext [Draw] | An error occured when creating the vertex buffer.\n");
 		}
 
@@ -79,7 +90,7 @@ namespace CMRenderer::DirectX
 
 		if (hResult != S_OK)
 		{
-			m_InfoQueue.LogMessages();
+			CM_IF_DEBUG(m_InfoQueue.LogMessages());
 			m_CMLoggerRef.LogFatal(L"DXContext [Draw] | An error occured when creating the input layout.\n");
 		}
 
@@ -93,7 +104,7 @@ namespace CMRenderer::DirectX
 
 		if (hResult != S_OK)
 		{
-			m_InfoQueue.LogMessages();
+			CM_IF_DEBUG(m_InfoQueue.LogMessages());
 			m_CMLoggerRef.LogFatal(L"DXContext [Draw] | An error occured when creating the vertex shader.\n");
 		}
 
@@ -107,7 +118,7 @@ namespace CMRenderer::DirectX
 
 		if (hResult != S_OK)
 		{
-			m_InfoQueue.LogMessages();
+			CM_IF_DEBUG(m_InfoQueue.LogMessages());
 			m_CMLoggerRef.LogFatal(L"DXContext [Draw] | An error occured when creating the pixel shader.\n");
 		}
 
@@ -118,10 +129,12 @@ namespace CMRenderer::DirectX
 
 		m_Device.Context()->Draw(vertices, 0);
 
-		if (!m_InfoQueue.IsQueueEmpty())
-		{
-			m_InfoQueue.LogMessages();
-			m_CMLoggerRef.LogFatal(L"DXContext [Draw] | Debug messages generated after drawing.\n");
-		}
+		CM_IF_DEBUG(
+			if (!m_InfoQueue.IsQueueEmpty())
+			{
+				m_InfoQueue.LogMessages();
+				m_CMLoggerRef.LogFatal(L"DXContext [Draw] | Debug messages generated after drawing.\n");
+			}
+		);
 	}
 }

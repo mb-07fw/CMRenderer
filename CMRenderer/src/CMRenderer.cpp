@@ -4,10 +4,19 @@
 namespace CMRenderer
 {
 	CMRenderer::CMRenderer(CMRendererSettings settings) noexcept
-		: m_Settings(settings), m_CMLogger(S_LIFETIME_LOG_FILE_NAME), m_Window(m_Settings, m_CMLogger),
-		m_RenderContext(m_CMLogger)
+		: m_Settings(settings), m_CMLogger(S_LIFETIME_LOG_FILE_NAME),
+		  m_Window(m_Settings, m_CMLogger),
+		  m_RenderContext(m_CMLogger)
 	{
-		m_CMLogger.LogInfo(L"CMRenderer [()] | CMRenderer : Initialized CMRenderer.\n");
+		/*HRESULT hResult = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+
+		if (hResult != S_OK)
+		{
+			m_CMLogger.LogFatal(L"CMRenderer[()] | Failed to initialize COM.\n");
+			return;
+		}*/
+
+		m_CMLogger.LogInfo(L"CMRenderer [()] | Constructed.\n");
 	}
 
 	CMRenderer::~CMRenderer() noexcept
@@ -15,9 +24,12 @@ namespace CMRenderer
 		if (!m_Shutdown)
 			Shutdown();
 
+		//CoUninitialize();
+
 		m_CMLogger.LogInfo(L"CMRenderer [~()] | Destroyed.\n");
 	}
 
+#pragma region Public
 	void CMRenderer::Init() noexcept
 	{
 		if (m_Initialized)
@@ -28,6 +40,17 @@ namespace CMRenderer
 
 		m_Window.Init();
 		m_RenderContext.Init(m_Window.Handle(), m_Window.ClientArea(), m_Settings.WindowSettings.Current.UseFullscreen);
+
+		m_Window.SetCharKeyCallback(
+			'R', 
+			[this](bool isReleased) { 
+				if (!isReleased && m_Window.IsFullscreen())
+				{
+					m_RenderContext.ToggleFullscreen(false); 
+					m_Window.Restore();
+				}
+			}
+		);
 
 		m_Initialized = true;
 		m_Shutdown = false;
@@ -59,12 +82,45 @@ namespace CMRenderer
 		while (m_Window.IsRunning())
 		{
 			m_Window.HandleMessages();
-			
+
+			// Quit message has been received.
+			if (!m_Window.IsRunning())
+				break;
+
+			if (m_Window.WasFullscreen())
+				m_RenderContext.ToggleFullscreen(true);
+			else if (m_Window.WasResized())
+				m_RenderContext.ToggleFullscreen(false);
+
 			m_RenderContext.Clear({ 0.5f, 0.0f, 0.5f, 0.0f });
 			m_RenderContext.Draw(array, 3);
 			m_RenderContext.Present();
 
-			Sleep(5);
+			Sleep(10);
 		}
 	}
+#pragma endregion
+#pragma region Private
+	void CMRenderer::Suspend() noexcept
+	{
+		if (m_Settings.WindowSettings.Current.UseFullscreen)
+		{
+			m_RenderContext.ToggleFullscreen(false);
+			m_Window.Minimize();
+		}
+
+		m_Window.WaitForMessages(20);
+
+		/*if (m_Window.HasResized())
+			m_RenderContext.ResizeTo(m_Window.ClientArea());*/
+
+		if (m_Settings.WindowSettings.Current.UseFullscreen)
+		{
+			m_RenderContext.ToggleFullscreen(true);
+			m_Window.Maximize();
+		}
+	}
+
+
+#pragma endregion
 }

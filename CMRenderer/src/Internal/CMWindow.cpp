@@ -3,39 +3,103 @@
 
 #include "Core/Utility.hpp"
 
+#include <chrono>
+
 namespace CMRenderer
 {
+#pragma region CMWindowDisplayState
+	void CMWindowDisplayState::SetState(CMDisplayType state) noexcept
+	{
+		if (CurrentState == state)
+			return;
+
+		PreviousState = CurrentState;
+		CurrentState = state;
+
+		IsFullscreen = CurrentState == CMDisplayType::MAXIMIZED;
+		IsWindowed = CurrentState == CMDisplayType::WINDOWED;
+		IsMinimized = CurrentState == CMDisplayType::MINIMIZED;
+
+		m_WasFullscreen = IsFullscreen;
+		m_WasWindowed = IsWindowed;
+		m_WasMinimized = IsMinimized;
+
+		HasResized = m_WasWindowed;
+	}
+
+	void CMWindowDisplayState::RestorePrevious() noexcept
+	{
+		SetState(PreviousState);
+	}
+
+	[[nodiscard]] bool CMWindowDisplayState::WasFullscreen() noexcept
+	{
+		bool wasFullscreen = m_WasFullscreen;
+		m_WasFullscreen = false;
+
+		HasResized = false;
+
+		return wasFullscreen;
+	}
+
+	[[nodiscard]] bool CMWindowDisplayState::WasWindowed() noexcept
+	{
+		bool wasWindowed = m_WasWindowed;
+		m_WasWindowed = false;
+
+		HasResized = false;
+
+		return wasWindowed;
+	}
+
+	[[nodiscard]] bool CMWindowDisplayState::WasMinimized() noexcept
+	{
+		bool wasMinimized = m_WasMinimized;
+		m_WasMinimized = false;
+
+		HasResized = false;
+
+		return wasMinimized;
+	}
+
+	[[nodiscard]] bool CMWindowDisplayState::WasResized() noexcept
+	{
+ 		bool wasResized = HasResized;
+		HasResized = false;
+
+		return wasResized;
+	}
+
+	[[nodiscard]] std::wstring_view CMWindowDisplayState::CurrentStateToWStrView() const noexcept
+	{
+		return DisplayStateToWStrView(CurrentState);
+	}
+
+	[[nodiscard]] std::wstring_view CMWindowDisplayState::PreviousStateToWStrView() const noexcept
+	{
+		return DisplayStateToWStrView(PreviousState);
+	}
+
+	[[nodiscard]] std::wstring CMWindowDisplayState::CurrentStateToWStr() const noexcept
+	{
+		return std::wstring(DisplayStateToWStrView(CurrentState));
+	}
+
+	[[nodiscard]] std::wstring CMWindowDisplayState::PreviousStateToWStr() const noexcept
+	{
+		return std::wstring(DisplayStateToWStrView(PreviousState));
+	}
+#pragma endregion
+
 #pragma region Public
 	CMWindow::CMWindow(CMRendererSettings& cmSettingsRef, CMLoggerWide& cmLoggerRef) noexcept
 		: m_CMSettingsRef(cmSettingsRef), m_WindowSettingsRef(cmSettingsRef.WindowSettings),
 		  m_CMLoggerRef(cmLoggerRef)
 	{
 		ValidateSettings();
+		LogCurrentSettings();
 
 		m_hInstance = GetCurrentHINSTANCE();
-
-		LogCurrentSettings();
-	}
-
-	void CMWindow::LogCurrentSettings() const noexcept
-	{
-		std::wstring message = L"CMWindow [LogCurrentSettings] | Target Title : " + std::wstring(m_WindowSettingsRef.Current.WindowTitle) + L'\n';
-
-		m_CMLoggerRef.LogInfo(message);
-
-		message = L"CMWindow [LogCurrentSettings] | Target Window Resolution : " +
-			std::to_wstring(m_WindowSettingsRef.Current.Width) + L" x " + std::to_wstring(m_WindowSettingsRef.Current.Height) + L'\n';
-
-		m_CMLoggerRef.LogInfo(message);
-
-		message = L"CMWindow [LogCurrentSettings] | Max Window Resolution : " +
-			std::to_wstring(m_WindowSettingsRef.MaxWidth) + L" x " + std::to_wstring(m_WindowSettingsRef.MaxHeight) + L'\n';
-
-		m_CMLoggerRef.LogInfo(message);
-
-		message = L"CMWindow [LogCurrentSettings] | Use fullscreen : " + Utility::BoolToWStr(m_WindowSettingsRef.Current.UseFullscreen) + L'\n';
-
-		m_CMLoggerRef.LogInfo(message);
 	}
 
 	CMWindow::~CMWindow() noexcept
@@ -44,7 +108,7 @@ namespace CMRenderer
 			Shutdown();
 	}
 
-	void CMWindow::Init() noexcept
+	void CMWindow::Init() noexcept 
 	{
 		if (m_Initialized)
 		{
@@ -88,19 +152,13 @@ namespace CMRenderer
 	void CMWindow::HandleMessages() noexcept
 	{
 		BOOL result = 0;
-		MSG msg;
+		MSG msg = {};
 
 		// While there are messages to process. (Return value is non-zero)
-		while ((result = PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) > 0)
+		while ((result = PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) != 0)
 		{
 			if (msg.message == WM_QUIT)
-			{
-				m_Running = false;
-
-				m_CMLoggerRef.LogInfo(L"CMWindow [HandleMessages] | Window shutdown has been requested.\n");
-
-				return;
-			}
+				SetShutdownState();
 
 			// Translate any raw virtual-key messages in character messages. (e.g., 'w', 'a', 's', 'd', etc)
 			TranslateMessage(&msg);
@@ -108,6 +166,39 @@ namespace CMRenderer
 			// Forward the message to the current window procedure.
 			DispatchMessageW(&msg);
 		}
+	}
+
+	void CMWindow::WaitForMessages(long long handleMillis) noexcept
+	{
+		bool firstMessage = false;
+		std::chrono::steady_clock::time_point firstRetrievalTime;
+
+		BOOL result = 0;
+		MSG msg = {};
+
+		while ((result = GetMessageW(&msg, nullptr, 0, 0)) != 0)
+		{
+			if (!firstMessage)
+			{
+				firstMessage = true;
+				firstRetrievalTime = std::chrono::high_resolution_clock::now();
+			}
+
+			// Translate any raw virtual-key messages in character messages. (e.g., 'w', 'a', 's', 'd', etc)
+			TranslateMessage(&msg);
+
+			// Forward the message to the current window procedure.
+			DispatchMessageW(&msg);
+
+			std::chrono::steady_clock::time_point currentTime = std::chrono::high_resolution_clock::now();
+			std::chrono::milliseconds elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - firstRetrievalTime);
+
+			if (elapsed.count() >= handleMillis)
+				return;
+		}
+
+		if (msg.message == WM_QUIT)
+			SetShutdownState();
 	}
 
 	void CMWindow::Minimize() const noexcept
@@ -118,11 +209,66 @@ namespace CMRenderer
 			return;
 		}
 
+		// Don't modify m_DisplayState here... it will be modified in CMWindow::WndProc.
 		ShowWindow(m_WindowHandle, SW_SHOWMINIMIZED);
+	}
+
+	void CMWindow::Maximize() const noexcept
+	{
+		if (!m_Initialized)
+		{
+			m_CMLoggerRef.LogWarning(L"CMWindow [Maximize] | Attempted to maximize the window before initializing it.\n");
+			return;
+		}
+		// Don't modify m_DisplayState here... it will be modified in CMWindow::WndProc.
+		ShowWindow(m_WindowHandle, SW_SHOWMAXIMIZED);
+	}
+
+	void CMWindow::Restore() const noexcept
+	{
+		if (!m_Initialized)
+		{
+			m_CMLoggerRef.LogWarning(L"CMWindow [Restore] | Attempted to restore the window before initializing it.\n");
+			return;
+		}
+
+		// Don't modify m_DisplayState here... it will be modified in CMWindow::WndProc.
+		BOOL previouslyVisible = ShowWindow(m_WindowHandle, SW_RESTORE);
+
+		m_CMLoggerRef.LogInfo(L"CMWindow [Restore] | Restored window.\n");
+	}
+
+	void CMWindow::SetCharKeyCallback(char c, std::function<void(bool)> func) noexcept
+	{
+		m_CharKeyCallbacks[c] = func;
 	}
 #pragma endregion
 
 #pragma region Private
+	void CMWindow::CallCharKeyCallback(char c, bool isReleased) noexcept
+	{
+		std::function<void(bool)> func = m_CharKeyCallbacks[c];
+
+		if (!func)
+			return;
+
+		//std::wstring message = (L"CMWindow [CallCharKeyCallback] | Calling key callback : " + static_cast<wchar_t>(c));
+		//m_CMLoggerRef.LogInfo(message);
+		//m_CMLoggerRef.LogInline(L"\n");
+
+		func(isReleased);
+	}
+#pragma region State
+	void CMWindow::SetShutdownState() noexcept
+	{
+		m_Running = false;
+		m_CMLoggerRef.LogInfo(L"CMWindow [SetShutdownState] | Window shutdown has been requested.\n");
+
+		Minimize();
+	}
+#pragma endregion
+
+#pragma region Window Management
 	bool CMWindow::Create() noexcept
 	{
 		WNDCLASSEXW wndClass = {};
@@ -151,7 +297,7 @@ namespace CMRenderer
 		m_ClientArea.top = 0;
 		m_ClientArea.bottom = m_WindowSettingsRef.Current.Height;
 
-		DWORD dwStyle = m_WindowSettingsRef.Current.UseFullscreen ? WS_POPUP : WS_OVERLAPPEDWINDOW | WS_SYSMENU;
+		DWORD dwStyle = m_WindowSettingsRef.Current.UseFullscreen ? WS_POPUP : WS_OVERLAPPEDWINDOW | WS_SYSMENU | WS_MAXIMIZEBOX;
 
 		// Create the window.
 		m_WindowHandle = CreateWindowExW(
@@ -182,10 +328,14 @@ namespace CMRenderer
 
 		// If nonzero, the return value is nonzero. Otherwise, the window was previously hidden.
 		BOOL previouslyVisible = ShowWindow(m_WindowHandle, showCmd);
-
 		BOOL result = GetClientRect(m_WindowHandle, &m_ClientArea);
+		
+		if (m_WindowSettingsRef.Current.UseFullscreen)
+			m_DisplayState.SetState(CMDisplayType::MAXIMIZED);
+		else
+			m_DisplayState.SetState(CMDisplayType::MINIMIZED);
 
-		if (result == 0)
+		if (!result)
 		{
 			m_CMLoggerRef.LogFatal(L"CMWindow [Create] | Failed to update window size.\n");
 			return false;
@@ -223,6 +373,27 @@ namespace CMRenderer
 		return true;
 	}
 
+	[[nodiscard]] HINSTANCE CMWindow::GetCurrentHINSTANCE() noexcept
+	{
+		HMODULE hModule = nullptr;
+		GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, NULL, &hModule);
+
+		if (hModule == nullptr)
+			m_CMLoggerRef.LogFatal(L"CMWindow [GetCurrentHINSTANCE] | Unable to retrieve the current HINSTANCE. Retrieved HINSTANCE was nullptr.\n");
+
+		return static_cast<HINSTANCE>(hModule);
+	}
+
+	void CMWindow::RegisterWindowClass(const WNDCLASSEX& wndClassRef) noexcept
+	{
+		bool registeredClass = RegisterClassExW(&wndClassRef);
+
+		if (!registeredClass)
+			m_CMLoggerRef.LogFatal(L"CMWindow [RegisterWindowClass] | Failed to register CMWindow's WNDCLASSEX.\n");
+	}
+#pragma endregion
+
+#pragma region Settings
 	void CMWindow::ValidateSettings() noexcept
 	{
 		if (m_WindowSettingsRef.Current.WindowTitle.data() == nullptr)
@@ -285,24 +456,27 @@ namespace CMRenderer
 		}
 	}
 
-	[[nodiscard]] HINSTANCE CMWindow::GetCurrentHINSTANCE() noexcept
+	void CMWindow::LogCurrentSettings() const noexcept
 	{
-		HMODULE hModule = nullptr;
-		GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, NULL, &hModule);
+		std::wstring message = L"CMWindow [LogCurrentSettings] | Target Title : " + std::wstring(m_WindowSettingsRef.Current.WindowTitle) + L'\n';
 
-		if (hModule == nullptr)
-			m_CMLoggerRef.LogFatal(L"CMWindow [GetCurrentHINSTANCE] | Unable to retrieve the current HINSTANCE. Retrieved HINSTANCE was nullptr.\n");
+		m_CMLoggerRef.LogInfo(message);
 
-		return static_cast<HINSTANCE>(hModule);
+		message = L"CMWindow [LogCurrentSettings] | Target Window Resolution : " +
+			std::to_wstring(m_WindowSettingsRef.Current.Width) + L" x " + std::to_wstring(m_WindowSettingsRef.Current.Height) + L'\n';
+
+		m_CMLoggerRef.LogInfo(message);
+
+		message = L"CMWindow [LogCurrentSettings] | Max Window Resolution : " +
+			std::to_wstring(m_WindowSettingsRef.MaxWidth) + L" x " + std::to_wstring(m_WindowSettingsRef.MaxHeight) + L'\n';
+
+		m_CMLoggerRef.LogInfo(message);
+
+		message = L"CMWindow [LogCurrentSettings] | Use fullscreen : " + Utility::BoolToWStr(m_WindowSettingsRef.Current.UseFullscreen) + L'\n';
+
+		m_CMLoggerRef.LogInfo(message);
 	}
-
-	void CMWindow::RegisterWindowClass(const WNDCLASSEX& wndClassRef) noexcept
-	{
-		bool registeredClass = RegisterClassExW(&wndClassRef);
-
-		if (!registeredClass)
-			m_CMLoggerRef.LogFatal(L"CMWindow [RegisterWindowClass] | Failed to register CMWindow's WNDCLASSEX.\n");
-	}
+#pragma endregion
 
 #pragma region WndProc
 	[[nodiscard]] LRESULT CALLBACK CMWindow::WndProcSetup(HWND hWnd, UINT msgCode, WPARAM wParam, LPARAM lParam) noexcept
@@ -341,12 +515,54 @@ namespace CMRenderer
 		{
 		case WM_KEYDOWN:
 			if (wParam != VK_ESCAPE)
+			{
+				CallCharKeyCallback(wParam, false);
 				return DefWindowProcW(hWnd, msgCode, wParam, lParam);
+			}
 
 			[[fallthrough]];
 		case WM_CLOSE:
 			PostQuitMessage(0);
 			return S_OK;
+		case WM_ACTIVATEAPP:
+			m_Focused = wParam != FALSE;
+			return DefWindowProcW(hWnd, msgCode, wParam, lParam);
+		//case WM_SYSKEYDOWN:
+		//	// If alt + enter is pressed is not pressed. ((GetKeyState(VK_MENU) & 0x8000) != 0 alt is held down)
+		//	if (wParam != VK_RETURN && (GetKeyState(VK_MENU) & 0x8000) == 0)
+		//		return DefWindowProcW(hWnd, msgCode, wParam, lParam);
+
+		//	// Handle state transition...
+
+		//	return DefWindowProcW(hWnd, msgCode, wParam, lParam);
+		case WM_SYSCOMMAND:
+			m_CMLoggerRef.LogInfo(L"CMWindow [WndProc] | Received SYSCOMMAND.\n");
+
+			if ((wParam & 0xFFF0) == SC_MAXIMIZE)
+			{
+				m_CMLoggerRef.LogInfo(L"CMWindow [WndProc] | Setting maximized state.\n");
+				m_DisplayState.SetState(CMDisplayType::MAXIMIZED);
+			}
+			else if ((wParam & 0xFFF0) == SC_MINIMIZE)
+			{
+				m_CMLoggerRef.LogInfo(L"CMWindow [WndProc] | Setting minimized state.\n");
+				m_DisplayState.SetState(CMDisplayType::MINIMIZED);
+			}
+			else if ((wParam & 0xFFF0) == SC_RESTORE)
+			{
+				m_CMLoggerRef.LogInfo(L"CMWindow [WndProc] | Setting restore state.\n");
+				
+				std::wstring message = L"CMWindow [WndProc] | Previous display state : " + m_DisplayState.PreviousStateToWStr() + L'\n';
+				m_CMLoggerRef.LogInfo(message);
+
+				m_DisplayState.RestorePrevious();
+			}
+
+			return DefWindowProcW(hWnd, msgCode, wParam, lParam);
+		case WM_SIZE:
+			GetClientRect(m_WindowHandle, &m_ClientArea);
+
+			[[fallthrough]];
 		default:
 			return DefWindowProcW(hWnd, msgCode, wParam, lParam);
 		}

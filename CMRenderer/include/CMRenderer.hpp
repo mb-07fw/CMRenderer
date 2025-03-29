@@ -14,6 +14,7 @@
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "DXGI.lib")
+#pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
 #include "Core/CMMacros.hpp"
@@ -34,6 +35,8 @@ namespace CMRenderer
 		void Shutdown() noexcept;
 		
 		void Run() noexcept;
+	private:
+		void Suspend() noexcept;
 	private:
 		static constexpr std::wstring_view S_LIFETIME_LOG_FILE_NAME = L"logs/CMRendererLifetime.log";
 		CMRendererSettings m_Settings;

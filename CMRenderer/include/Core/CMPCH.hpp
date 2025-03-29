@@ -28,3 +28,5 @@
 #include <filesystem>
 #include <span>
 #include <functional>
+#include <memory>
+#include <unordered_map>

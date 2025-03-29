@@ -1,11 +1,10 @@
 #include "Core/CMPCH.hpp"
-
 #include "CMRenderer.hpp"
 
 void Entry()
 {
 	/* !!! WARNING:
-	 *		Dont pass true for useFullscreen is setting breakpoints, as breaking the debugger with a maximized window will hijack your display,
+	 *		Dont pass true for useFullscreen if setting breakpoints, as breaking the debugger with a maximized window will hijack your display,
 	 *		and require restarting your computer to fix. If a breakpoint is triggered when the window is maximized, 
 	 *		the window will become unresponsive and unable to be minimized.
 	 * 
@@ -22,7 +21,7 @@ void Entry()
 	}
 }
 
-#ifndef CM_DIST
+#if defined(CM_DEBUG)
 
 int main()
 {
