@@ -3,7 +3,7 @@
 #include <d3dcommon.h>
 #include <string_view>
 
-namespace CMRenderer::DirectX::Utility
+namespace CMRenderer::CMDirectX::Utility
 {
 	constexpr std::wstring_view D3DFeatureLevelToWStrView(D3D_FEATURE_LEVEL featureLevel) noexcept;
 	

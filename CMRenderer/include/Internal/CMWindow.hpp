@@ -11,7 +11,7 @@
 
 namespace CMRenderer
 {
-	enum class CMDisplayType
+	/*enum class CMDisplayType
 	{
 		INVALID = -1,
 		MINIMIZED,
@@ -61,7 +61,7 @@ namespace CMRenderer
 		case CMDisplayType::WINDOWED:   return std::wstring_view(L"WINDOWED");
 		default:						return std::wstring_view(L"UNKNOWN");
 		}
-	}
+	}*/
 
 
 
@@ -79,9 +79,9 @@ namespace CMRenderer
 		// handleMillis : Time to handle messages before returning once an initial message is received.
 		void WaitForMessages(long long handleMillis) noexcept;
 
-		void Minimize() const noexcept;
-		void Maximize() const noexcept;
-		void Restore() const noexcept;
+		void Maximize() noexcept;
+		void Minimize() noexcept;
+		void Restore() noexcept;
 
 		void SetCharKeyCallback(char c, std::function<void(bool)> func) noexcept;
 
@@ -89,14 +89,14 @@ namespace CMRenderer
 		inline [[nodiscard]] bool IsShutdown() const noexcept { return m_Shutdown; }
 		inline [[nodiscard]] bool IsRunning() const noexcept { return m_Running; }
 		
-		inline [[nodiscard]] bool IsFullscreen() const noexcept { return m_DisplayState.IsFullscreen; }
-		inline [[nodiscard]] bool IsMinimized() const noexcept { return m_DisplayState.IsMinimized; }
-		inline [[nodiscard]] bool IsWindowed() const noexcept { return m_DisplayState.IsWindowed; }
+		inline [[nodiscard]] bool IsMaximized() const noexcept { return m_Maximized; }
+		inline [[nodiscard]] bool IsMinimized() const noexcept { return m_Minimized; }
+		inline [[nodiscard]] bool IsWindowed() const noexcept { return m_Windowed; }
 
-		inline [[nodiscard]] bool WasFullscreen() noexcept { return m_DisplayState.WasFullscreen(); }
+		/*inline [[nodiscard]] bool WasFullscreen() noexcept { return m_DisplayState.WasFullscreen(); }
 		inline [[nodiscard]] bool WasMinimized() noexcept { return m_DisplayState.WasMinimized(); }
 		inline [[nodiscard]] bool WasWindowed() noexcept { return m_DisplayState.WasWindowed(); }
-		inline [[nodiscard]] bool WasResized() noexcept { return m_DisplayState.WasResized(); }
+		inline [[nodiscard]] bool WasResized() noexcept { return m_DisplayState.WasResized(); }*/
 
 		inline [[nodiscard]] bool IsFocused() const noexcept { return m_Focused; }
 
@@ -132,7 +132,11 @@ namespace CMRenderer
 		bool m_Shutdown = false;
 		bool m_Running = false;
 		bool m_Focused = false;
-		CMWindowDisplayState m_DisplayState = {};
+		bool m_Maximized = false;
+		bool m_Minimized = false;
+		bool m_Windowed = false;
+		bool m_SetWindowedPos = false;
+		//CMWindowDisplayState m_DisplayState = {};
 		std::unordered_map<char, std::function<void(bool)>> m_CharKeyCallbacks;
 	};
 }

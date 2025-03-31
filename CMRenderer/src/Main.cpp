@@ -9,7 +9,7 @@ void Entry()
 	 *		the window will become unresponsive and unable to be minimized.
 	 * 
 	 * !!! */
-	CMRenderer::CMWindowData windowSettings(L"TITLE!!!", false, 640, 480);
+	CMRenderer::CMWindowData windowSettings(L"TITLE!!!", true, 640, 480);
 	CMRenderer::CMRendererSettings rendererSettings(windowSettings);
 
 	{

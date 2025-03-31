@@ -15,10 +15,12 @@ namespace CMRenderer
 	{
 		INVALID = -1,
 		DEFAULT,
+		POS2D_COLOR_TRANSFORM
 	};
 
-	inline constexpr std::array<CMImplementedShaderType, 1> G_IMPLEMENTED_SHADER_TYPES = {
-		CMImplementedShaderType::DEFAULT
+	inline constexpr std::array<CMImplementedShaderType, 2> G_IMPLEMENTED_SHADER_TYPES = {
+		CMImplementedShaderType::DEFAULT,
+		CMImplementedShaderType::POS2D_COLOR_TRANSFORM
 	};
 
 	enum class CMShaderType
@@ -79,9 +81,10 @@ namespace CMRenderer
 	{
 		switch (implementedType)
 		{
-		case CMImplementedShaderType::INVALID:	return std::wstring_view(L"INVALID");
-		case CMImplementedShaderType::DEFAULT:	return std::wstring_view(L"DEFAULT");
-		default:								return std::wstring_view(L"NONE");
+		case CMImplementedShaderType::INVALID:				 return std::wstring_view(L"INVALID");
+		case CMImplementedShaderType::DEFAULT:				 return std::wstring_view(L"DEFAULT");
+		case CMImplementedShaderType::POS2D_COLOR_TRANSFORM: return std::wstring_view(L"POS2D_COLOR_TRANSFORM");
+		default:											 return std::wstring_view(L"NONE");
 		}
 	}
 }

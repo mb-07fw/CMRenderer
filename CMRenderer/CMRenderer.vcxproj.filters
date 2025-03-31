@@ -96,5 +96,7 @@
   <ItemGroup>
     <FxCompile Include="resources\shaders\DefaultVS.hlsl" />
     <FxCompile Include="resources\shaders\DefaultPS.hlsl" />
+    <FxCompile Include="resources\shaders\Pos2D_Color_TransformVS.hlsl" />
+    <FxCompile Include="resources\shaders\Pos2D_Color_TransformPS.hlsl" />
   </ItemGroup>
 </Project>

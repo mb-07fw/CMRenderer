@@ -36,8 +36,12 @@ namespace CMRenderer
 		[[nodiscard]] CMImplementedShaderType CorrespondingImplementedType(const std::wstring& fileName) const noexcept;
 		[[nodiscard]] void GetCorrespondingDescription(Utility::CMStaticArray<D3D11_INPUT_ELEMENT_DESC>& outDesc, CMImplementedShaderType implementedType) const noexcept;
 	private:
-		static constexpr size_t S_TOTAL_SHADERS = 2;
-		static constexpr size_t S_TOTAL_SHADER_SETS = 1;
+		static constexpr size_t S_EXPECTED_NUM_SHADERS = 4;
+		static constexpr size_t S_EXPECTED_NUM_SHADER_SETS = 2;
+		static constexpr std::wstring_view S_DEFAULT_VS_NAME = L"DefaultVS.cso";
+		static constexpr std::wstring_view S_DEFAULT_PS_NAME = L"DefaultPS.cso";
+		static constexpr std::wstring_view S_POS2D_COLOR_TRANSFORM_VS_NAME = L"Pos2D_Color_TransformVS.cso";
+		static constexpr std::wstring_view S_POS2D_COLOR_TRANSFORM_PS_NAME = L"Pos2D_Color_TransformPS.cso";
 		bool m_Initialized = false;
 		bool m_Shutdown = false;
 		CMLoggerWide& m_CMLoggerRef;

@@ -1,11 +1,13 @@
-#include "Core/CMPCH.hpp"
+﻿#include "Core/CMPCH.hpp"
 #include "Internal/WindowsUtility.hpp"
 #include "Internal/DirectX/DXContext.hpp"
 #include "Internal/DirectX/DXUtility.hpp"
 
+#include <comdef.h>
+
 #define APPEND_COMMA(x) x,
 
-namespace CMRenderer::DirectX
+namespace CMRenderer::CMDirectX
 {
 #pragma region DXContext
 	DXContext::DXContext(CMLoggerWide& cmLoggerRef) noexcept
@@ -14,6 +16,32 @@ namespace CMRenderer::DirectX
 		  CM_IF_NDEBUG_REPLACE(APPEND_COMMA(m_InfoQueue(cmLoggerRef)))
 		  m_ShaderLibrary(cmLoggerRef)
 	{
+		CM_IF_DEBUG(
+			m_DebugInterfaceModule = LoadLibrary(L"Dxgidebug.dll");
+		
+			if (m_DebugInterfaceModule == nullptr)
+			{
+				m_CMLoggerRef.LogFatal(L"DXContext [Shutdown] | Failed to load Dxgidebug.dll\n");
+				return;
+			}
+
+			typedef HRESULT(WINAPI* DXGIGetDebugInterfaceFunc)(const IID&, void**);
+
+			// Retrieve the address of DXGIGetDebugInterface function
+			DXGIGetDebugInterfaceFunc pDXGIGetDebugInterface =
+				(DXGIGetDebugInterfaceFunc)GetProcAddress(m_DebugInterfaceModule, "DXGIGetDebugInterface");
+
+			if (!pDXGIGetDebugInterface)
+			{
+				m_CMLoggerRef.LogFatal(L"DXContext [Shutdown] | Failed to get function address for DXGIGetDebugInterface\n");
+				return;
+			}
+
+			HRESULT hResult = pDXGIGetDebugInterface(IID_PPV_ARGS(&mP_DebugInterface));
+
+			if (hResult != S_OK)
+				m_CMLoggerRef.LogFatal(L"DXContext [Shutdown] | Failed to retrieve a DXGI debug interface.\n");
+		);
 	}
 
 	DXContext::~DXContext() noexcept
@@ -21,42 +49,10 @@ namespace CMRenderer::DirectX
 		if (m_Initialized)
 			Shutdown();
 
-		// Load Dxgidebug.dll dynamically
-		HMODULE dxgiDebugModule = LoadLibrary(L"Dxgidebug.dll");
-
-		if (dxgiDebugModule == nullptr)
-			m_CMLoggerRef.LogWarning(L"DXContext [Shutdown] | Failed to load Dxgidebug.dll\n");
-		else
-		{
-			typedef HRESULT(WINAPI* DXGIGetDebugInterfaceFunc)(const IID&, void**);
-
-			// Retrieve the address of DXGIGetDebugInterface function
-			DXGIGetDebugInterfaceFunc pDXGIGetDebugInterface =
-				(DXGIGetDebugInterfaceFunc)GetProcAddress(dxgiDebugModule, "DXGIGetDebugInterface");
-
-			if (!pDXGIGetDebugInterface)
-				m_CMLoggerRef.LogWarning(L"DXContext [Shutdown] | Failed to get function address for DXGIGetDebugInterface\n");
-			else
-			{
-				Microsoft::WRL::ComPtr<IDXGIDebug> pDebug;
-				HRESULT hResult = pDXGIGetDebugInterface(IID_PPV_ARGS(&pDebug));
-
-				if (hResult != S_OK)
-					m_CMLoggerRef.LogWarning(L"DXContext [Shutdown] | Failed to retrieve a DXGI debug interface.\n");
-				else
-				{
-					hResult = pDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_SUMMARY);
-
-					if (hResult != S_OK)
-						m_CMLoggerRef.LogWarning(L"DXContext [Shutdown] | Failed to report live objects.\n");
-				}
-			}
-
-			FreeLibrary(dxgiDebugModule);
-		}
+		CM_IF_DEBUG(FreeLibrary(m_DebugInterfaceModule));
 	}
 
-	void DXContext::Init(const HWND hWnd, RECT clientArea, bool isFullscreen) noexcept
+	void DXContext::Init(const HWND hWnd, RECT clientArea) noexcept
 	{
 		if (m_Initialized)
 		{
@@ -64,11 +60,9 @@ namespace CMRenderer::DirectX
 			return;
 		}
 
-		m_Fullscreen = isFullscreen;
-
 		m_Device.Create();
 		m_Factory.Create(m_Device);
-		m_SwapChain.Create(hWnd, clientArea, m_Factory, m_Device, m_Fullscreen);
+		m_SwapChain.Create(hWnd, clientArea, m_Factory, m_Device);
 
 		CM_IF_DEBUG(
 			m_InfoQueue.Create(m_Device);
@@ -115,11 +109,13 @@ namespace CMRenderer::DirectX
 		m_Device.Release();
 		m_SwapChain.Release();
 
-		if (!m_InfoQueue.IsQueueEmpty())
-			m_InfoQueue.LogMessages();
+		CM_IF_DEBUG(
+			if (!m_InfoQueue.IsQueueEmpty())
+				m_InfoQueue.LogMessages();
 
-		CM_IF_DEBUG(m_InfoQueue.Release());
-			
+			m_InfoQueue.Release()
+		);
+
 		m_ShaderLibrary.Shutdown();
 
 		m_Initialized = false;
@@ -163,103 +159,9 @@ namespace CMRenderer::DirectX
 		}
 	}
 
-	void DXContext::ToggleFullscreen(bool state) noexcept
-	{
-		if (!m_Initialized)
-		{
-			m_CMLoggerRef.LogWarning(L"DXContext [ToggleFullscreen] | Attempted to set context state before initialization.\n");
-			return;
-		}
-
-		if (m_Fullscreen == state)
-			return;
-
-		mP_RTV.Reset();
-		HRESULT hResult = m_SwapChain->SetFullscreenState(state, nullptr);
-
-		if (hResult != S_OK)
-		{
-			CM_IF_DEBUG(
-				if (!m_InfoQueue.IsQueueEmpty())
-					m_InfoQueue.LogMessages();
-			);
-
-			m_CMLoggerRef.LogFatal(L"DXContext [ToggleFullscreen] | Failed to set fullscreen state.\n");
-			return;
-		}
-
-		DXGI_SWAP_CHAIN_DESC previousDesc;
-		hResult = m_SwapChain->GetDesc(&previousDesc);
-
-		if (hResult != S_OK)
-		{
-			CM_IF_DEBUG(
-				if (!m_InfoQueue.IsQueueEmpty())
-					m_InfoQueue.LogMessages();
-					);
-
-			m_CMLoggerRef.LogFatal(L"DXContext [ToggleFullscreen] | Failed to get previous swap chain desc.\n");
-			return;
-		}
-
-		hResult = m_SwapChain->ResizeBuffers(previousDesc.BufferCount, 0, 0, DXGI_FORMAT_UNKNOWN, previousDesc.Flags);
-
-		if (hResult == DXGI_ERROR_DEVICE_REMOVED || hResult == DXGI_ERROR_DEVICE_RESET)
-		{
-			m_CMLoggerRef.LogFatal(L"DXContext [ToggleFullscreen] | Failed to resize buffers due to device loss.\n");
-			return;
-		}
-		else if (hResult != S_OK)
-		{
-			m_CMLoggerRef.LogFatal(L"DXContext [ToggleFullscreen] | Failed to resize buffers.\n");
-			return;
-		}
-
-		DXGI_SWAP_CHAIN_DESC currentDesc;
-		hResult = m_SwapChain->GetDesc(&currentDesc);
-
-		if (hResult != S_OK)
-		{
-			CM_IF_DEBUG(
-				if (!m_InfoQueue.IsQueueEmpty())
-					m_InfoQueue.LogMessages();
-					);
-
-			m_CMLoggerRef.LogFatal(L"DXContext [ToggleFullscreen] | Failed to get current swap chain desc.\n");
-			return;
-		}
-
-		SetViewport((float)currentDesc.BufferDesc.Width, (float)currentDesc.BufferDesc.Height);
-		CreateRTV();
-
-		m_Fullscreen = state;
-	}
-
-	/*void DXContext::ResizeTo(RECT newClientArea) noexcept
-	{
-		mP_RTV.Reset();
-		m_Device.Context()->ClearState();
-
-		DXGI_SWAP_CHAIN_DESC currentDesc;
-		m_SwapChain->GetDesc(&currentDesc);
-
-		m_SwapChain->ResizeBuffers(
-			currentDesc.BufferCount,
-			newClientArea.right - newClientArea.left, 
-			newClientArea.bottom - newClientArea.top,
-			DXGI_FORMAT_UNKNOWN, 
-			currentDesc.Flags
-		);
-
-		CreateRTV();
-		SetViewport(newClientArea);
-		SetTopology();
-	}*/
-
 	void DXContext::CreateRTV() noexcept
 	{
-		// Reset RTV in case it was created previously. Failure to do so will result in a memory leak.
-		mP_RTV.Reset();
+		ReleaseViews();
 
 		// Get the back buffer.
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> pBackBuffer;
@@ -289,12 +191,18 @@ namespace CMRenderer::DirectX
 	void DXContext::SetViewport(float width, float height) noexcept
 	{
 		CD3D11_VIEWPORT viewport(0.0f, 0.0f, width, height);
-		m_Device.Context()->RSSetViewports(1, &viewport);
+		m_Device.ContextRaw()->RSSetViewports(1, &viewport);
 	}
 
 	void DXContext::SetTopology() noexcept
 	{
-		m_Device.Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_Device.ContextRaw()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	}
+
+	void DXContext::ReleaseViews() noexcept
+	{
+		m_Device.ContextRaw()->OMSetRenderTargets(0, nullptr, nullptr);
+		mP_RTV.Reset();
 	}
 #pragma endregion
 }

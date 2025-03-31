@@ -8,7 +8,7 @@
 
 #include "Internal/CMLogger.hpp"
 
-namespace CMRenderer::DirectX::Components
+namespace CMRenderer::CMDirectX::Components
 {
 #pragma region DXDevice
 	class DXDevice
@@ -74,7 +74,7 @@ namespace CMRenderer::DirectX::Components
 		DXSwapChain(CMLoggerWide& cmLoggerRef) noexcept;
 		~DXSwapChain() noexcept;
 	public:
-		void Create(const HWND hWnd, const RECT clientArea, DXFactory& factoryRef, DXDevice& deviceRef, bool isFullscreen) noexcept;
+		void Create(const HWND hWnd, const RECT clientArea, DXFactory& factoryRef, DXDevice& deviceRef) noexcept;
 		void Release() noexcept;
 
 		IDXGISwapChain* operator->() noexcept;

@@ -39,16 +39,36 @@ namespace CMRenderer
 		}
 
 		m_Window.Init();
-		m_RenderContext.Init(m_Window.Handle(), m_Window.ClientArea(), m_Settings.WindowSettings.Current.UseFullscreen);
+		m_RenderContext.Init(m_Window.Handle(), m_Window.ClientArea());
 
 		m_Window.SetCharKeyCallback(
-			'R', 
+			'I', 
 			[this](bool isReleased) { 
-				if (!isReleased && m_Window.IsFullscreen())
-				{
-					m_RenderContext.ToggleFullscreen(false); 
+				if (!isReleased && !m_Window.IsWindowed())
 					m_Window.Restore();
-				}
+				else if (m_Window.IsWindowed())
+					m_CMLogger.LogInfo(L"CMRenderer [CharKeyCallback ('r')] | Windowed key was pressed, but window is already windowed.\n");
+			}
+		);
+
+		m_Window.SetCharKeyCallback(
+			'O',
+			[this](bool isReleased) {
+				if (!isReleased && !m_Window.IsMaximized())
+					m_Window.Maximize();
+				else if (m_Window.IsMaximized())
+					m_CMLogger.LogInfo(L"CMRenderer [CharKeyCallback ('O')] | Maximize key was pressed, but window is already maximized.\n");
+			}
+		);
+
+
+		m_Window.SetCharKeyCallback(
+			'P',
+			[this](bool isReleased) {
+				if (!isReleased && !m_Window.IsMinimized())
+					m_Window.Minimize();
+				else if (m_Window.IsMinimized())
+					m_CMLogger.LogInfo(L"CMRenderer [CharKeyCallback ('P')] | Minimize key was pressed, but window is already minimized.\n");
 			}
 		);
 
@@ -73,12 +93,19 @@ namespace CMRenderer
 
 	void CMRenderer::Run() noexcept
 	{
-		std::array<float, 6> array = {
-			  0.0,   0.5f,
+		std::array<float, 12> array = {
+			 -0.5f,  0.5f,
 			  0.5f, -0.5f,
-			 -0.5f, -0.5f
+			 -0.5f, -0.5f,
+			  0.5f,  0.5f,
 		};
 
+		std::array<short, 6> indices = {
+			0, 1, 2,
+			0, 3, 1
+		};
+
+		float angle = 0.0f;
 		while (m_Window.IsRunning())
 		{
 			m_Window.HandleMessages();
@@ -87,40 +114,25 @@ namespace CMRenderer
 			if (!m_Window.IsRunning())
 				break;
 
-			if (m_Window.WasFullscreen())
+			// TODO: Fix memory leak from COM exceptions being thrown from toggling fullscreen state...
+			/*if (m_Window.WasFullscreen())
 				m_RenderContext.ToggleFullscreen(true);
-			else if (m_Window.WasResized())
-				m_RenderContext.ToggleFullscreen(false);
+			else if (m_Window.WasWindowed())
+				m_RenderContext.ToggleFullscreen(false);*/
 
-			m_RenderContext.Clear({ 0.5f, 0.0f, 0.5f, 0.0f });
-			m_RenderContext.Draw(array, 3);
-			m_RenderContext.Present();
+			if (m_Window.IsFocused())
+			{
+				m_RenderContext.Clear({ 0.5f, 0.0f, 0.5f, 0.0f });
+				m_RenderContext.DrawIndexed(array, indices, angle);
+				m_RenderContext.Present();
+			}
+
+			angle += 0.05f;
 
 			Sleep(10);
 		}
 	}
 #pragma endregion
 #pragma region Private
-	void CMRenderer::Suspend() noexcept
-	{
-		if (m_Settings.WindowSettings.Current.UseFullscreen)
-		{
-			m_RenderContext.ToggleFullscreen(false);
-			m_Window.Minimize();
-		}
-
-		m_Window.WaitForMessages(20);
-
-		/*if (m_Window.HasResized())
-			m_RenderContext.ResizeTo(m_Window.ClientArea());*/
-
-		if (m_Settings.WindowSettings.Current.UseFullscreen)
-		{
-			m_RenderContext.ToggleFullscreen(true);
-			m_Window.Maximize();
-		}
-	}
-
-
 #pragma endregion
 }

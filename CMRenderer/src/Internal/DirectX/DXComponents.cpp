@@ -3,7 +3,7 @@
 #include "Internal/DirectX/DXUtility.hpp"
 #include "Internal/WindowsUtility.hpp"
 
-namespace CMRenderer::DirectX::Components
+namespace CMRenderer::CMDirectX::Components
 {
 #pragma region DXDevice
 	DXDevice::DXDevice(CMLoggerWide& cmLoggerRef) noexcept
@@ -45,6 +45,10 @@ namespace CMRenderer::DirectX::Components
 			m_CMLoggerRef.LogWarning(L"DXDevice [Release] | Attempted to release after DXDevice was released previously.\n");
 			return;
 		}
+
+		mP_Context->OMSetRenderTargets(0, nullptr, nullptr);
+		mP_Context->ClearState();
+		mP_Context->Flush();
 
 		mP_Context.Reset();
 		mP_Device.Reset();
@@ -95,7 +99,7 @@ namespace CMRenderer::DirectX::Components
 		else if (succeededLevel < D3D_FEATURE_LEVEL_11_0)
 		{
 			std::wstring message = L"DXDevice [Create] | DirectX Feature Level was less than 11.0 (" +
-				std::wstring(DirectX::Utility::D3DFeatureLevelToWStrView(succeededLevel).data()) +
+				std::wstring(CMDirectX::Utility::D3DFeatureLevelToWStrView(succeededLevel).data()) +
 				L"), which is less than required for this program. Continuation will only result in errors.\n";
 
 			m_CMLoggerRef.LogFatal(message);
@@ -103,211 +107,162 @@ namespace CMRenderer::DirectX::Components
 		}
 
 		std::wstring message = L"DXDevice [Create] | Feature level in use : " +
-			std::wstring(DirectX::Utility::D3DFeatureLevelToWStrView(succeededLevel)) + L'\n';
+			std::wstring(CMDirectX::Utility::D3DFeatureLevelToWStrView(succeededLevel)) + L'\n';
 
 		m_CMLoggerRef.LogInfo(message);
 	}
 #pragma endregion
 
 #pragma region DXFactory
-DXFactory::DXFactory(CMLoggerWide& cmLoggerRef) noexcept
-	: m_CMLoggerRef(cmLoggerRef)
-{
-}
-
-DXFactory::~DXFactory() noexcept
-{
-	if (m_Created)
-		Release();
-}
-
-void DXFactory::Create(DXDevice& deviceRef) noexcept
-{
-	if (m_Created)
+	DXFactory::DXFactory(CMLoggerWide& cmLoggerRef) noexcept
+		: m_CMLoggerRef(cmLoggerRef)
 	{
-		m_CMLoggerRef.LogWarning(L"DXFactory [Create] | Attempted to create factory after DXFactory has already been created.\n");
-		return;
 	}
 
-	if (!deviceRef.IsCreated())
+	DXFactory::~DXFactory() noexcept
 	{
-		m_CMLoggerRef.LogFatal(L"DXFactory [Create] | Attempted to create factory before the provided DXDevice was created.\n");
-		return;
+		if (m_Created)
+			Release();
 	}
 
-	Microsoft::WRL::ComPtr<IDXGIDevice> pDXGIDevice;
-	HRESULT hResult = deviceRef->QueryInterface(IID_PPV_ARGS(&pDXGIDevice));
-
-	if (hResult != S_OK)
+	void DXFactory::Create(DXDevice& deviceRef) noexcept
 	{
-		std::wstring message = L"DXFactory [Create] | Failed to retrieve IDXGIDevice interface from ID3D11Device : " +
-			WindowsUtility::TranslateDWORDError(hResult) + L'\n';
+		if (m_Created)
+		{
+			m_CMLoggerRef.LogWarning(L"DXFactory [Create] | Attempted to create factory after DXFactory has already been created.\n");
+			return;
+		}
 
-		m_CMLoggerRef.LogFatal(message);
-		return;
+		if (!deviceRef.IsCreated())
+		{
+			m_CMLoggerRef.LogFatal(L"DXFactory [Create] | Attempted to create factory before the provided DXDevice was created.\n");
+			return;
+		}
+
+		HRESULT hResult = CreateDXGIFactory1(IID_PPV_ARGS(&mP_Factory));
+
+		if (hResult != S_OK)
+			m_CMLoggerRef.LogFatal(L"DXFactory [Create] | Failed to create factory.\n");
+
+		m_CMLoggerRef.LogInfo(L"DXFactory [Create] | Created.\n");
+
+		m_Created = true;
+		m_Released = false;
 	}
 
-	Microsoft::WRL::ComPtr<IDXGIAdapter> pDXGIAdapter;
-	hResult = pDXGIDevice->GetParent(IID_PPV_ARGS(&pDXGIAdapter));
-
-	if (hResult != S_OK)
+	void DXFactory::Release() noexcept
 	{
-		std::wstring message = L"DXFactory [Create] | Failed to retrieve adapter from the IDXGIDevice interface : " +
-			WindowsUtility::TranslateDWORDError(hResult) + L'\n';
+		if (!m_Created)
+		{
+			m_CMLoggerRef.LogWarning(L"DXFactory [Release] | Attempted to release factory before DXFactory has been created.\n");
+			return;
+		}
+		else if (m_Released)
+		{
+			m_CMLoggerRef.LogWarning(L"DXFactory [Release] | Attempted to release factory after DXFactory has already been released.\n");
+			return;
+		}
 
-		m_CMLoggerRef.LogFatal(message);
-		return;
+		mP_Factory.Reset();
+
+		m_CMLoggerRef.LogInfo(L"DXFactory [Release] | Released.\n");
+
+		m_Created = false;
+		m_Released = true;
 	}
 
-	hResult = pDXGIAdapter->GetParent(IID_PPV_ARGS(&mP_Factory));
-
-	if (hResult != S_OK)
+	IDXGIFactory1* DXFactory::operator->() noexcept
 	{
-		std::wstring message = L"DXFactory [Create] | Failed to create DXGIFactory1 : " +
-			WindowsUtility::TranslateDWORDError(hResult) + L'\n';
-
-		m_CMLoggerRef.LogFatal(message);
-		return;
+		return FactoryRaw();
 	}
-
-	m_CMLoggerRef.LogInfo(L"DXFactory [Create] | Created.\n");
-
-	m_Created = true;
-	m_Released = false;
-}
-
-void DXFactory::Release() noexcept
-{
-	if (!m_Created)
-	{
-		m_CMLoggerRef.LogWarning(L"DXFactory [Release] | Attempted to release factory before DXFactory has been created.\n");
-		return;
-	}
-	else if (m_Released)
-	{
-		m_CMLoggerRef.LogWarning(L"DXFactory [Release] | Attempted to release factory after DXFactory has already been released.\n");
-		return;
-	}
-
-	mP_Factory.Reset();
-
-	m_CMLoggerRef.LogInfo(L"DXFactory [Release] | Released.\n");
-
-	m_Created = false;
-	m_Released = true;
-}
-
-IDXGIFactory1* DXFactory::operator->() noexcept
-{
-	return FactoryRaw();
-}
 #pragma endregion
 
 #pragma region DXSwapChain
-DXSwapChain::DXSwapChain(CMLoggerWide& cmLoggerRef) noexcept
-	: m_CMLoggerRef(cmLoggerRef)
-{
-	m_Desc.BufferDesc.Width = 0;
-	m_Desc.BufferDesc.Height = 0;
-	m_Desc.BufferDesc.RefreshRate.Numerator = 0;
-	m_Desc.BufferDesc.RefreshRate.Denominator = 0;
-	m_Desc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	m_Desc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-	m_Desc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+	DXSwapChain::DXSwapChain(CMLoggerWide& cmLoggerRef) noexcept
+		: m_CMLoggerRef(cmLoggerRef)
+	{
+		m_Desc.BufferDesc.Width = 0;
+		m_Desc.BufferDesc.Height = 0;
+		m_Desc.BufferDesc.RefreshRate.Numerator = 0;
+		m_Desc.BufferDesc.RefreshRate.Denominator = 0;
+		m_Desc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		m_Desc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+		m_Desc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
 
-	m_Desc.SampleDesc.Count = 1;
-	m_Desc.SampleDesc.Quality = 0;
+		m_Desc.SampleDesc.Count = 1;
+		m_Desc.SampleDesc.Quality = 0;
 
-	m_Desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+		m_Desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	
-	m_Desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	m_Desc.BufferCount = 2;
-	m_Desc.Windowed = true;
-}
+		m_Desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		m_Desc.BufferCount = 2;
+		m_Desc.Windowed = true;
 
-DXSwapChain::~DXSwapChain() noexcept
-{
-	if (m_Created)
-		Release();
-}
-
-void DXSwapChain::Create(const HWND hWnd, const RECT clientArea, DXFactory& factoryRef, DXDevice& deviceRef, bool isFullscreen) noexcept
-{
-	if (m_Created)
-	{
-		m_CMLoggerRef.LogWarning(L"DXSwapChain [Create] | Attempted to create DXSwapChain after it has already been created.\n");
-		return;
+		m_Desc.Flags = 0;
 	}
 
-	if (!factoryRef.IsCreated())
+	DXSwapChain::~DXSwapChain() noexcept
 	{
-		m_CMLoggerRef.LogFatal(L"DXSwapChain [Create] | Attempted to create DXSwapChain before the provided DXFactory has been created.\n");
-		return;
-	}
-	else if (!deviceRef.IsCreated())
-	{
-		m_CMLoggerRef.LogFatal(L"DXSwapChain [Create] | Attempted to create DXSwapChain before the provided DXDevice has been created.\n");
-		return;
+		if (m_Created)
+			Release();
 	}
 
-	m_Desc.OutputWindow = hWnd;
-
-	HRESULT hResult = factoryRef->CreateSwapChain(deviceRef.DeviceRaw(), &m_Desc, &mP_SwapChain);
-
-	if (hResult != S_OK)
+	void DXSwapChain::Create(const HWND hWnd, const RECT clientArea, DXFactory& factoryRef, DXDevice& deviceRef) noexcept
 	{
-		std::wstring message = L"DXContext [Init] | Failed to create swap chain : " +
-			WindowsUtility::TranslateDWORDError(hResult) + L'\n';
+		if (m_Created)
+		{
+			m_CMLoggerRef.LogWarning(L"DXSwapChain [Create] | Attempted to create DXSwapChain after it has already been created.\n");
+			return;
+		}
 
-		m_CMLoggerRef.LogFatal(message);
-		return;
-	}
-	
-	if (isFullscreen)
-	{
-		hResult = mP_SwapChain->SetFullscreenState(isFullscreen, nullptr);
+		if (!factoryRef.IsCreated())
+			m_CMLoggerRef.LogFatal(L"DXSwapChain [Create] | Attempted to create DXSwapChain before the provided DXFactory has been created.\n");
+		else if (!deviceRef.IsCreated())
+			m_CMLoggerRef.LogFatal(L"DXSwapChain [Create] | Attempted to create DXSwapChain before the provided DXDevice has been created.\n");
+
+		m_Desc.OutputWindow = hWnd;
+
+		HRESULT hResult = factoryRef->CreateSwapChain(deviceRef.DeviceRaw(), &m_Desc, &mP_SwapChain);
 
 		if (hResult != S_OK)
 		{
-			std::wstring message = L"DXContext [Init] | Failed to set swap chain to fullscreen : " +
+			std::wstring message = L"DXSwapChain [Create] | Failed to create swap chain : " +
 				WindowsUtility::TranslateDWORDError(hResult) + L'\n';
 
 			m_CMLoggerRef.LogFatal(message);
+		}
+	
+		m_CMLoggerRef.LogInfo(L"DXSwapChain [Create] | Created.\n");
+
+		m_Created = true;
+		m_Released = false;
+	}
+
+	void DXSwapChain::Release() noexcept
+	{
+		if (!m_Created)
+		{
+			m_CMLoggerRef.LogWarning(L"DXSwapChain [Release] | Attempted to release DXSwapChain before it has been created.\n");
 			return;
 		}
+		else if (m_Released)
+		{
+			m_CMLoggerRef.LogWarning(L"DXSwapChain [Release] | Attempted to release DXSwapChain after it has already been released.\n");
+			return;
+		}
+
+		mP_SwapChain.Reset();
+
+		m_CMLoggerRef.LogInfo(L"DXSwapChain [Release] | Released.\n");
+
+		m_Created = false;
+		m_Released = true;
 	}
 
-	m_CMLoggerRef.LogInfo(L"DXSwapChain [Create] | Created.\n");
-
-	m_Created = true;
-	m_Released = false;
-}
-
-void DXSwapChain::Release() noexcept
-{
-	if (!m_Created)
+	IDXGISwapChain* DXSwapChain::operator->() noexcept
 	{
-		m_CMLoggerRef.LogWarning(L"DXSwapChain [Release] | Attempted to release DXSwapChain before it has been created.\n");
-		return;
+		return SwapChainRaw();
 	}
-	else if (m_Released)
-	{
-		m_CMLoggerRef.LogWarning(L"DXSwapChain [Release] | Attempted to release DXSwapChain after it has already been released.\n");
-		return;
-	}
-
-	mP_SwapChain.Reset();
-
-	m_CMLoggerRef.LogInfo(L"DXSwapChain [Release] | Released.\n");
-
-	m_Created = false;
-	m_Released = true;
-}
-
-IDXGISwapChain* DXSwapChain::operator->() noexcept
-{
-	return SwapChainRaw();
-}
 #pragma endregion
 
 #pragma region DXInfoQueue
@@ -331,10 +286,7 @@ IDXGISwapChain* DXSwapChain::operator->() noexcept
 		}
 
 		if (!deviceRef.IsCreated())
-		{
 			m_CMLoggerRef.LogFatal(L"DXInfoQueue [Create] | Attempted to create DXInfoQueue with a un-initialized device.\n");
-			return;
-		}
 
 		// Get the info queue interface.
 		HRESULT hResult = deviceRef->QueryInterface(IID_PPV_ARGS(&mP_InfoQueue));
@@ -411,16 +363,10 @@ IDXGISwapChain* DXSwapChain::operator->() noexcept
 
 		size_t messageLength = 0;
 		HRESULT hResult = S_OK;
-		for (size_t i = 0; i < mP_InfoQueue->GetNumStoredMessages(); i++)
+		for (size_t i = 0; i < mP_InfoQueue->GetNumStoredMessages(); ++i)
 		{
 			// Get size of message.
 			HRESULT hResult = mP_InfoQueue->GetMessageW(i, nullptr, &messageLength);
-
-			if (hResult != S_OK)
-			{
-				m_CMLoggerRef.LogWarning(L"DXInfoQueue [GetMessages] | Failed to retrieve message.\n");
-				continue;
-			}
 
 			if (messageLength == 0)
 				continue;

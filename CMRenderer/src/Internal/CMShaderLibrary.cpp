@@ -6,7 +6,7 @@ namespace CMRenderer
 	CMShaderLibrary::CMShaderLibrary(CMLoggerWide& cmLoggerRef) noexcept
 		: m_CMLoggerRef(cmLoggerRef)
 	{
-		m_ShaderSets.reserve(S_TOTAL_SHADER_SETS);
+		m_ShaderSets.reserve(S_EXPECTED_NUM_SHADER_SETS);
 		m_CMLoggerRef.LogInfo(L"CMShaderLibrary [()] | Constructed.\n");
 	}
 
@@ -33,7 +33,6 @@ namespace CMRenderer
 		GetAllShaderData(shaderData, compiledShaderPath);
 
 		std::wstring message;
-
 		for (CMImplementedShaderType implementedType : G_IMPLEMENTED_SHADER_TYPES)
 		{
 			const CMShaderData* pVertexData = nullptr;
@@ -85,10 +84,10 @@ namespace CMRenderer
 			m_ShaderSets.emplace_back(*pVertexData, *pPixelData, desc, implementedType);
 		}
 
-		if (m_ShaderSets.size() != S_TOTAL_SHADER_SETS)
+		if (m_ShaderSets.size() != S_EXPECTED_NUM_SHADER_SETS)
 		{
 			message = L"CMShaderLibrary [Init] | Failed to collect the expected amount of shader sets. (Collected : " +
-				std::to_wstring(m_ShaderSets.size()) + L" | Expected : " + std::to_wstring(S_TOTAL_SHADER_SETS) + L")\n";
+				std::to_wstring(m_ShaderSets.size()) + L" | Expected : " + std::to_wstring(S_EXPECTED_NUM_SHADER_SETS) + L")\n";
 
 			m_CMLoggerRef.LogFatal(message);
 		}
@@ -160,10 +159,10 @@ namespace CMRenderer
 
 		if (totalShaders == 0)
 			m_CMLoggerRef.LogFatal(L"CMShaderLibrary [GetAllShaderData] | No shaders were found.\n");
-		else if (totalShaders < S_TOTAL_SHADERS)
+		else if (totalShaders != S_EXPECTED_NUM_SHADERS)
 		{
-			message = L"CMShaderLibrary [GetAllShaderData] | The amount of shaders collected was less than the expected amount. (Collected : " +
-				std::to_wstring(totalShaders) + L" | Expected : " + std::to_wstring(S_TOTAL_SHADERS) + L")\n";
+			message = L"CMShaderLibrary [GetAllShaderData] | The amount of compiled shaders didn't match the expected amount. (Collected : " +
+				std::to_wstring(totalShaders) + L" | Expected : " + std::to_wstring(S_EXPECTED_NUM_SHADERS) + L")\n";
 
 			m_CMLoggerRef.LogFatal(message);
 		}
@@ -211,17 +210,38 @@ namespace CMRenderer
 			}
 
 			CMImplementedShaderType implementedType = CorrespondingImplementedType(fileName);
-			outDataRef.emplace_back(implementedType, shaderType, pBlob, fileName);
-
+			
 			message = L"CMShaderLibrary [GetAllShaderData] | Found shader : " + fileName + L'\n';
 			m_CMLoggerRef.LogInfo(message);
 
 			message = L"CMShaderLibrary [GetAllShaderData] | Shader flag : " + shaderFlag + L'\n';
 			m_CMLoggerRef.LogInfo(message);
+
+			message = L"CMShaderLibrary [GetAllShaderData] | Implemented type : " +
+				std::wstring(CMShaderData::ImplementedToWStr(implementedType)) + L'\n';
+			m_CMLoggerRef.LogInfo(message);
+
+			if (implementedType == CMImplementedShaderType::INVALID)
+			{
+				message = L"CMShaderLibrary [GetAllShaderData] | Failed to find a matching implemented type for the shader : " +
+					fileName + L'\n';
+
+				m_CMLoggerRef.LogFatal(message);
+			}
+			
+			outDataRef.emplace_back(implementedType, shaderType, pBlob, fileName);
 		}
 
 		message = L"CMShaderLibrary [GetAllShaderData] | Total shaders collected : " + std::to_wstring(outDataRef.size()) + L'\n';
 		m_CMLoggerRef.LogInfo(message);
+
+		if (outDataRef.size() != S_EXPECTED_NUM_SHADERS)
+		{
+			message = L"CMShaderLibrary [GetAllShaderData] | Failed to collect the expected amount of shaders. (Collected : " +
+				std::to_wstring(outDataRef.size()) + L" | Expected : " + std::to_wstring(S_EXPECTED_NUM_SHADERS) + L")\n";
+
+			m_CMLoggerRef.LogFatal(message);
+		}
 	}
 
 	[[nodiscard]] size_t CMShaderLibrary::TotalCompiledShaders(const std::filesystem::path& compiledShaderPathRef) const noexcept
@@ -241,8 +261,10 @@ namespace CMRenderer
 
 	[[nodiscard]] CMImplementedShaderType CMShaderLibrary::CorrespondingImplementedType(const std::wstring& fileName) const noexcept
 	{
-		if (fileName == L"DefaultVS.cso" || fileName == L"DefaultPS.cso")
+		if (fileName == S_DEFAULT_VS_NAME || fileName == S_DEFAULT_PS_NAME)
 			return CMImplementedShaderType::DEFAULT;
+		else if (fileName == S_POS2D_COLOR_TRANSFORM_VS_NAME || fileName == S_POS2D_COLOR_TRANSFORM_PS_NAME)
+			return CMImplementedShaderType::POS2D_COLOR_TRANSFORM;
 
 		return CMImplementedShaderType::INVALID;
 	}
@@ -251,6 +273,7 @@ namespace CMRenderer
 	{
 		switch (implementedType)
 		{
+		case CMImplementedShaderType::POS2D_COLOR_TRANSFORM: [[fallthrough]];
 		case CMImplementedShaderType::DEFAULT:
 		{
 			D3D11_INPUT_ELEMENT_DESC descs[] = {

@@ -36,13 +36,13 @@ namespace CMRenderer
 		
 		void Run() noexcept;
 	private:
-		void Suspend() noexcept;
+		//void Suspend() noexcept;
 	private:
 		static constexpr std::wstring_view S_LIFETIME_LOG_FILE_NAME = L"logs/CMRendererLifetime.log";
 		CMRendererSettings m_Settings;
 		CMLoggerWide m_CMLogger;
 		CMWindow m_Window;
-		DirectX::DXContext m_RenderContext;
+		CMDirectX::DXContext m_RenderContext;
 		bool m_Initialized = false;
 		bool m_Shutdown = false;
 	};
