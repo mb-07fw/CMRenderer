@@ -4,10 +4,6 @@
 	#error This project is currently only usable on Windows, due to it's heavy usage of the WinAPI.
 #endif
 
-#if defined(CM_NO_DIRECTX) && defined(CM_NO_OPENGL) && defined(CM_NO_VULKAN)
-	#error All Implemented graphics API's have been defined to be excluded, which is invalid as CMRenderer needs at least one of it's implementations. (e.g., OpenGL, DirectX, OpenGL)
-#endif
-
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "DXGI.lib")
 #pragma comment(lib, "dxguid.lib")
@@ -31,8 +27,6 @@ namespace CMRenderer
 		void Shutdown() noexcept;
 		
 		void Run() noexcept;
-	private:
-		//void Suspend() noexcept;
 	private:
 		static constexpr std::wstring_view S_LIFETIME_LOG_FILE_NAME = L"logs/CMRendererLifetime.log";
 		CMRendererSettings m_Settings;
