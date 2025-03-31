@@ -7,7 +7,7 @@ namespace CMRenderer
 		: m_CMLoggerRef(cmLoggerRef)
 	{
 		m_ShaderSets.reserve(S_EXPECTED_NUM_SHADER_SETS);
-		m_CMLoggerRef.LogInfo(L"CMShaderLibrary [()] | Constructed.\n");
+		m_CMLoggerRef.LogInfoNL(L"CMShaderLibrary [()] | Constructed.");
 	}
 
 	CMShaderLibrary::~CMShaderLibrary() noexcept
@@ -15,14 +15,14 @@ namespace CMRenderer
 		if (m_Initialized)
 			Shutdown();
 
-		m_CMLoggerRef.LogInfo(L"CMShaderLibrary [~()] | Destroyed.\n");
+		m_CMLoggerRef.LogInfoNL(L"CMShaderLibrary [~()] | Destroyed.");
 	}
 
 	void CMShaderLibrary::Init() noexcept
 	{
 		if (m_Initialized)
 		{
-			m_CMLoggerRef.LogWarning(L"CMShaderLibrary [Init] | Initialization has been attempted after initialization already occured.\n");
+			m_CMLoggerRef.LogWarningNL(L"CMShaderLibrary [Init] | Initialization has been attempted after initialization already occured.");
 			return;
 		}
 
@@ -46,35 +46,39 @@ namespace CMRenderer
 				switch (data.Type)
 				{
 				case CMShaderType::INVALID:
-					m_CMLoggerRef.LogFatal(L"CMShaderLibrary [Init] | A collected shader has an invalid CMShaderType.\n");
+					m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [Init] | A collected shader has an invalid CMShaderType.");
 					break; // LogFatal will terminate the program anyway...
 				case CMShaderType::VERTEX:
 					if (pVertexData != nullptr)
-						m_CMLoggerRef.LogFatal(L"CMShaderLibrary [Init] | A second vertex shader was found for the same CMImplementedShaderType.\n");
+						m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [Init] | A second vertex shader was found for the same CMImplementedShaderType.");
 
 					pVertexData = &data;
 					break;
 				case CMShaderType::PIXEL:
 					if (pVertexData != nullptr)
-						m_CMLoggerRef.LogFatal(L"CMShaderLibrary [Init] | A second pixel shader was found for the same CMImplementedShaderType.\n");
+						m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [Init] | A second pixel shader was found for the same CMImplementedShaderType.");
 
 					pPixelData = &data;
 					break;
 				default:
-					m_CMLoggerRef.LogFatal(L"CMShaderLibrary [Init] | No matching cases found for the CMShaderType of a shader.\n");
+					m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [Init] | No matching cases found for the CMShaderType of a shader.");
 				}
 			}
 
 			if (pVertexData == nullptr)
 			{
-				message = L"CMShaderLibrary [Init] | No vertex shader was found for the CMImplementedType : " + std::wstring(CMShaderData::ImplementedToWStr(implementedType)) + L"\n";
-				m_CMLoggerRef.LogFatal(message);
+				m_CMLoggerRef.LogFatalNLAppend(
+					L"CMShaderLibrary [Init] | No vertex shader was found for the CMImplementedType : ",
+					CMShaderData::ImplementedToWStrView(implementedType)
+				);
 				return; // Here so Intelisense doesn't yell at me for dereferencing a null pointer.
 			}
 			else if (pPixelData == nullptr)
 			{
-				message = L"CMShaderLibrary [Init] | No pixel shader was found for the CMImplementedType : " + std::wstring(CMShaderData::ImplementedToWStr(implementedType)) + L"\n";
-				m_CMLoggerRef.LogFatal(message);
+				m_CMLoggerRef.LogFatalNLAppend(
+					L"CMShaderLibrary [Init] | No pixel shader was found for the CMImplementedType : ",
+					CMShaderData::ImplementedToWStrView(implementedType)
+				);
 				return; // Here so Intelisense doesn't yell at me for dereferencing a null pointer.
 			}
 
@@ -86,27 +90,28 @@ namespace CMRenderer
 
 		if (m_ShaderSets.size() != S_EXPECTED_NUM_SHADER_SETS)
 		{
-			message = L"CMShaderLibrary [Init] | Failed to collect the expected amount of shader sets. (Collected : " +
-				std::to_wstring(m_ShaderSets.size()) + L" | Expected : " + std::to_wstring(S_EXPECTED_NUM_SHADER_SETS) + L")\n";
-
-			m_CMLoggerRef.LogFatal(message);
+			m_CMLoggerRef.LogFatalNLVariadic(
+				L"CMShaderLibrary [Init] | Failed to collect the expected amount of shader sets.",
+				"(Collected : ", m_ShaderSets.size(),
+				L" | Expected : ", S_EXPECTED_NUM_SHADER_SETS
+			);
 		}
 
 		m_Initialized = true;
 		m_Shutdown = false;
-		m_CMLoggerRef.LogInfo(L"CMShaderLibrary [Init] | Initialied.\n");
+		m_CMLoggerRef.LogInfoNL(L"CMShaderLibrary [Init] | Initialied.");
 	}
 
 	void CMShaderLibrary::Shutdown() noexcept
 	{
 		if (!m_Initialized)
 		{
-			m_CMLoggerRef.LogWarning(L"CMShaderLibrary [Shutdown] | Shutdown has been attempted before initialization has occured.\n");
+			m_CMLoggerRef.LogWarningNL(L"CMShaderLibrary [Shutdown] | Shutdown has been attempted before initialization has occured.");
 			return;
 		}
 		else if (m_Shutdown)
 		{
-			m_CMLoggerRef.LogWarning(L"CMShaderLibrary [Shutdown] | Shutdown has been attempted after shutdown has already occured.\n");
+			m_CMLoggerRef.LogWarningNL(L"CMShaderLibrary [Shutdown] | Shutdown has been attempted after shutdown has already occured.");
 			return;
 		}
 
@@ -115,19 +120,19 @@ namespace CMRenderer
 
 		m_Initialized = false;
 		m_Shutdown = true;
-		m_CMLoggerRef.LogInfo(L"CMShaderLibrary [Shutdown] | Shutdown.\n");
+		m_CMLoggerRef.LogInfoNL(L"CMShaderLibrary [Shutdown] | Shutdown.");
 	}
 
 	[[nodiscard]] const CMShaderSet& CMShaderLibrary::GetSetOfType(CMImplementedShaderType implementedType) noexcept
 	{
 		if (!m_Initialized)
-			m_CMLoggerRef.LogFatal(L"CMShaderLibrary [GetSetOfType] | Attempted to retrieve a shader set before initialization occured.\n");
+			m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [GetSetOfType] | Attempted to retrieve a shader set before initialization occured.");
 
 		for (const CMShaderSet& set : m_ShaderSets)
 			if (set.ImplementedType() == implementedType)
 				return set;
 
-		m_CMLoggerRef.LogFatal(L"CMShaderLibrary [GetSetOfType] | Couldn't find a shader set with the matching implemented type.\n");
+		m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [GetSetOfType] | Couldn't find a shader set with the matching implemented type.");
 		return m_ShaderSets.back();
 	}
 
@@ -135,19 +140,23 @@ namespace CMRenderer
 	{
 		std::filesystem::path workingPath = std::filesystem::current_path();
 
-		std::wstring message = L"CMShaderLibrary [GetCompiledShaderDirectory] | Working directory : " + workingPath.wstring() + L'\n';
-		m_CMLoggerRef.LogInfo(message);
+		m_CMLoggerRef.LogInfoNLAppend(
+			L"CMShaderLibrary [GetCompiledShaderDirectory] | Working directory : ",
+			workingPath.wstring()
+		);
 
 		outPathRef = workingPath.parent_path() / "build" / CM_CONFIG / "Out";
 		m_CompiledShaderDirectory = outPathRef.wstring();
 
-		message = L"CMShaderLibrary [GetCompiledShaderDirectory] | Compiled shader path : " + m_CompiledShaderDirectory + L'\n';
-		m_CMLoggerRef.LogInfo(message);
+		m_CMLoggerRef.LogInfoNLAppend(
+			L"CMShaderLibrary [GetCompiledShaderDirectory] | Compiled shader path : ",
+			m_CompiledShaderDirectory
+		);
 
 		if (!std::filesystem::exists(outPathRef))
-			m_CMLoggerRef.LogFatal(L"CMShaderLibrary [GetCompiledShaderDirectory] | Shader directory doesn't exist.\n");
+			m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [GetCompiledShaderDirectory] | Shader directory doesn't exist.");
 		else if (!std::filesystem::is_directory(outPathRef))
-			m_CMLoggerRef.LogFatal(L"CMShaderLibrary [GetCompiledShaderDirectory] | Shader directory wasn't a directory.\n");
+			m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [GetCompiledShaderDirectory] | Shader directory wasn't a directory.");
 	}
 
 	void CMShaderLibrary::GetAllShaderData(std::vector<CMShaderData>& outDataRef, const std::filesystem::path& compiledShaderPathRef) noexcept
@@ -158,14 +167,13 @@ namespace CMRenderer
 		std::wstring message;
 
 		if (totalShaders == 0)
-			m_CMLoggerRef.LogFatal(L"CMShaderLibrary [GetAllShaderData] | No shaders were found.\n");
+			m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [GetAllShaderData] | No shaders were found.");
 		else if (totalShaders != S_EXPECTED_NUM_SHADERS)
-		{
-			message = L"CMShaderLibrary [GetAllShaderData] | The amount of compiled shaders didn't match the expected amount. (Collected : " +
-				std::to_wstring(totalShaders) + L" | Expected : " + std::to_wstring(S_EXPECTED_NUM_SHADERS) + L")\n";
-
-			m_CMLoggerRef.LogFatal(message);
-		}
+			m_CMLoggerRef.LogFatalNLVariadic(
+				L"CMShaderLibrary [GetAllShaderData] | The amount of compiled shaders didn't match the expected amount.",
+				"(Collected : ", totalShaders,
+				L" | Expected : ", S_EXPECTED_NUM_SHADERS
+			);
 
 		Microsoft::WRL::ComPtr<ID3DBlob> pBlob;
 		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(compiledShaderPathRef))
@@ -181,8 +189,11 @@ namespace CMRenderer
 			// (Number of characters before the flag; e.g., .....PS.cso)
 			if (fileName.size() - 6 <= 0)
 			{
-				message = L"CMShaderLibrary [GetAllShaderData] | Invalid shader : " + fileName + L'\n';
-				m_CMLoggerRef.LogWarning(message);
+				m_CMLoggerRef.LogWarningNLAppend(
+					L"CMShaderLibrary [GetAllShaderData] | Invalid shader : ",
+					fileName
+				);
+
 				continue;
 			}
 
@@ -195,53 +206,56 @@ namespace CMRenderer
 			else if (shaderFlag == CMShaderData::S_PIXEL_FLAG)
 				shaderType = CMShaderType::PIXEL;
 			else
-			{
-				message = L"CMShaderLibrary [GetAllShaderData] | Invalid shader : " + fileName + L'\n';
-				m_CMLoggerRef.LogFatal(message);
-				continue;
-			}
+				m_CMLoggerRef.LogFatalNLVariadic(
+					L"CMShaderLibrary [GetAllShaderData] | Invalid shader : ",
+					fileName, ". Expected flag in shader name. (\"VS\", \"PS\")"
+				);
 
 			HRESULT hResult = D3DReadFileToBlob(entryWStr.data(), &pBlob);
 
 			if (hResult != S_OK)
-			{
-				message = L"CMShaderLibrary [GetAllShaderData] | Failed to read in shader : " + fileName + L'\n';
-				m_CMLoggerRef.LogFatal(message);
-			}
+				m_CMLoggerRef.LogFatalNLAppend(
+					L"CMShaderLibrary [GetAllShaderData] | Failed to read in compiled shader : ",
+					fileName
+				);
 
 			CMImplementedShaderType implementedType = CorrespondingImplementedType(fileName);
 			
-			message = L"CMShaderLibrary [GetAllShaderData] | Found shader : " + fileName + L'\n';
-			m_CMLoggerRef.LogInfo(message);
+			m_CMLoggerRef.LogInfoNLAppend(
+				L"CMShaderLibrary [GetAllShaderData] | Found valid shader : ",
+				fileName
+			);
 
-			message = L"CMShaderLibrary [GetAllShaderData] | Shader flag : " + shaderFlag + L'\n';
-			m_CMLoggerRef.LogInfo(message);
+			m_CMLoggerRef.LogInfoNLAppend(
+				L"CMShaderLibrary [GetAllShaderData] | Shader flag : ",
+				shaderFlag
+			);
 
-			message = L"CMShaderLibrary [GetAllShaderData] | Implemented type : " +
-				std::wstring(CMShaderData::ImplementedToWStr(implementedType)) + L'\n';
-			m_CMLoggerRef.LogInfo(message);
+			m_CMLoggerRef.LogInfoNLAppend(
+				L"CMShaderLibrary [GetAllShaderData] | Implemented type : ",
+				CMShaderData::ImplementedToWStrView(implementedType)
+			);
 
 			if (implementedType == CMImplementedShaderType::INVALID)
-			{
-				message = L"CMShaderLibrary [GetAllShaderData] | Failed to find a matching implemented type for the shader : " +
-					fileName + L'\n';
-
-				m_CMLoggerRef.LogFatal(message);
-			}
+				m_CMLoggerRef.LogFatalNLAppend(
+					L"CMShaderLibrary [GetAllShaderData] | Failed to find a matching implemented type for the shader : ",
+					fileName
+				);
 			
 			outDataRef.emplace_back(implementedType, shaderType, pBlob, fileName);
 		}
 
-		message = L"CMShaderLibrary [GetAllShaderData] | Total shaders collected : " + std::to_wstring(outDataRef.size()) + L'\n';
-		m_CMLoggerRef.LogInfo(message);
+		m_CMLoggerRef.LogInfoNLAppend(
+			L"CMShaderLibrary [GetAllShaderData] | Total shaders collected : ", 
+			outDataRef.size()
+		);
 
 		if (outDataRef.size() != S_EXPECTED_NUM_SHADERS)
-		{
-			message = L"CMShaderLibrary [GetAllShaderData] | Failed to collect the expected amount of shaders. (Collected : " +
-				std::to_wstring(outDataRef.size()) + L" | Expected : " + std::to_wstring(S_EXPECTED_NUM_SHADERS) + L")\n";
-
-			m_CMLoggerRef.LogFatal(message);
-		}
+			m_CMLoggerRef.LogFatalNLVariadic(
+				L"CMShaderLibrary [GetAllShaderData] | Failed to collect the expected amount of shaders.",
+				"(Collected : ", outDataRef.size(),
+				L" | Expected : ", S_EXPECTED_NUM_SHADERS
+			);
 	}
 
 	[[nodiscard]] size_t CMShaderLibrary::TotalCompiledShaders(const std::filesystem::path& compiledShaderPathRef) const noexcept

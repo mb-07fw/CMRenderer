@@ -21,13 +21,13 @@ namespace CMRenderer::CMDirectX::Components
 	{
 		if (m_Created)
 		{
-			m_CMLoggerRef.LogWarning(L"DXDevice [Create] | Attempted to create after DXDevice has already been created.\n");
+			m_CMLoggerRef.LogWarningNL(L"DXDevice [Create] | Attempted to create after DXDevice has already been created.");
 			return;
 		}
 
 		CreateDevice();
 
-		m_CMLoggerRef.LogInfo(L"DXDevice [Create] | Created.\n");
+		m_CMLoggerRef.LogInfoNL(L"DXDevice [Create] | Created.");
 
 		m_Created = true;
 		m_Released = false;
@@ -37,12 +37,12 @@ namespace CMRenderer::CMDirectX::Components
 	{
 		if (!m_Created)
 		{
-			m_CMLoggerRef.LogWarning(L"DXDevice [Release] | Attempted to release before creation has occured.\n");
+			m_CMLoggerRef.LogWarningNL(L"DXDevice [Release] | Attempted to release before creation has occured.");
 			return;
 		}
 		else if (m_Released)
 		{
-			m_CMLoggerRef.LogWarning(L"DXDevice [Release] | Attempted to release after DXDevice was released previously.\n");
+			m_CMLoggerRef.LogWarningNL(L"DXDevice [Release] | Attempted to release after DXDevice was released previously.");
 			return;
 		}
 
@@ -53,7 +53,7 @@ namespace CMRenderer::CMDirectX::Components
 		mP_Context.Reset();
 		mP_Device.Reset();
 
-		m_CMLoggerRef.LogInfo(L"DXDevice [Create] | Released.\n");
+		m_CMLoggerRef.LogInfoNL(L"DXDevice [Create] | Released.");
 
 		m_Created = false;
 		m_Released = true;
@@ -89,27 +89,21 @@ namespace CMRenderer::CMDirectX::Components
 		);
 
 		if (hResult != S_OK)
-		{
-			std::wstring message = L"DXDevice [Create] | Failed to create device : " +
-				WindowsUtility::TranslateDWORDError(hResult) + L'\n';
-
-			m_CMLoggerRef.LogFatal(message);
-			return;
-		}
+			m_CMLoggerRef.LogFatalNLAppend(
+				L"DXDevice [Create] | Failed to create device : ",
+				WindowsUtility::TranslateDWORDError(hResult)
+		);
 		else if (succeededLevel < D3D_FEATURE_LEVEL_11_0)
-		{
-			std::wstring message = L"DXDevice [Create] | DirectX Feature Level was less than 11.0 (" +
-				std::wstring(CMDirectX::Utility::D3DFeatureLevelToWStrView(succeededLevel).data()) +
-				L"), which is less than required for this program. Continuation will only result in errors.\n";
+			m_CMLoggerRef.LogFatalNLVariadic(
+				L"DXDevice [Create] | DirectX Feature Level was less than 11.0 (",
+				CMDirectX::Utility::D3DFeatureLevelToWStrView(succeededLevel).data(),
+				L"), which is less than required for this program. Continuation will only result in errors."
+			);
 
-			m_CMLoggerRef.LogFatal(message);
-			return;
-		}
-
-		std::wstring message = L"DXDevice [Create] | Feature level in use : " +
-			std::wstring(CMDirectX::Utility::D3DFeatureLevelToWStrView(succeededLevel)) + L'\n';
-
-		m_CMLoggerRef.LogInfo(message);
+		m_CMLoggerRef.LogInfoNLAppend(
+			L"DXDevice [Create] | Feature level in use : ",
+			CMDirectX::Utility::D3DFeatureLevelToWStrView(succeededLevel)
+		);
 	}
 #pragma endregion
 
@@ -129,22 +123,19 @@ namespace CMRenderer::CMDirectX::Components
 	{
 		if (m_Created)
 		{
-			m_CMLoggerRef.LogWarning(L"DXFactory [Create] | Attempted to create factory after DXFactory has already been created.\n");
+			m_CMLoggerRef.LogWarningNL(L"DXFactory [Create] | Attempted to create factory after DXFactory has already been created.");
 			return;
 		}
 
 		if (!deviceRef.IsCreated())
-		{
-			m_CMLoggerRef.LogFatal(L"DXFactory [Create] | Attempted to create factory before the provided DXDevice was created.\n");
-			return;
-		}
+			m_CMLoggerRef.LogFatalNL(L"DXFactory [Create] | Attempted to create factory before the provided DXDevice was created.");
 
 		HRESULT hResult = CreateDXGIFactory1(IID_PPV_ARGS(&mP_Factory));
 
 		if (hResult != S_OK)
-			m_CMLoggerRef.LogFatal(L"DXFactory [Create] | Failed to create factory.\n");
+			m_CMLoggerRef.LogFatalNL(L"DXFactory [Create] | Failed to create factory.");
 
-		m_CMLoggerRef.LogInfo(L"DXFactory [Create] | Created.\n");
+		m_CMLoggerRef.LogInfoNL(L"DXFactory [Create] | Created.");
 
 		m_Created = true;
 		m_Released = false;
@@ -154,18 +145,18 @@ namespace CMRenderer::CMDirectX::Components
 	{
 		if (!m_Created)
 		{
-			m_CMLoggerRef.LogWarning(L"DXFactory [Release] | Attempted to release factory before DXFactory has been created.\n");
+			m_CMLoggerRef.LogWarningNL(L"DXFactory [Release] | Attempted to release factory before DXFactory has been created.");
 			return;
 		}
 		else if (m_Released)
 		{
-			m_CMLoggerRef.LogWarning(L"DXFactory [Release] | Attempted to release factory after DXFactory has already been released.\n");
+			m_CMLoggerRef.LogWarningNL(L"DXFactory [Release] | Attempted to release factory after DXFactory has already been released.");
 			return;
 		}
 
 		mP_Factory.Reset();
 
-		m_CMLoggerRef.LogInfo(L"DXFactory [Release] | Released.\n");
+		m_CMLoggerRef.LogInfoNL(L"DXFactory [Release] | Released.");
 
 		m_Created = false;
 		m_Released = true;
@@ -211,28 +202,26 @@ namespace CMRenderer::CMDirectX::Components
 	{
 		if (m_Created)
 		{
-			m_CMLoggerRef.LogWarning(L"DXSwapChain [Create] | Attempted to create DXSwapChain after it has already been created.\n");
+			m_CMLoggerRef.LogWarningNL(L"DXSwapChain [Create] | Attempted to create DXSwapChain after it has already been created.");
 			return;
 		}
 
 		if (!factoryRef.IsCreated())
-			m_CMLoggerRef.LogFatal(L"DXSwapChain [Create] | Attempted to create DXSwapChain before the provided DXFactory has been created.\n");
+			m_CMLoggerRef.LogFatalNL(L"DXSwapChain [Create] | Attempted to create DXSwapChain before the provided DXFactory has been created.");
 		else if (!deviceRef.IsCreated())
-			m_CMLoggerRef.LogFatal(L"DXSwapChain [Create] | Attempted to create DXSwapChain before the provided DXDevice has been created.\n");
+			m_CMLoggerRef.LogFatalNL(L"DXSwapChain [Create] | Attempted to create DXSwapChain before the provided DXDevice has been created.");
 
 		m_Desc.OutputWindow = hWnd;
 
 		HRESULT hResult = factoryRef->CreateSwapChain(deviceRef.DeviceRaw(), &m_Desc, &mP_SwapChain);
 
 		if (hResult != S_OK)
-		{
-			std::wstring message = L"DXSwapChain [Create] | Failed to create swap chain : " +
-				WindowsUtility::TranslateDWORDError(hResult) + L'\n';
-
-			m_CMLoggerRef.LogFatal(message);
-		}
+			m_CMLoggerRef.LogFatalNLAppend(
+				L"DXSwapChain [Create] | Failed to create swap chain : ",
+				WindowsUtility::TranslateDWORDError(hResult)
+			);
 	
-		m_CMLoggerRef.LogInfo(L"DXSwapChain [Create] | Created.\n");
+		m_CMLoggerRef.LogInfoNL(L"DXSwapChain [Create] | Created.");
 
 		m_Created = true;
 		m_Released = false;
@@ -242,18 +231,18 @@ namespace CMRenderer::CMDirectX::Components
 	{
 		if (!m_Created)
 		{
-			m_CMLoggerRef.LogWarning(L"DXSwapChain [Release] | Attempted to release DXSwapChain before it has been created.\n");
+			m_CMLoggerRef.LogWarningNL(L"DXSwapChain [Release] | Attempted to release DXSwapChain before it has been created.");
 			return;
 		}
 		else if (m_Released)
 		{
-			m_CMLoggerRef.LogWarning(L"DXSwapChain [Release] | Attempted to release DXSwapChain after it has already been released.\n");
+			m_CMLoggerRef.LogWarningNL(L"DXSwapChain [Release] | Attempted to release DXSwapChain after it has already been released.");
 			return;
 		}
 
 		mP_SwapChain.Reset();
 
-		m_CMLoggerRef.LogInfo(L"DXSwapChain [Release] | Released.\n");
+		m_CMLoggerRef.LogInfoNL(L"DXSwapChain [Release] | Released.");
 
 		m_Created = false;
 		m_Released = true;
@@ -281,23 +270,23 @@ namespace CMRenderer::CMDirectX::Components
 	{
 		if (m_Created)
 		{
-			m_CMLoggerRef.LogWarning(L"DXInfoQueue [Create] | Attempted to create DXInfoQueue after creation has already occured.\n");
+			m_CMLoggerRef.LogWarningNL(L"DXInfoQueue [Create] | Attempted to create DXInfoQueue after creation has already occured.");
 			return;
 		}
 
 		if (!deviceRef.IsCreated())
-			m_CMLoggerRef.LogFatal(L"DXInfoQueue [Create] | Attempted to create DXInfoQueue with a un-initialized device.\n");
+			m_CMLoggerRef.LogFatalNL(L"DXInfoQueue [Create] | Attempted to create DXInfoQueue with a un-initialized device.");
 
 		// Get the info queue interface.
 		HRESULT hResult = deviceRef->QueryInterface(IID_PPV_ARGS(&mP_InfoQueue));
 
 		if (hResult != S_OK)
 		{
-			m_CMLoggerRef.LogWarning(L"DXInfoQueue [Create] | Failed to retrieve an ID3D11InfoQueue, meaning no debug output will be generated. Is the debug layer enabled?\n");
+			m_CMLoggerRef.LogWarningNL(L"DXInfoQueue [Create] | Failed to retrieve an ID3D11InfoQueue, meaning no debug output will be generated. Is the debug layer enabled?");
 			return;
 		}
 
-		m_CMLoggerRef.LogInfo(L"DXInfoQueue [Create] | Created.\n");
+		m_CMLoggerRef.LogInfoNL(L"DXInfoQueue [Create] | Created.");
 
 		m_Created = true;
 		m_Released = false;
@@ -307,18 +296,18 @@ namespace CMRenderer::CMDirectX::Components
 	{
 		if (m_Released)
 		{
-			m_CMLoggerRef.LogWarning(L"DXInfoQueue [Release] | Attempted to release after DXInfoQueue has already been released.\n");
+			m_CMLoggerRef.LogWarningNL(L"DXInfoQueue [Release] | Attempted to release after DXInfoQueue has already been released.");
 			return;
 		}
 		else if (!m_Created)
 		{
-			m_CMLoggerRef.LogWarning(L"DXInfoQueue [Release] | Attempted to release before DXInfoQueue has been created.\n");
+			m_CMLoggerRef.LogWarningNL(L"DXInfoQueue [Release] | Attempted to release before DXInfoQueue has been created.");
 			return;
 		}
 
 		mP_InfoQueue.Reset();
 
-		m_CMLoggerRef.LogInfo(L"DXInfoQueue [Release] | Released.\n");
+		m_CMLoggerRef.LogInfoNL(L"DXInfoQueue [Release] | Released.");
 
 		m_Created = false;
 		m_Released = true;
@@ -333,18 +322,17 @@ namespace CMRenderer::CMDirectX::Components
 		GetMessages(messages);
 
 		for (const std::wstring& message : messages)
-		{
-			m_CMLoggerRef.LogInfo(L"DXInfoQueue [LogMessages] | Debug message generated : ");
-			m_CMLoggerRef.LogInline(message);
-			m_CMLoggerRef.LogInline(L"\n");
-		}
+			m_CMLoggerRef.LogInfoNLAppend(
+				L"DXInfoQueue [LogMessages] | Debug message generated : ",
+				message
+			);
 	}
 
 	[[nodiscard]] bool DXInfoQueue::IsQueueEmpty() noexcept
 	{
 		if (!m_Created)
 		{
-			m_CMLoggerRef.LogWarning(L"DXInfoQueue [IsQueueEmpty] | Attempted to check if info queue is empty before DXInfoQueue is created.\n");
+			m_CMLoggerRef.LogWarningNL(L"DXInfoQueue [IsQueueEmpty] | Attempted to check if info queue is empty before DXInfoQueue is created.");
 			return true;
 		}
 
@@ -355,7 +343,7 @@ namespace CMRenderer::CMDirectX::Components
 	{
 		if (!m_Created)
 		{
-			m_CMLoggerRef.LogWarning(L"DXInfoQueue [GetMessages] | Attempted to retrieve messages before DXInfoQueue has been created.\n");
+			m_CMLoggerRef.LogWarningNL(L"DXInfoQueue [GetMessages] | Attempted to retrieve messages before DXInfoQueue has been created.");
 			return;
 		}
 
@@ -378,7 +366,7 @@ namespace CMRenderer::CMDirectX::Components
 
 			if (hResult != S_OK)
 			{
-				m_CMLoggerRef.LogWarning(L"DXInfoQueue [GetMessages] | Failed to get a message in the info queue. Skipping message...\n");
+				m_CMLoggerRef.LogWarningNL(L"DXInfoQueue [GetMessages] | Failed to get a message in the info queue. Skipping message...");
 				continue;
 			}
 

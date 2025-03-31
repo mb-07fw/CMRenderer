@@ -21,7 +21,7 @@ namespace CMRenderer::CMDirectX
 		
 			if (m_DebugInterfaceModule == nullptr)
 			{
-				m_CMLoggerRef.LogFatal(L"DXContext [Shutdown] | Failed to load Dxgidebug.dll\n");
+				m_CMLoggerRef.LogFatalNL(L"DXContext [Shutdown] | Failed to load Dxgidebug.dll");
 				return;
 			}
 
@@ -33,14 +33,14 @@ namespace CMRenderer::CMDirectX
 
 			if (!pDXGIGetDebugInterface)
 			{
-				m_CMLoggerRef.LogFatal(L"DXContext [Shutdown] | Failed to get function address for DXGIGetDebugInterface\n");
+				m_CMLoggerRef.LogFatalNL(L"DXContext [Shutdown] | Failed to get function address for the DXGIGetDebugInterface.");
 				return;
 			}
 
 			HRESULT hResult = pDXGIGetDebugInterface(IID_PPV_ARGS(&mP_DebugInterface));
 
 			if (hResult != S_OK)
-				m_CMLoggerRef.LogFatal(L"DXContext [Shutdown] | Failed to retrieve a DXGI debug interface.\n");
+				m_CMLoggerRef.LogFatalNL(L"DXContext [Shutdown] | Failed to retrieve a DXGI debug interface.");
 		);
 	}
 
@@ -56,7 +56,7 @@ namespace CMRenderer::CMDirectX
 	{
 		if (m_Initialized)
 		{
-			m_CMLoggerRef.LogWarning(L"DXContext [Init] | Initializion has been attempted after CMRenderContext has already been initialized.\n");
+			m_CMLoggerRef.LogWarningNL(L"DXContext [Init] | Initializion has been attempted after CMRenderContext has already been initialized.");
 			return;
 		}
 
@@ -68,7 +68,7 @@ namespace CMRenderer::CMDirectX
 			m_InfoQueue.Create(m_Device);
 			if (!m_InfoQueue.IsCreated())
 			{
-				m_CMLoggerRef.LogFatal(L"DXContext [Init] | Failed to initialize info queue.\n");
+				m_CMLoggerRef.LogFatalNL(L"DXContext [Init] | Failed to initialize info queue.");
 				return;
 			}
 		);
@@ -79,7 +79,7 @@ namespace CMRenderer::CMDirectX
 		SetViewport((float)clientArea.right, (float)clientArea.bottom);
 		SetTopology();
 
-		m_CMLoggerRef.LogInfo(L"DXContext [Init] | Initialized.\n");
+		m_CMLoggerRef.LogInfoNL(L"DXContext [Init] | Initialized.");
 
 		m_Initialized = true;
 		m_Shutdown = false;
@@ -89,20 +89,15 @@ namespace CMRenderer::CMDirectX
 	{
 		if (m_Shutdown)
 		{
-			m_CMLoggerRef.LogWarning(L"DXContext [Shutdown] | Shutdown has been attempted after shutdown has already occured previously.\n");
+			m_CMLoggerRef.LogWarningNL(L"DXContext [Shutdown] | Shutdown has been attempted after shutdown has already occured previously.");
 			return;
 		}
 
 		else if (!m_Initialized)
 		{
-			m_CMLoggerRef.LogWarning(L"DXContext [Shutdown] | Shutdown has been attempted before initialization.\n");
+			m_CMLoggerRef.LogWarningNL(L"DXContext [Shutdown] | Shutdown has been attempted before initialization.");
 			return;
 		}
-		
-		HRESULT hResult = m_SwapChain->SetFullscreenState(false, nullptr);
-
-		if (hResult != S_OK)
-			m_CMLoggerRef.LogWarning(L"DXContext [Shutdown] | Failed to reset fullscreen state.\n");
 
 		mP_RTV.Reset();
 		m_Factory.Release();
@@ -136,13 +131,12 @@ namespace CMRenderer::CMDirectX
 			CM_IF_DEBUG(
 				if (!m_InfoQueue.IsQueueEmpty())
 					m_InfoQueue.LogMessages();
-					);
+			);
 
-			std::wstring message = L"DXContext [Present] | Device removed error : " +
-				WindowsUtility::TranslateDWORDError(hResult) + L'\n';
-
-			m_CMLoggerRef.LogFatal(message);
-			return;
+			m_CMLoggerRef.LogFatalNLAppend(
+				L"DXContext [Present] | Device removed error : ",
+				WindowsUtility::TranslateDWORDError(hResult)
+			);
 		}
 		else if (hResult != S_OK)
 		{
@@ -151,11 +145,10 @@ namespace CMRenderer::CMDirectX
 					m_InfoQueue.LogMessages();
 			);
 
-			std::wstring message = L"DXContext [Present] | Present error : " + 
-				WindowsUtility::TranslateDWORDError(hResult) + L'\n';
-
-			m_CMLoggerRef.LogFatal(message);
-			return;
+			m_CMLoggerRef.LogFatalNLAppend(
+				L"DXContext [Present] | Present error : ", 
+				WindowsUtility::TranslateDWORDError(hResult)
+			);
 		}
 	}
 
@@ -168,24 +161,19 @@ namespace CMRenderer::CMDirectX
 		HRESULT hResult = m_SwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
 
 		if (hResult != S_OK)
-		{
-			std::wstring message = L"DXContext [CreateRTV] | Failed to get back buffer : " +
-				WindowsUtility::TranslateDWORDError(hResult) + L'\n';
-
-			m_CMLoggerRef.LogFatal(message);
-			return;
-		}
+			m_CMLoggerRef.LogFatalNLAppend(
+				L"DXContext [CreateRTV] | Failed to get back buffer : ",
+				WindowsUtility::TranslateDWORDError(hResult)
+			);
 
 		// Create the RTV.
 		hResult = m_Device->CreateRenderTargetView(pBackBuffer.Get(), nullptr, mP_RTV.GetAddressOf());
 
 		if (hResult != S_OK)
-		{
-			std::wstring message = L"DXContext [CreateRTV] | Failed to create the Render Target View : " +
-				WindowsUtility::TranslateDWORDError(hResult) + L'\n';
-
-			m_CMLoggerRef.LogFatal(message);
-		}
+			m_CMLoggerRef.LogFatalNLAppend(
+				L"DXContext [CreateRTV] | Failed to create the Render Target View : ",
+				WindowsUtility::TranslateDWORDError(hResult)
+			);
 	}
 
 	void DXContext::SetViewport(float width, float height) noexcept

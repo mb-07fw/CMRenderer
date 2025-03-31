@@ -48,7 +48,7 @@ namespace CMRenderer
 		Microsoft::WRL::ComPtr<ID3DBlob> pBytecode;
 		std::wstring Filename;
 
-		static constexpr std::wstring_view ImplementedToWStr(CMImplementedShaderType implementedType) noexcept;
+		static constexpr std::wstring_view ImplementedToWStrView(CMImplementedShaderType implementedType) noexcept;
 
 		static constexpr std::wstring_view S_VERTEX_FLAG = L"VS";
 		static constexpr std::wstring_view S_PIXEL_FLAG = L"PS";
@@ -77,7 +77,7 @@ namespace CMRenderer
 		
 	};
 
-	constexpr std::wstring_view CMShaderData::ImplementedToWStr(CMImplementedShaderType implementedType) noexcept
+	constexpr std::wstring_view CMShaderData::ImplementedToWStrView(CMImplementedShaderType implementedType) noexcept
 	{
 		switch (implementedType)
 		{

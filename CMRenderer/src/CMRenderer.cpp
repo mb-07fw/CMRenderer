@@ -8,15 +8,7 @@ namespace CMRenderer
 		  m_Window(m_Settings, m_CMLogger),
 		  m_RenderContext(m_CMLogger)
 	{
-		/*HRESULT hResult = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-
-		if (hResult != S_OK)
-		{
-			m_CMLogger.LogFatal(L"CMRenderer[()] | Failed to initialize COM.\n");
-			return;
-		}*/
-
-		m_CMLogger.LogInfo(L"CMRenderer [()] | Constructed.\n");
+		m_CMLogger.LogInfoNL(L"CMRenderer [()] | Constructed.");
 	}
 
 	CMRenderer::~CMRenderer() noexcept
@@ -24,9 +16,7 @@ namespace CMRenderer
 		if (!m_Shutdown)
 			Shutdown();
 
-		//CoUninitialize();
-
-		m_CMLogger.LogInfo(L"CMRenderer [~()] | Destroyed.\n");
+		m_CMLogger.LogInfoNL(L"CMRenderer [~()] | Destroyed.");
 	}
 
 #pragma region Public
@@ -34,7 +24,7 @@ namespace CMRenderer
 	{
 		if (m_Initialized)
 		{
-			m_CMLogger.LogWarning(L"CMRenderer [Init] | Attempted to initialize after initialization has already occured previously.\n");
+			m_CMLogger.LogWarningNL(L"CMRenderer [Init] | Attempted to initialize after initialization has already occured previously.");
 			return;
 		}
 
@@ -47,7 +37,7 @@ namespace CMRenderer
 				if (!isReleased && !m_Window.IsWindowed())
 					m_Window.Restore();
 				else if (m_Window.IsWindowed())
-					m_CMLogger.LogInfo(L"CMRenderer [CharKeyCallback ('r')] | Windowed key was pressed, but window is already windowed.\n");
+					m_CMLogger.LogInfoNL(L"CMRenderer [CharKeyCallback ('r')] | Windowed key was pressed, but window is already windowed.");
 			}
 		);
 
@@ -57,7 +47,7 @@ namespace CMRenderer
 				if (!isReleased && !m_Window.IsMaximized())
 					m_Window.Maximize();
 				else if (m_Window.IsMaximized())
-					m_CMLogger.LogInfo(L"CMRenderer [CharKeyCallback ('O')] | Maximize key was pressed, but window is already maximized.\n");
+					m_CMLogger.LogInfoNL(L"CMRenderer [CharKeyCallback ('O')] | Maximize key was pressed, but window is already maximized.");
 			}
 		);
 
@@ -68,7 +58,7 @@ namespace CMRenderer
 				if (!isReleased && !m_Window.IsMinimized())
 					m_Window.Minimize();
 				else if (m_Window.IsMinimized())
-					m_CMLogger.LogInfo(L"CMRenderer [CharKeyCallback ('P')] | Minimize key was pressed, but window is already minimized.\n");
+					m_CMLogger.LogInfoNL(L"CMRenderer [CharKeyCallback ('P')] | Minimize key was pressed, but window is already minimized.");
 			}
 		);
 
@@ -80,7 +70,7 @@ namespace CMRenderer
 	{
 		if (m_Shutdown)
 		{
-			m_CMLogger.LogWarning(L"CMRenderer [Shutdown] | Attempted to shutdown after shutdown has already occured previously.\n");
+			m_CMLogger.LogWarningNL(L"CMRenderer [Shutdown] | Attempted to shutdown after shutdown has already occured previously.");
 			return;
 		}
 
@@ -114,12 +104,6 @@ namespace CMRenderer
 			if (!m_Window.IsRunning())
 				break;
 
-			// TODO: Fix memory leak from COM exceptions being thrown from toggling fullscreen state...
-			/*if (m_Window.WasFullscreen())
-				m_RenderContext.ToggleFullscreen(true);
-			else if (m_Window.WasWindowed())
-				m_RenderContext.ToggleFullscreen(false);*/
-
 			if (m_Window.IsFocused())
 			{
 				m_RenderContext.Clear({ 0.5f, 0.0f, 0.5f, 0.0f });
@@ -134,5 +118,6 @@ namespace CMRenderer
 	}
 #pragma endregion
 #pragma region Private
+
 #pragma endregion
 }

@@ -9,8 +9,8 @@ Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
-		Dist|x64 = Dist|x64
-		Dist|x86 = Dist|x86
+		Distribution|x64 = Distribution|x64
+		Distribution|x86 = Distribution|x86
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
@@ -19,10 +19,10 @@ Global
 		{638C273D-113B-4BCC-A8CD-D0A6C3310A13}.Debug|x64.Build.0 = Debug|x64
 		{638C273D-113B-4BCC-A8CD-D0A6C3310A13}.Debug|x86.ActiveCfg = Debug|Win32
 		{638C273D-113B-4BCC-A8CD-D0A6C3310A13}.Debug|x86.Build.0 = Debug|Win32
-		{638C273D-113B-4BCC-A8CD-D0A6C3310A13}.Dist|x64.ActiveCfg = Distribution|x64
-		{638C273D-113B-4BCC-A8CD-D0A6C3310A13}.Dist|x64.Build.0 = Distribution|x64
-		{638C273D-113B-4BCC-A8CD-D0A6C3310A13}.Dist|x86.ActiveCfg = Distribution|Win32
-		{638C273D-113B-4BCC-A8CD-D0A6C3310A13}.Dist|x86.Build.0 = Distribution|Win32
+		{638C273D-113B-4BCC-A8CD-D0A6C3310A13}.Distribution|x64.ActiveCfg = Distribution|x64
+		{638C273D-113B-4BCC-A8CD-D0A6C3310A13}.Distribution|x64.Build.0 = Distribution|x64
+		{638C273D-113B-4BCC-A8CD-D0A6C3310A13}.Distribution|x86.ActiveCfg = Distribution|Win32
+		{638C273D-113B-4BCC-A8CD-D0A6C3310A13}.Distribution|x86.Build.0 = Distribution|Win32
 		{638C273D-113B-4BCC-A8CD-D0A6C3310A13}.Release|x64.ActiveCfg = Release|x64
 		{638C273D-113B-4BCC-A8CD-D0A6C3310A13}.Release|x64.Build.0 = Release|x64
 		{638C273D-113B-4BCC-A8CD-D0A6C3310A13}.Release|x86.ActiveCfg = Release|Win32

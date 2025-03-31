@@ -28,14 +28,14 @@ namespace CMRenderer
 	{
 		if (m_Initialized)
 		{
-			m_CMLoggerRef.LogWarning(L"CMWindow [Init] | Initialization has been attempted after CMWindow has already been initialized.\n");
+			m_CMLoggerRef.LogWarningNL(L"CMWindow [Init] | Initialization has been attempted after CMWindow has already been initialized.");
 			return;
 		};
 
 		bool createdWindow = Create();
 
 		if (!createdWindow)
-			m_CMLoggerRef.LogFatal(L"CMWindow [Init] | Failed to create the window.\n");
+			m_CMLoggerRef.LogFatalNL(L"CMWindow [Init] | Failed to create the window.");
 
 		m_Initialized = true;
 		m_Shutdown = false;
@@ -45,24 +45,24 @@ namespace CMRenderer
 	{
 		if (m_Shutdown)
 		{
-			m_CMLoggerRef.LogWarning(L"CMWindow [Shutdown] | Shutdown has been attempted after CMWindow has already been shutdown.\n");
+			m_CMLoggerRef.LogWarningNL(L"CMWindow [Shutdown] | Shutdown has been attempted after CMWindow has already been shutdown.");
 			return;
 		}
 		else if (!m_Initialized)
 		{
-			m_CMLoggerRef.LogWarning(L"CMWindow [Shutdown] | Shutdown has been attempted before CMWindow has been initialized.\n");
+			m_CMLoggerRef.LogWarningNL(L"CMWindow [Shutdown] | Shutdown has been attempted before CMWindow has been initialized.");
 			return;
 		}
 
 		bool destroyed = Destroy();
 
 		if (!destroyed)
-			m_CMLoggerRef.LogFatal(L"CMWindow [Shutdown] | Failed to destroy the window.\n");
+			m_CMLoggerRef.LogFatalNL(L"CMWindow [Shutdown] | Failed to destroy the window.");
 
 		m_Initialized = false;
 		m_Shutdown = true;
 
-		m_CMLoggerRef.LogInfo(L"CMWindow [Shutdown] | Shutdown.\n");
+		m_CMLoggerRef.LogInfoNL(L"CMWindow [Shutdown] | Shutdown.");
 	}
 
 	void CMWindow::HandleMessages() noexcept
@@ -121,20 +121,20 @@ namespace CMRenderer
 	{
 		if (!m_Initialized)
 		{
-			m_CMLoggerRef.LogWarning(L"CMWindow [Maximize] | Attempted to maximize the window before initializing it.\n");
+			m_CMLoggerRef.LogWarningNL(L"CMWindow [Maximize] | Attempted to maximize the window before initializing it.");
 			return;
 		}
 
 		if (m_Maximized)
 		{
-			m_CMLoggerRef.LogWarning(L"CMWindow [Minimize] | Attempted to maximized the window while it is already in maximized state.\n");
+			m_CMLoggerRef.LogWarningNL(L"CMWindow [Minimize] | Attempted to maximized the window while it is already in maximized state.");
 			return;
 		}
 
 		SetWindowLongPtrW(m_WindowHandle, GWL_STYLE, WS_POPUP);
 		ShowWindow(m_WindowHandle, SW_SHOWMAXIMIZED);
 
-		m_CMLoggerRef.LogInfo(L"CMWindow [Maximize] | Maximized window.\n");
+		m_CMLoggerRef.LogInfoNL(L"CMWindow [Maximize] | Maximized window.");
 
 		m_Maximized = true;
 		m_Minimized = false;
@@ -145,18 +145,18 @@ namespace CMRenderer
 	{
 		if (!m_Initialized)
 		{
-			m_CMLoggerRef.LogWarning(L"CMWindow [Minimize] | Attempted to minimize the window before initializing it.\n");
+			m_CMLoggerRef.LogWarningNL(L"CMWindow [Minimize] | Attempted to minimize the window before initializing it.");
 			return;
 		}
 
 		if (m_Minimized)
 		{
-			m_CMLoggerRef.LogWarning(L"CMWindow [Minimize] | Attempted to minimize the window while it is already in minimized state.\n");
+			m_CMLoggerRef.LogWarningNL(L"CMWindow [Minimize] | Attempted to minimize the window while it is already in minimized state.");
 			return;
 		}
 
 		ShowWindow(m_WindowHandle, SW_SHOWMINIMIZED);
-		m_CMLoggerRef.LogInfo(L"CMWindow [Minimize] | Minimized window.\n");
+		m_CMLoggerRef.LogInfoNL(L"CMWindow [Minimize] | Minimized window.");
 
 		m_Maximized = false;
 		m_Minimized = true;
@@ -167,44 +167,41 @@ namespace CMRenderer
 	{
 		if (!m_Initialized)
 		{
-			m_CMLoggerRef.LogWarning(L"CMWindow [Restore] | Attempted to restore the window before initializing it.\n");
+			m_CMLoggerRef.LogWarningNL(L"CMWindow [Restore] | Attempted to restore the window before initializing it.");
 			return;
 		}
 
 		if (m_Windowed)
 		{
-			m_CMLoggerRef.LogWarning(L"CMWindow [Restore] | Attempted to restore the window when it is already in windowed state.\n");
+			m_CMLoggerRef.LogWarningNL(L"CMWindow [Restore] | Attempted to restore the window when it is already in windowed state.");
 			return;
 		}
 
 		LONG_PTR currentStyle = GetWindowLongPtrW(m_WindowHandle, GWL_STYLE);
 
 		if (currentStyle == 0)
-			m_CMLoggerRef.LogWarning(L"CMWindow [Restore] | Failed to retrieve window style.\n");
+			m_CMLoggerRef.LogWarningNL(L"CMWindow [Restore] | Failed to retrieve window style.");
 		else
 		{
 			if (currentStyle & WS_POPUP)
 			{
-				m_CMLoggerRef.LogInfo(L"CMWindow [Restore] | WS_POPUP is set.\n");
+				m_CMLoggerRef.LogInfoNL(L"CMWindow [Restore] | WS_POPUP is set.");
 
 				SetWindowLongPtrW(m_WindowHandle, GWL_STYLE, WS_OVERLAPPEDWINDOW);
 
-				m_CMLoggerRef.LogInfo(L"CMWindow [Restore] | Set windowed style.\n");
+				m_CMLoggerRef.LogInfoNL(L"CMWindow [Restore] | Set windowed style.");
 			}
 
 			BOOL succeeded = SetWindowPos(m_WindowHandle, nullptr, 0, 0, m_WindowSettingsRef.Current.Width, m_WindowSettingsRef.Current.Height, SWP_NOMOVE);
 
 			if (!succeeded)
-				m_CMLoggerRef.LogWarning(L"CMWindow [Restore] | Failed to set windowed pos.\n");
+				m_CMLoggerRef.LogWarningNL(L"CMWindow [Restore] | Failed to set windowed pos.");
 			else
-			{
-				m_SetWindowedPos = true;
-				m_CMLoggerRef.LogInfo(L"CMWindow [Restore] | Set windowed pos.\n");
-			}
+				m_CMLoggerRef.LogInfoNL(L"CMWindow [Restore] | Set windowed pos.");
 		}
 
 		ShowWindow(m_WindowHandle, SW_RESTORE);
-		m_CMLoggerRef.LogInfo(L"CMWindow [Restore] | Restored window.\n");
+		m_CMLoggerRef.LogInfoNL(L"CMWindow [Restore] | Restored window.");
 
 		m_Maximized = false;
 		m_Minimized = false;
@@ -231,7 +228,7 @@ namespace CMRenderer
 	void CMWindow::SetShutdownState() noexcept
 	{
 		m_Running = false;
-		m_CMLoggerRef.LogInfo(L"CMWindow [SetShutdownState] | Window shutdown has been requested.\n");
+		m_CMLoggerRef.LogInfoNL(L"CMWindow [SetShutdownState] | Window shutdown has been requested.");
 
 		Minimize();
 	}
@@ -289,7 +286,7 @@ namespace CMRenderer
 
 		if (m_WindowHandle == nullptr)
 		{
-			m_CMLoggerRef.LogFatal(L"CMWindow [Create] | Failed to get a valid window handle. Window handle is nullptr.\n");
+			m_CMLoggerRef.LogFatalNL(L"CMWindow [Create] | Failed to get a valid window handle. Window handle is nullptr.");
 			return false;
 		}
 
@@ -302,7 +299,7 @@ namespace CMRenderer
 		
 		if (!result)
 		{
-			m_CMLoggerRef.LogFatal(L"CMWindow [Create] | Failed to update window size.\n");
+			m_CMLoggerRef.LogFatalNL(L"CMWindow [Create] | Failed to update window size.");
 			return false;
 		}
 
@@ -324,7 +321,7 @@ namespace CMRenderer
 
 		if (destroyedWindow == 0)
 		{
-			m_CMLoggerRef.LogWarning(L"CMWindow [Destroy] | Failed to destroy the window handle.\n");
+			m_CMLoggerRef.LogWarningNL(L"CMWindow [Destroy] | Failed to destroy the window handle.");
 			return false;
 		}
 
@@ -332,7 +329,7 @@ namespace CMRenderer
 
 		if (unregisteredClass == 0)
 		{
-			m_CMLoggerRef.LogWarning(L"CMWindow [Destroy] | Failed to unregisted the window's class. How did you manage to do this???\n");
+			m_CMLoggerRef.LogWarningNL(L"CMWindow [Destroy] | Failed to unregisted the window's class. How did you manage to do this???");
 			return false;
 		}
 
@@ -345,7 +342,7 @@ namespace CMRenderer
 		GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, NULL, &hModule);
 
 		if (hModule == nullptr)
-			m_CMLoggerRef.LogFatal(L"CMWindow [GetCurrentHINSTANCE] | Unable to retrieve the current HINSTANCE. Retrieved HINSTANCE was nullptr.\n");
+			m_CMLoggerRef.LogFatalNL(L"CMWindow [GetCurrentHINSTANCE] | Unable to retrieve the current HINSTANCE. Retrieved HINSTANCE was nullptr.");
 
 		return static_cast<HINSTANCE>(hModule);
 	}
@@ -355,7 +352,7 @@ namespace CMRenderer
 		bool registeredClass = RegisterClassExW(&wndClassRef);
 
 		if (!registeredClass)
-			m_CMLoggerRef.LogFatal(L"CMWindow [RegisterWindowClass] | Failed to register CMWindow's WNDCLASSEX.\n");
+			m_CMLoggerRef.LogFatalNL(L"CMWindow [RegisterWindowClass] | Failed to register CMWindow's WNDCLASSEX.");
 	}
 #pragma endregion
 
@@ -364,83 +361,92 @@ namespace CMRenderer
 	{
 		if (m_WindowSettingsRef.Current.WindowTitle.data() == nullptr)
 		{
-			std::wstring message = L"CMWindow [ValidateSettings] | Window title is nullptr. Resorting to default : " +
-				std::wstring(CMWindowData::S_DEFAULT_WINDOW_TITLE.data()) + L'\n';
-			m_CMLoggerRef.LogWarning(message);
+			m_CMLoggerRef.LogWarningNLAppend(
+				L"CMWindow [ValidateSettings] | Window title is nullptr."
+				"Resorting to default : ", CMWindowData::S_DEFAULT_WINDOW_TITLE.data()
+			);
+
 			m_WindowSettingsRef.SetTitleToDefault();
 		}
 
 		else if (m_WindowSettingsRef.Current.WindowTitle.size() == 0)
 		{
-			std::wstring message = L"CMWindow [ValidateSettings] | Window title has a size of 0. Resorting to default : " +
-				std::wstring(CMWindowData::S_DEFAULT_WINDOW_TITLE.data()) + L'\n';
+			m_CMLoggerRef.LogWarningNLAppend(
+				L"CMWindow [ValidateSettings] | Window title has a size of 0."
+				"Resorting to default : ", CMWindowData::S_DEFAULT_WINDOW_TITLE.data()
+			);
 
-			m_CMLoggerRef.LogWarning(message);
 			m_WindowSettingsRef.SetTitleToDefault();
 		}
 
 		if (m_WindowSettingsRef.Current.Width <= 0)
 		{
-			std::wstring message = L"CMWindow [ValidateSettings] | Window width is negative. (Width : " +
-				std::to_wstring(m_WindowSettingsRef.Current.Width) + L") Resorting to default : " +
-				std::to_wstring(CMWindowData::S_DEFAULT_WIDTH) + L'\n';
+			m_CMLoggerRef.LogWarningNLVariadic(
+				L"CMWindow [ValidateSettings] | Window width is negative."
+				"(Width : ", m_WindowSettingsRef.Current.Width,
+				L") Resorting to default : ", CMWindowData::S_DEFAULT_WIDTH
+			);
 
-			m_CMLoggerRef.LogWarning(message);
 			m_WindowSettingsRef.SetWidthToDefault();
 		}
 
 		else if (m_WindowSettingsRef.Current.Width >= m_WindowSettingsRef.MaxWidth)
 		{
-			std::wstring message = L"CMWindow [ValidateSettings] | Window width is greater than max width. (Width : " +
-				std::to_wstring(m_WindowSettingsRef.Current.Width) + L" | Max Width : " +
-				std::to_wstring(m_WindowSettingsRef.MaxWidth) + L") Resorting to default: " +
-				std::to_wstring(CMWindowData::S_DEFAULT_WIDTH) + L'\n';
+			m_CMLoggerRef.LogWarningNLVariadic(
+				L"CMWindow [ValidateSettings] | Window width is greater than max width."
+				"(Width : ", m_WindowSettingsRef.Current.Width,
+				L" | Max Width : ", m_WindowSettingsRef.MaxWidth,
+				L") Resorting to default: ", CMWindowData::S_DEFAULT_WIDTH
+			);
 
-			m_CMLoggerRef.LogWarning(message);
 			m_WindowSettingsRef.SetWidthToDefault();
 		}
 
 		if (m_WindowSettingsRef.Current.Height <= 0)
 		{
-			std::wstring message = L"CMWindow [ValidateSettings] | Window height is negative. (Height : " +
-				std::to_wstring(m_WindowSettingsRef.Current.Height) + L") Resorting to default : " +
-				std::to_wstring(CMWindowData::S_DEFAULT_HEIGHT) + L'\n';
+			m_CMLoggerRef.LogWarningNLVariadic(
+				L"CMWindow [ValidateSettings] | Window height is negative."
+				"(Height : ", m_WindowSettingsRef.Current.Height,
+				L") Resorting to default : ", CMWindowData::S_DEFAULT_HEIGHT
+			);
 
-			m_CMLoggerRef.LogWarning(message);
 			m_WindowSettingsRef.SetHeightToDefault();
 		}
 
 		else if (m_WindowSettingsRef.Current.Height >= m_WindowSettingsRef.MaxHeight)
 		{
-			std::wstring message = L"CMWindow [ValidateSettings] | Window height is greater than max width. (Height : " +
-				std::to_wstring(m_WindowSettingsRef.Current.Height) + L" | Max Height : " +
-				std::to_wstring(m_WindowSettingsRef.MaxHeight) + L") Resorting to default: " +
-				std::to_wstring(CMWindowData::S_DEFAULT_HEIGHT) + L'\n';
+			m_CMLoggerRef.LogWarningNLVariadic(
+				L"CMWindow [ValidateSettings] | Window height is greater than max width."
+				"(Height : ", m_WindowSettingsRef.Current.Height,
+				L" | Max Height : ", m_WindowSettingsRef.MaxHeight, 
+				L") Resorting to default: ", CMWindowData::S_DEFAULT_HEIGHT
+			);
 
-			m_CMLoggerRef.LogWarning(message);
 			m_WindowSettingsRef.SetHeightToDefault();
 		}
 	}
 
 	void CMWindow::LogCurrentSettings() const noexcept
 	{
-		std::wstring message = L"CMWindow [LogCurrentSettings] | Target Title : " + std::wstring(m_WindowSettingsRef.Current.WindowTitle) + L'\n';
+		m_CMLoggerRef.LogInfoNLAppend(
+			L"CMWindow [LogCurrentSettings] | Target Title : ",
+			m_WindowSettingsRef.Current.WindowTitle
+		);
 
-		m_CMLoggerRef.LogInfo(message);
+		m_CMLoggerRef.LogInfoNLVariadic(
+			L"CMWindow [LogCurrentSettings] | Target Window Resolution : ",
+			m_WindowSettingsRef.Current.Width, L" x ", m_WindowSettingsRef.Current.Height
+		);
 
-		message = L"CMWindow [LogCurrentSettings] | Target Window Resolution : " +
-			std::to_wstring(m_WindowSettingsRef.Current.Width) + L" x " + std::to_wstring(m_WindowSettingsRef.Current.Height) + L'\n';
+		m_CMLoggerRef.LogInfoNLVariadic(
+			L"CMWindow [LogCurrentSettings] | Max Window Resolution : ",
+			m_WindowSettingsRef.MaxWidth, L" x ", m_WindowSettingsRef.MaxHeight
+		);
 
-		m_CMLoggerRef.LogInfo(message);
-
-		message = L"CMWindow [LogCurrentSettings] | Max Window Resolution : " +
-			std::to_wstring(m_WindowSettingsRef.MaxWidth) + L" x " + std::to_wstring(m_WindowSettingsRef.MaxHeight) + L'\n';
-
-		m_CMLoggerRef.LogInfo(message);
-
-		message = L"CMWindow [LogCurrentSettings] | Use fullscreen : " + Utility::BoolToWStr(m_WindowSettingsRef.Current.UseFullscreen) + L'\n';
-
-		m_CMLoggerRef.LogInfo(message);
+		m_CMLoggerRef.LogInfoNLAppend(
+			L"CMWindow [LogCurrentSettings] | Use fullscreen : ", 
+			Utility::BoolToWStrView(m_WindowSettingsRef.Current.UseFullscreen)
+		);
 	}
 #pragma endregion
 
@@ -493,7 +499,7 @@ namespace CMRenderer
 		case WM_ACTIVATE:
 			if (LOWORD(wParam) == WA_INACTIVE)
 			{
-				m_CMLoggerRef.LogInfo(L"CMWindow [WndProc] Window deactivated (possibly due to Alt-Tab)\n");
+				m_CMLoggerRef.LogInfo(L"CMWindow [WndProc] Window deactivated.\n");
 				m_Focused = false;
 			}
 			else if (LOWORD(wParam) == WA_ACTIVE)
@@ -518,7 +524,7 @@ namespace CMRenderer
 				Minimize();
 			else if ((wParam & 0xFFF0) == SC_RESTORE)
 				Restore();
-				
+
 			return DefWindowProcW(hWnd, msgCode, wParam, lParam);
 		case WM_SIZE:
 			GetClientRect(m_WindowHandle, &m_ClientArea);
