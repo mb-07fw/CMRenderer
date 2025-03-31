@@ -4,10 +4,6 @@
 	#error This project is currently only usable on Windows, due to it's heavy usage of the WinAPI.
 #endif
 
-#ifndef _MSC_VER
-	#error This project is currently only usable on MVSC compilers (Visual Studio) do to it's use of __debugbreak().
-#endif
-
 #if defined(CM_NO_DIRECTX) && defined(CM_NO_OPENGL) && defined(CM_NO_VULKAN)
 	#error All Implemented graphics API's have been defined to be excluded, which is invalid as CMRenderer needs at least one of it's implementations. (e.g., OpenGL, DirectX, OpenGL)
 #endif
