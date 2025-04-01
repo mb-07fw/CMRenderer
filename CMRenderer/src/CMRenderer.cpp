@@ -81,21 +81,21 @@ namespace CMRenderer
 				if (!m_Window.IsWindowed())
 					m_Window.Restore();
 				else
-					m_CMLogger.LogInfoNL(L"CMRenderer [CharKeyCallback ('I')] | Windowed key was released, but window is already windowed.");
+					m_CMLogger.LogInfoNL(L"CMRenderer [Run] | Windowed key was released, but window is already windowed.");
 			}
 			else if (keyboardRef.IsReleasedClear('o'))
 			{
 				if (!m_Window.IsMaximized())
 					m_Window.Maximize();
 				else
-					m_CMLogger.LogInfoNL(L"CMRenderer [CharKeyCallback ('O')] | Maximize key was released, but window is already maximized.");
+					m_CMLogger.LogInfoNL(L"CMRenderer [Run] | Maximize key was released, but window is already maximized.");
 			}
 			else if (keyboardRef.IsReleasedClear('p'))
 			{
 				if (!m_Window.IsMinimized())
 					m_Window.Minimize();
 				else
-					m_CMLogger.LogInfoNL(L"CMRenderer [CharKeyCallback ('P')] | Minimize key was pressed, but window is already minimized.");
+					m_CMLogger.LogInfoNL(L"CMRenderer [Run] | Minimize key was pressed, but window is already minimized.");
 			}
 
 			if (m_Window.IsFocused())
