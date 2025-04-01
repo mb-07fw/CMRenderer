@@ -1,16 +1,17 @@
 #include "Core/CMPCH.hpp"
 #include "Internal/CMWindow.hpp"
 
-#include "Core/Utility.hpp"
+#include "Internal/Utility/Utility.hpp"
+#include "Internal/Utility/WindowsUtility.hpp"
 
 #include <chrono>
 
 namespace CMRenderer
 {
 #pragma region Public
-	CMWindow::CMWindow(CMRendererSettings& cmSettingsRef, CMLoggerWide& cmLoggerRef) noexcept
+	CMWindow::CMWindow(CMRendererSettings& cmSettingsRef, Utility::CMLoggerWide& cmLoggerRef) noexcept
 		: m_CMSettingsRef(cmSettingsRef), m_WindowSettingsRef(cmSettingsRef.WindowSettings),
-		m_CMLoggerRef(cmLoggerRef)
+		  m_CMLoggerRef(cmLoggerRef), m_Keyboard(cmLoggerRef)
 	{
 		ValidateSettings();
 		LogCurrentSettings();
@@ -207,23 +208,9 @@ namespace CMRenderer
 		m_Minimized = false;
 		m_Windowed = true;
 	}
-
-	void CMWindow::SetCharKeyCallback(char c, std::function<void(bool)> func) noexcept
-	{
-		m_CharKeyCallbacks[c] = func;
-	}
 #pragma endregion
 
 #pragma region Private
-	void CMWindow::CallCharKeyCallback(char c, bool isReleased) noexcept
-	{
-		std::function<void(bool)> func = m_CharKeyCallbacks[c];
-
-		if (!func)
-			return;
-
-		func(isReleased);
-	}
 #pragma region State
 	void CMWindow::SetShutdownState() noexcept
 	{
@@ -486,10 +473,21 @@ namespace CMRenderer
 		switch (msgCode)
 		{
 		case WM_KEYDOWN:
+			/*m_CMLoggerRef.LogInfoNLVariadic(
+				L"CMWindow [WndProc] | VK pressed : ",
+				(UINT)wParam, 
+				" | \'", m_Keyboard.TranslateVK((BYTE)wParam), "\' (",
+				Utility::BoolToWStr(WindowsUtility::IsAlphabeticalVK((USHORT)wParam)), ')'
+			);*/
+
+			m_Keyboard.SetPressedVK((BYTE)wParam);
+			return DefWindowProcW(hWnd, msgCode, wParam, lParam);
+		case WM_KEYUP:
 			if (wParam != VK_ESCAPE)
 			{
-				CallCharKeyCallback(static_cast<char>(wParam), false);
-				return DefWindowProcW(hWnd, msgCode, wParam, lParam);
+				m_Keyboard.SetReleasedVK((BYTE)wParam);
+				//return DefWindowProcW(hWnd, msgCode, wParam, lParam);
+				return S_OK;
 			}
 
 			[[fallthrough]];

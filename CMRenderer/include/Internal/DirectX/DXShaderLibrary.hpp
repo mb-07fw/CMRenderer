@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Internal/CMLogger.hpp"
+#include "Internal/Utility/CMLogger.hpp"
+#include "Internal/Utility/CMStaticArray.hpp"
 #include "Internal/CMRendererSettings.hpp"
-#include "Internal/CMStaticArray.hpp"
-#include "Internal/CMShaderData.hpp"
+#include "Internal/DirectX/DXShaderData.hpp"
 
 #include <d3d11.h>
 
@@ -13,12 +13,12 @@
 #include <vector>
 #include <span>
 
-namespace CMRenderer
+namespace CMRenderer::CMDirectX
 {
 	class CMShaderLibrary
 	{
 	public:
-		CMShaderLibrary(CMLoggerWide& cmLoggerRef) noexcept;
+		CMShaderLibrary(Utility::CMLoggerWide& cmLoggerRef) noexcept;
 		~CMShaderLibrary() noexcept;
 	public:
 		void Init() noexcept;
@@ -42,10 +42,10 @@ namespace CMRenderer
 		static constexpr std::wstring_view S_DEFAULT_PS_NAME = L"DefaultPS.cso";
 		static constexpr std::wstring_view S_POS2D_COLOR_TRANSFORM_VS_NAME = L"Pos2D_Color_TransformVS.cso";
 		static constexpr std::wstring_view S_POS2D_COLOR_TRANSFORM_PS_NAME = L"Pos2D_Color_TransformPS.cso";
-		bool m_Initialized = false;
-		bool m_Shutdown = false;
-		CMLoggerWide& m_CMLoggerRef;
+		Utility::CMLoggerWide& m_CMLoggerRef;
 		std::wstring m_CompiledShaderDirectory;
 		std::vector<CMShaderSet> m_ShaderSets;
+		bool m_Initialized = false;
+		bool m_Shutdown = false;
 	};
 }

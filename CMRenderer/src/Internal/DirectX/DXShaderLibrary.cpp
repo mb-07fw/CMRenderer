@@ -1,9 +1,9 @@
 #include "Core/CMPCH.hpp"
-#include "Internal/CMShaderLibrary.hpp"
+#include "Internal/DirectX/DXShaderLibrary.hpp"
 
-namespace CMRenderer
+namespace CMRenderer::CMDirectX
 {
-	CMShaderLibrary::CMShaderLibrary(CMLoggerWide& cmLoggerRef) noexcept
+	CMShaderLibrary::CMShaderLibrary(Utility::CMLoggerWide& cmLoggerRef) noexcept
 		: m_CMLoggerRef(cmLoggerRef)
 	{
 		m_ShaderSets.reserve(S_EXPECTED_NUM_SHADER_SETS);
@@ -91,6 +91,7 @@ namespace CMRenderer
 		if (m_ShaderSets.size() != S_EXPECTED_NUM_SHADER_SETS)
 		{
 			m_CMLoggerRef.LogFatalNLVariadic(
+				-1,
 				L"CMShaderLibrary [Init] | Failed to collect the expected amount of shader sets.",
 				"(Collected : ", m_ShaderSets.size(),
 				L" | Expected : ", S_EXPECTED_NUM_SHADER_SETS
@@ -170,6 +171,7 @@ namespace CMRenderer
 			m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [GetAllShaderData] | No shaders were found.");
 		else if (totalShaders != S_EXPECTED_NUM_SHADERS)
 			m_CMLoggerRef.LogFatalNLVariadic(
+				-1,
 				L"CMShaderLibrary [GetAllShaderData] | The amount of compiled shaders didn't match the expected amount.",
 				"(Collected : ", totalShaders,
 				L" | Expected : ", S_EXPECTED_NUM_SHADERS
@@ -207,6 +209,7 @@ namespace CMRenderer
 				shaderType = CMShaderType::PIXEL;
 			else
 				m_CMLoggerRef.LogFatalNLVariadic(
+					-1,
 					L"CMShaderLibrary [GetAllShaderData] | Invalid shader : ",
 					fileName, ". Expected flag in shader name. (\"VS\", \"PS\")"
 				);
@@ -252,6 +255,7 @@ namespace CMRenderer
 
 		if (outDataRef.size() != S_EXPECTED_NUM_SHADERS)
 			m_CMLoggerRef.LogFatalNLVariadic(
+				-1,
 				L"CMShaderLibrary [GetAllShaderData] | Failed to collect the expected amount of shaders.",
 				"(Collected : ", outDataRef.size(),
 				L" | Expected : ", S_EXPECTED_NUM_SHADERS

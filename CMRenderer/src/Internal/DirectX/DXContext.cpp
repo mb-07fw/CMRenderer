@@ -1,5 +1,5 @@
 ﻿#include "Core/CMPCH.hpp"
-#include "Internal/WindowsUtility.hpp"
+#include "Internal/Utility/WindowsUtility.hpp"
 #include "Internal/DirectX/DXContext.hpp"
 #include "Internal/DirectX/DXUtility.hpp"
 
@@ -10,7 +10,7 @@
 namespace CMRenderer::CMDirectX
 {
 #pragma region DXContext
-	DXContext::DXContext(CMLoggerWide& cmLoggerRef) noexcept
+	DXContext::DXContext(Utility::CMLoggerWide& cmLoggerRef) noexcept
 		: m_CMLoggerRef(cmLoggerRef), m_Device(cmLoggerRef),
 		  m_Factory(cmLoggerRef), m_SwapChain(cmLoggerRef),
 		  CM_IF_NDEBUG_REPLACE(APPEND_COMMA(m_InfoQueue(cmLoggerRef)))

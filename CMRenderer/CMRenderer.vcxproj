@@ -258,29 +258,30 @@
     </ClCompile>
     <ClCompile Include="src\Internal\DirectX\DXContext.cpp" />
     <ClCompile Include="src\Internal\CMRendererSettings.cpp" />
-    <ClCompile Include="src\Internal\CMShaderData.cpp" />
-    <ClCompile Include="src\Internal\CMShaderLibrary.cpp" />
+    <ClCompile Include="src\Internal\DirectX\DXShaderData.cpp" />
+    <ClCompile Include="src\Internal\DirectX\DXShaderLibrary.cpp" />
     <ClCompile Include="src\Internal\CMWindow.cpp" />
     <ClCompile Include="src\Internal\DirectX\DXComponents.cpp" />
-    <ClCompile Include="src\Internal\WindowsUtility.cpp" />
+    <ClCompile Include="src\Internal\CMKeyboard.cpp" />
     <ClCompile Include="src\Main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\CMRenderer.hpp" />
     <ClInclude Include="include\Core\CMMacros.hpp" />
-    <ClInclude Include="include\Core\Utility.hpp" />
+    <ClInclude Include="include\Internal\CMKeyboard.hpp" />
+    <ClInclude Include="include\Internal\Utility\Utility.hpp" />
     <ClInclude Include="include\Internal\DirectX\DXContext.hpp" />
-    <ClInclude Include="include\Internal\CMLogger.hpp" />
+    <ClInclude Include="include\Internal\Utility\CMLogger.hpp" />
     <ClInclude Include="include\Core\CMPCH.hpp" />
     <ClInclude Include="include\Core\WindowsDefines.hpp" />
     <ClInclude Include="include\Internal\CMRendererSettings.hpp" />
-    <ClInclude Include="include\Internal\CMShaderData.hpp" />
-    <ClInclude Include="include\Internal\CMShaderLibrary.hpp" />
-    <ClInclude Include="include\Internal\CMStaticArray.hpp" />
+    <ClInclude Include="include\Internal\DirectX\DXShaderData.hpp" />
+    <ClInclude Include="include\Internal\DirectX\DXShaderLibrary.hpp" />
+    <ClInclude Include="include\Internal\Utility\CMStaticArray.hpp" />
     <ClInclude Include="include\Internal\CMWindow.hpp" />
     <ClInclude Include="include\Internal\DirectX\DXComponents.hpp" />
     <ClInclude Include="include\Internal\DirectX\DXUtility.hpp" />
-    <ClInclude Include="include\Internal\WindowsUtility.hpp" />
+    <ClInclude Include="include\Internal\Utility\WindowsUtility.hpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="resources\shaders\Pos2D_Color_TransformPS.hlsl">

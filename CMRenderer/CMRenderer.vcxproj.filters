@@ -33,13 +33,10 @@
     <ClCompile Include="src\Internal\DirectX\DXContext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Internal\WindowsUtility.cpp">
+    <ClCompile Include="src\Internal\DirectX\DXShaderLibrary.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Internal\CMShaderLibrary.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Internal\CMShaderData.cpp">
+    <ClCompile Include="src\Internal\DirectX\DXShaderData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Internal\DirectX\DXComponents.cpp">
@@ -56,7 +53,7 @@
     <ClInclude Include="include\CMRenderer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Internal\CMLogger.hpp">
+    <ClInclude Include="include\Internal\Utility\CMLogger.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\Internal\CMWindow.hpp">
@@ -68,19 +65,19 @@
     <ClInclude Include="include\Internal\DirectX\DXContext.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Internal\WindowsUtility.hpp">
+    <ClInclude Include="include\Internal\Utility\WindowsUtility.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Core\Utility.hpp">
+    <ClInclude Include="include\Internal\Utility\Utility.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Internal\CMShaderLibrary.hpp">
+    <ClInclude Include="include\Internal\DirectX\DXShaderLibrary.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Internal\CMStaticArray.hpp">
+    <ClInclude Include="include\Internal\Utility\CMStaticArray.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Internal\CMShaderData.hpp">
+    <ClInclude Include="include\Internal\DirectX\DXShaderData.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\Internal\DirectX\DXUtility.hpp">
@@ -90,6 +87,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\Core\CMMacros.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Internal\CMKeyboard.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -7,9 +7,9 @@
 #include <string_view>
 #include <array>
 
-#include "Internal/CMStaticArray.hpp"
+#include "Internal/Utility/CMStaticArray.hpp"
 
-namespace CMRenderer
+namespace CMRenderer::CMDirectX
 {
 	enum class CMImplementedShaderType
 	{

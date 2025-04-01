@@ -4,7 +4,8 @@
 namespace CMRenderer
 {
 	CMRenderer::CMRenderer(CMRendererSettings settings) noexcept
-		: m_Settings(settings), m_CMLogger(S_LIFETIME_LOG_FILE_NAME),
+		: m_CMLogger(S_LIFETIME_LOG_FILE_NAME),
+		  m_Settings(settings),
 		  m_Window(m_Settings, m_CMLogger),
 		  m_RenderContext(m_CMLogger)
 	{
@@ -30,37 +31,6 @@ namespace CMRenderer
 
 		m_Window.Init();
 		m_RenderContext.Init(m_Window.Handle(), m_Window.ClientArea());
-
-		m_Window.SetCharKeyCallback(
-			'I', 
-			[this](bool isReleased) { 
-				if (!isReleased && !m_Window.IsWindowed())
-					m_Window.Restore();
-				else if (m_Window.IsWindowed())
-					m_CMLogger.LogInfoNL(L"CMRenderer [CharKeyCallback ('r')] | Windowed key was pressed, but window is already windowed.");
-			}
-		);
-
-		m_Window.SetCharKeyCallback(
-			'O',
-			[this](bool isReleased) {
-				if (!isReleased && !m_Window.IsMaximized())
-					m_Window.Maximize();
-				else if (m_Window.IsMaximized())
-					m_CMLogger.LogInfoNL(L"CMRenderer [CharKeyCallback ('O')] | Maximize key was pressed, but window is already maximized.");
-			}
-		);
-
-
-		m_Window.SetCharKeyCallback(
-			'P',
-			[this](bool isReleased) {
-				if (!isReleased && !m_Window.IsMinimized())
-					m_Window.Minimize();
-				else if (m_Window.IsMinimized())
-					m_CMLogger.LogInfoNL(L"CMRenderer [CharKeyCallback ('P')] | Minimize key was pressed, but window is already minimized.");
-			}
-		);
 
 		m_Initialized = true;
 		m_Shutdown = false;
@@ -95,6 +65,8 @@ namespace CMRenderer
 			0, 3, 1
 		};
 
+		CMKeyboard& keyboardRef = m_Window.Keyboard();
+
 		float angle = 0.0f;
 		while (m_Window.IsRunning())
 		{
@@ -103,6 +75,28 @@ namespace CMRenderer
 			// Quit message has been received.
 			if (!m_Window.IsRunning())
 				break;
+
+			if (keyboardRef.IsReleasedClear('i'))
+			{
+				if (!m_Window.IsWindowed())
+					m_Window.Restore();
+				else
+					m_CMLogger.LogInfoNL(L"CMRenderer [CharKeyCallback ('I')] | Windowed key was released, but window is already windowed.");
+			}
+			else if (keyboardRef.IsReleasedClear('o'))
+			{
+				if (!m_Window.IsMaximized())
+					m_Window.Maximize();
+				else
+					m_CMLogger.LogInfoNL(L"CMRenderer [CharKeyCallback ('O')] | Maximize key was released, but window is already maximized.");
+			}
+			else if (keyboardRef.IsReleasedClear('p'))
+			{
+				if (!m_Window.IsMinimized())
+					m_Window.Minimize();
+				else
+					m_CMLogger.LogInfoNL(L"CMRenderer [CharKeyCallback ('P')] | Minimize key was pressed, but window is already minimized.");
+			}
 
 			if (m_Window.IsFocused())
 			{

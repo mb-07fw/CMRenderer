@@ -1,12 +1,12 @@
 #include "Core/CMPCH.hpp"
+#include "Internal/Utility/WindowsUtility.hpp"
 #include "Internal/DirectX/DXComponents.hpp"
 #include "Internal/DirectX/DXUtility.hpp"
-#include "Internal/WindowsUtility.hpp"
 
 namespace CMRenderer::CMDirectX::Components
 {
 #pragma region DXDevice
-	DXDevice::DXDevice(CMLoggerWide& cmLoggerRef) noexcept
+	DXDevice::DXDevice(Utility::CMLoggerWide& cmLoggerRef) noexcept
 		: m_CMLoggerRef(cmLoggerRef)
 	{
 	}
@@ -95,20 +95,21 @@ namespace CMRenderer::CMDirectX::Components
 		);
 		else if (succeededLevel < D3D_FEATURE_LEVEL_11_0)
 			m_CMLoggerRef.LogFatalNLVariadic(
+				-1,
 				L"DXDevice [Create] | DirectX Feature Level was less than 11.0 (",
-				CMDirectX::Utility::D3DFeatureLevelToWStrView(succeededLevel).data(),
+				CMDirectX::DXUtility::D3DFeatureLevelToWStrView(succeededLevel).data(),
 				L"), which is less than required for this program. Continuation will only result in errors."
 			);
 
 		m_CMLoggerRef.LogInfoNLAppend(
 			L"DXDevice [Create] | Feature level in use : ",
-			CMDirectX::Utility::D3DFeatureLevelToWStrView(succeededLevel)
+			CMDirectX::DXUtility::D3DFeatureLevelToWStrView(succeededLevel)
 		);
 	}
 #pragma endregion
 
 #pragma region DXFactory
-	DXFactory::DXFactory(CMLoggerWide& cmLoggerRef) noexcept
+	DXFactory::DXFactory(CMRenderer::Utility::CMLoggerWide& cmLoggerRef) noexcept
 		: m_CMLoggerRef(cmLoggerRef)
 	{
 	}
@@ -169,7 +170,7 @@ namespace CMRenderer::CMDirectX::Components
 #pragma endregion
 
 #pragma region DXSwapChain
-	DXSwapChain::DXSwapChain(CMLoggerWide& cmLoggerRef) noexcept
+	DXSwapChain::DXSwapChain(Utility::CMLoggerWide& cmLoggerRef) noexcept
 		: m_CMLoggerRef(cmLoggerRef)
 	{
 		m_Desc.BufferDesc.Width = 0;
@@ -255,7 +256,7 @@ namespace CMRenderer::CMDirectX::Components
 #pragma endregion
 
 #pragma region DXInfoQueue
-	DXInfoQueue::DXInfoQueue(CMLoggerWide& cmLoggerRef) noexcept
+	DXInfoQueue::DXInfoQueue(Utility::CMLoggerWide& cmLoggerRef) noexcept
 		: m_CMLoggerRef(cmLoggerRef)
 	{
 	}

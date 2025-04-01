@@ -1,7 +1,8 @@
 #pragma once
 
+#include "Internal/Utility/CMLogger.hpp"
 #include "Internal/CMRendererSettings.hpp"
-#include "Internal/CMLogger.hpp"
+#include "Internal/CMKeyboard.hpp"
 
 #include <minwindef.h> // Include Windows type definitions.
 
@@ -14,7 +15,7 @@ namespace CMRenderer
 	class CMWindow
 	{
 	public:
-		CMWindow(CMRendererSettings& cmSettingsRef, CMLoggerWide& cmLoggerRef) noexcept;
+		CMWindow(CMRendererSettings& cmSettingsRef, Utility::CMLoggerWide& cmLoggerRef) noexcept;
 		~CMWindow() noexcept;
 	public:
 		void Init() noexcept;
@@ -29,8 +30,6 @@ namespace CMRenderer
 		void Minimize() noexcept;
 		void Restore() noexcept;
 
-		void SetCharKeyCallback(char c, std::function<void(bool)> func) noexcept;
-
 		inline [[nodiscard]] bool IsInitialized() const noexcept { return m_Initialized; }
 		inline [[nodiscard]] bool IsShutdown() const noexcept { return m_Shutdown; }
 		inline [[nodiscard]] bool IsRunning() const noexcept { return m_Running; }
@@ -43,9 +42,8 @@ namespace CMRenderer
 
 		inline [[nodiscard]] const HWND Handle() const noexcept { return m_WindowHandle; }
 		inline [[nodiscard]] RECT ClientArea() const noexcept { return m_ClientArea; }
+		inline [[nodiscard]] CMKeyboard& Keyboard() noexcept { return m_Keyboard; }
 	private:
-		void CallCharKeyCallback(char c, bool isReleased) noexcept;
-
 		void SetShutdownState() noexcept;
 
 		bool Create() noexcept;
@@ -65,10 +63,11 @@ namespace CMRenderer
 		static constexpr std::wstring_view S_CLASS_NAME = L"CMWindow";
 		CMRendererSettings& m_CMSettingsRef;
 		CMWindowSettings& m_WindowSettingsRef;
-		CMLoggerWide& m_CMLoggerRef;
-		RECT m_ClientArea = {};
+		Utility::CMLoggerWide& m_CMLoggerRef;
 		HINSTANCE m_hInstance = nullptr;
 		HWND m_WindowHandle = nullptr;
+		CMKeyboard m_Keyboard;
+		RECT m_ClientArea = {};
 		bool m_Initialized = false;
 		bool m_Shutdown = false;
 		bool m_Running = false;
@@ -76,6 +75,5 @@ namespace CMRenderer
 		bool m_Maximized = false;
 		bool m_Minimized = false;
 		bool m_Windowed = false;
-		std::unordered_map<char, std::function<void(bool)>> m_CharKeyCallbacks;
 	};
 }

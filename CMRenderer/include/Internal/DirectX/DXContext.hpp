@@ -6,9 +6,9 @@
 #include <string_view>
 
 #include "Core/CMMacros.hpp"
-#include "Internal/CMLogger.hpp"
+#include "Internal/Utility/CMLogger.hpp"
 #include "Internal/DirectX/DXComponents.hpp"
-#include "Internal/CMShaderLibrary.hpp"
+#include "Internal/DirectX/DXShaderLibrary.hpp"
 
 namespace CMRenderer::CMDirectX
 {
@@ -19,7 +19,7 @@ namespace CMRenderer::CMDirectX
 	class DXContext
 	{
 	public:
-		DXContext(CMLoggerWide& cmLoggerRef) noexcept;
+		DXContext(Utility::CMLoggerWide& cmLoggerRef) noexcept;
 		~DXContext() noexcept;
 	public:
 		void Init(const HWND hWnd, RECT clientArea) noexcept;
@@ -43,7 +43,7 @@ namespace CMRenderer::CMDirectX
 
 		void ReleaseViews() noexcept;
 	private:
-		CMLoggerWide& m_CMLoggerRef;
+		Utility::CMLoggerWide& m_CMLoggerRef;
 		const HWND m_WindowHandle = nullptr;
 		Components::DXDevice m_Device;
 		Components::DXFactory m_Factory;

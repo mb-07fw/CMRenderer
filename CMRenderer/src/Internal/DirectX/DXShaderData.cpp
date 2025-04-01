@@ -1,7 +1,7 @@
 #include "Core/CMPCH.hpp"
-#include "Internal/CMShaderData.hpp"
+#include "Internal/DirectX/DXShaderData.hpp"
 
-namespace CMRenderer
+namespace CMRenderer::CMDirectX
 {
 	CMShaderData::CMShaderData(
 		CMImplementedShaderType implementedType,

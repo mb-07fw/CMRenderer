@@ -10,8 +10,8 @@
 #pragma comment(lib, "d3dcompiler.lib")
 
 #include "Core/CMMacros.hpp"
+#include "Internal/Utility/CMLogger.hpp"
 #include "Internal/CMRendererSettings.hpp"
-#include "Internal/CMLogger.hpp"
 #include "Internal/CMWindow.hpp"
 #include "Internal/DirectX/DXContext.hpp"
 
@@ -29,8 +29,8 @@ namespace CMRenderer
 		void Run() noexcept;
 	private:
 		static constexpr std::wstring_view S_LIFETIME_LOG_FILE_NAME = L"logs/CMRendererLifetime.log";
+		Utility::CMLoggerWide m_CMLogger;
 		CMRendererSettings m_Settings;
-		CMLoggerWide m_CMLogger;
 		CMWindow m_Window;
 		CMDirectX::DXContext m_RenderContext;
 		bool m_Initialized = false;

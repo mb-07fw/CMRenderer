@@ -5,12 +5,9 @@
 
 namespace CMRenderer::Utility
 {
-	inline const std::wstring BoolToWStr(bool value) noexcept
+	inline constexpr const wchar_t* BoolToWStr(bool value) noexcept
 	{
-		if (value)
-			return std::wstring(L"TRUE");
-		else
-			return std::wstring(L"FALSE");
+		return (value) ?L"TRUE" : L"FALSE";
 	}
 
 	inline constexpr std::wstring_view BoolToWStrView(bool value) noexcept

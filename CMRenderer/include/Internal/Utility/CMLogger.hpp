@@ -6,7 +6,7 @@
 #include <fstream>
 #include <type_traits>
 
-namespace CMRenderer
+namespace CMRenderer::Utility
 {
 	template <typename Ty>
 	struct IsLoggableType
@@ -79,7 +79,7 @@ namespace CMRenderer
 		inline void LogFatalNLAppend(DataTy data, AppendTy append, int exitCode = -1) noexcept;
 
 		template <typename... Args>
-		inline void LogFatalNLVariadic(DataTy data, Args&&... args) noexcept;
+		inline void LogFatalNLVariadic(int exitCode, DataTy data, Args&&... args) noexcept;
 
 		inline void LogInline(DataTy data) noexcept;
 
@@ -333,12 +333,29 @@ namespace CMRenderer
 	template <CMLoggerType EnumLoggerType, typename DataTy, typename StreamTy>
 		requires LoggableType<DataTy>&& ValidStream<StreamTy>
 	template <typename... Args>
-	inline void CMLogger<EnumLoggerType, DataTy, StreamTy>::LogFatalNLVariadic(DataTy data, Args&&... args) noexcept
+	inline void CMLogger<EnumLoggerType, DataTy, StreamTy>::LogFatalNLVariadic(int exitCode, DataTy data, Args&&... args) noexcept
 	{
 		if constexpr (S_IS_WIDE_LOGGER)
+		{
 			LogFlagNLVariadic(data, L"FATAL", std::forward<Args>(args)...);
+			LogFlagNLAppend(
+				L"CMLogger [LogFatalNLVariadic] | Logger is terminating the program with the exit code : ",
+				exitCode,
+				L"FATAL"
+			);
+		}
 		else
+		{
 			LogFlagNLVariadic(data, "FATAL", std::forward<Args>(args)...);
+			LogFlagNLAppend(
+				"CMLogger [LogFatalNLVariadic] | Logger is terminating the program with the exit code : ",
+				exitCode,
+				"FATAL"
+			);
+		}
+
+		CM_BREAK_DEBUGGER();
+		exit(exitCode);
 	}
 #pragma endregion
 

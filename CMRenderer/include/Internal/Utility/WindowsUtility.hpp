@@ -1,9 +1,21 @@
-#include "Core/CMPCH.hpp"
-#include "Internal/WindowsUtility.hpp"
+#pragma once
+
+#include <Windows.h>
+#include <string>
 
 namespace CMRenderer::WindowsUtility
 {
-    std::wstring TranslateDWORDError(const DWORD errorCode) noexcept
+    constexpr [[nodiscard]] bool IsAlphabeticalVK(USHORT virtualKey);
+    constexpr [[nodiscard]] std::wstring TranslateDWORDError(DWORD errorCode) noexcept;
+    constexpr [[nodiscard]] std::wstring TranslateDWORDError(HRESULT hResult) noexcept;
+
+    
+    constexpr [[nodiscard]] bool IsAlphabeticalVK(USHORT virtualKey)
+    {
+        return (virtualKey - 'A' < 26);
+    }
+
+    constexpr [[nodiscard]] std::wstring TranslateDWORDError(DWORD errorCode) noexcept
     {
         if (errorCode == ERROR_SUCCESS)
             return L"NO_ERROR";
@@ -29,7 +41,7 @@ namespace CMRenderer::WindowsUtility
         return errorString;
     }
 
-    std::wstring TranslateDWORDError(const HRESULT hResult) noexcept
+    constexpr [[nodiscard]] std::wstring TranslateDWORDError(HRESULT hResult) noexcept
     {
         DWORD errorCode = HRESULT_CODE(hResult);
 
