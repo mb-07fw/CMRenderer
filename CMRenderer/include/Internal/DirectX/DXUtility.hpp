@@ -3,6 +3,8 @@
 #include <d3dcommon.h>
 #include <string_view>
 
+#include <cstdint>
+
 namespace CMRenderer::CMDirectX::DXUtility
 {
 	constexpr std::wstring_view D3DFeatureLevelToWStrView(D3D_FEATURE_LEVEL featureLevel) noexcept;
@@ -24,5 +26,15 @@ namespace CMRenderer::CMDirectX::DXUtility
 		case D3D_FEATURE_LEVEL_12_2:	 return std::wstring_view(L"D3D_FEATURE_LEVEL_12_2");
 		default:						 return std::wstring_view(L"UNKNOWN");
 		}
+	}
+
+	inline constexpr float ScreenToNDCX(uint32_t x, uint32_t width)
+	{
+		return (2.0f * x) / width - 1.0f;
+	}
+
+	inline constexpr float ScreenToNDCY(uint32_t y, uint32_t height)
+	{
+		return 1.0f - (2.0f * y) / height;
 	}
 }

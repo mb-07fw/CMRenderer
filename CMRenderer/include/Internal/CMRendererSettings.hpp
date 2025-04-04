@@ -3,6 +3,11 @@
 #include <string_view>
 #include <cstdint>
 
+#include <winsdkver.h>
+#include <Windows.h>
+
+#include <windef.h>
+
 namespace CMRenderer
 {
 	struct CMWindowData
@@ -12,17 +17,19 @@ namespace CMRenderer
 		CMWindowData(
 			std::wstring_view windowTitle,
 			bool useFullscreen,
-			uint32_t width,
-			uint32_t height
+			LONG width,
+			LONG height
 		) noexcept;
 
 		std::wstring_view WindowTitle;
-		unsigned int Width = 0, Height = 0;
+		LONG InitialWidth = 0;
+		LONG InitialHeight = 0;
+		RECT ClientArea = {};
 		bool UseFullscreen = false;
 
 		static constexpr std::wstring_view S_DEFAULT_WINDOW_TITLE = L"CMRenderer Window";
-		static constexpr unsigned int S_DEFAULT_WIDTH = 800;
-		static constexpr unsigned int S_DEFAULT_HEIGHT = 600;
+		static constexpr LONG S_DEFAULT_WIDTH = 800;
+		static constexpr LONG S_DEFAULT_HEIGHT = 600;
 	};
 
 	struct CMWindowSettings
@@ -37,7 +44,7 @@ namespace CMRenderer
 
 		const CMWindowData DEFAULT;
 		CMWindowData Current;
-		uint32_t MaxWidth, MaxHeight; // Represents the total width of the screen.
+		LONG MaxWidth, MaxHeight; // Represents the total width of the screen.
 	};
 
 	struct CMRendererSettings
@@ -46,6 +53,5 @@ namespace CMRenderer
 		~CMRendererSettings() = default;
 
 		CMWindowSettings WindowSettings;
-		const bool M_FAIL_FAST = true; // TODO: Make this optional.
 	};
 }

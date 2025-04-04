@@ -1,8 +1,8 @@
 #include "Core/CMPCH.hpp"
 #include "Internal/CMKeyboard.hpp"
 
-#define CM_KEYSTATE_IS_PRESSED_BIT  0x80
-#define CM_KEYSTATE_WAS_PRESSED_BIT 0x40
+#define CM_KEYSTATE_IS_PRESSED_BIT  0x80 // Reserved "pressed" flag.
+#define CM_KEYSTATE_WAS_PRESSED_BIT 0x40 // Custom flag to track if a key was pressed previously.
 #define CM_KEYSTATE_LOW_ORDER_BYTE  0xFF
 
 namespace CMRenderer

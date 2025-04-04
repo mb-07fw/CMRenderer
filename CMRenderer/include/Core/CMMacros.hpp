@@ -2,7 +2,7 @@
 
 #define CM_NO_OP (void)0
 
-#if defined(CM_DEBUG)
+#if defined(CM_DEBUG) || defined(_DEBUG)
 
 #define CM_IF_DEBUG(x)			x
 #define CM_IF_NDEBUG_REPLACE(x) x

@@ -193,7 +193,7 @@ namespace CMRenderer
 				m_CMLoggerRef.LogInfoNL(L"CMWindow [Restore] | Set windowed style.");
 			}
 
-			BOOL succeeded = SetWindowPos(m_WindowHandle, nullptr, 0, 0, m_WindowSettingsRef.Current.Width, m_WindowSettingsRef.Current.Height, SWP_NOMOVE);
+			BOOL succeeded = SetWindowPos(m_WindowHandle, nullptr, 0, 0, m_WindowSettingsRef.Current.InitialWidth, m_WindowSettingsRef.Current.InitialHeight, SWP_NOMOVE);
 
 			if (!succeeded)
 				m_CMLoggerRef.LogWarningNL(L"CMWindow [Restore] | Failed to set windowed pos.");
@@ -245,10 +245,10 @@ namespace CMRenderer
 
 		RegisterWindowClass(wndClass);
 
-		m_ClientArea.left = 0;
-		m_ClientArea.right = m_WindowSettingsRef.Current.Width;
-		m_ClientArea.top = 0;
-		m_ClientArea.bottom = m_WindowSettingsRef.Current.Height;
+		RECT& clientAreaRef = m_WindowSettingsRef.Current.ClientArea;
+
+		clientAreaRef.right = m_WindowSettingsRef.Current.InitialWidth;
+		clientAreaRef.bottom = m_WindowSettingsRef.Current.InitialHeight;
 
 		DWORD dwStyle = m_WindowSettingsRef.Current.UseFullscreen ? WS_POPUP : WS_OVERLAPPEDWINDOW;
 
@@ -259,8 +259,8 @@ namespace CMRenderer
 			m_WindowSettingsRef.Current.WindowTitle.data(),			// Window title.
 			dwStyle,												// Window styles. 
 			CW_USEDEFAULT, CW_USEDEFAULT,							// X, Y position.
-			m_ClientArea.right - m_ClientArea.left,					// Window width. 
-			m_ClientArea.bottom - m_ClientArea.top,					// Window height.
+			clientAreaRef.right - clientAreaRef.left,				// Window width. 
+			clientAreaRef.bottom - clientAreaRef.top,				// Window height.
 			nullptr,												// Parent window.
 			nullptr,												// Menu.
 			wndClass.hInstance,										// Handle to the instance of the application. (HINSTANCE)
@@ -282,7 +282,7 @@ namespace CMRenderer
 		// If nonzero, the return value is nonzero. Otherwise, the window was previously hidden.
 		BOOL previouslyVisible = ShowWindow(m_WindowHandle, showCmd);
 
-		BOOL result = GetClientRect(m_WindowHandle, &m_ClientArea);
+		BOOL result = GetClientRect(m_WindowHandle, &clientAreaRef);
 		
 		if (!result)
 		{
@@ -366,22 +366,22 @@ namespace CMRenderer
 			m_WindowSettingsRef.SetTitleToDefault();
 		}
 
-		if (m_WindowSettingsRef.Current.Width <= 0)
+		if (m_WindowSettingsRef.Current.InitialWidth <= 0)
 		{
 			m_CMLoggerRef.LogWarningNLVariadic(
 				L"CMWindow [ValidateSettings] | Window width is negative."
-				"(Width : ", m_WindowSettingsRef.Current.Width,
+				"(Width : ", m_WindowSettingsRef.Current.InitialWidth,
 				L") Resorting to default : ", CMWindowData::S_DEFAULT_WIDTH
 			);
 
 			m_WindowSettingsRef.SetWidthToDefault();
 		}
 
-		else if (m_WindowSettingsRef.Current.Width >= m_WindowSettingsRef.MaxWidth)
+		else if (m_WindowSettingsRef.Current.InitialWidth >= m_WindowSettingsRef.MaxWidth)
 		{
 			m_CMLoggerRef.LogWarningNLVariadic(
 				L"CMWindow [ValidateSettings] | Window width is greater than max width."
-				"(Width : ", m_WindowSettingsRef.Current.Width,
+				"(Width : ", m_WindowSettingsRef.Current.InitialWidth,
 				L" | Max Width : ", m_WindowSettingsRef.MaxWidth,
 				L") Resorting to default: ", CMWindowData::S_DEFAULT_WIDTH
 			);
@@ -389,28 +389,30 @@ namespace CMRenderer
 			m_WindowSettingsRef.SetWidthToDefault();
 		}
 
-		if (m_WindowSettingsRef.Current.Height <= 0)
+		if (m_WindowSettingsRef.Current.InitialHeight <= 0)
 		{
 			m_CMLoggerRef.LogWarningNLVariadic(
 				L"CMWindow [ValidateSettings] | Window height is negative."
-				"(Height : ", m_WindowSettingsRef.Current.Height,
+				"(Height : ", m_WindowSettingsRef.Current.InitialHeight,
 				L") Resorting to default : ", CMWindowData::S_DEFAULT_HEIGHT
 			);
 
 			m_WindowSettingsRef.SetHeightToDefault();
 		}
 
-		else if (m_WindowSettingsRef.Current.Height >= m_WindowSettingsRef.MaxHeight)
+		else if (m_WindowSettingsRef.Current.InitialHeight >= m_WindowSettingsRef.MaxHeight)
 		{
 			m_CMLoggerRef.LogWarningNLVariadic(
 				L"CMWindow [ValidateSettings] | Window height is greater than max width."
-				"(Height : ", m_WindowSettingsRef.Current.Height,
+				"(Height : ", m_WindowSettingsRef.Current.InitialHeight,
 				L" | Max Height : ", m_WindowSettingsRef.MaxHeight, 
 				L") Resorting to default: ", CMWindowData::S_DEFAULT_HEIGHT
 			);
 
 			m_WindowSettingsRef.SetHeightToDefault();
 		}
+		
+		m_WindowSettingsRef.Current.ClientArea = { 0, 0, m_WindowSettingsRef.Current.InitialWidth, m_WindowSettingsRef.Current.InitialHeight };
 	}
 
 	void CMWindow::LogCurrentSettings() const noexcept
@@ -422,7 +424,7 @@ namespace CMRenderer
 
 		m_CMLoggerRef.LogInfoNLVariadic(
 			L"CMWindow [LogCurrentSettings] | Target Window Resolution : ",
-			m_WindowSettingsRef.Current.Width, L" x ", m_WindowSettingsRef.Current.Height
+			m_WindowSettingsRef.Current.InitialWidth, L" x ", m_WindowSettingsRef.Current.InitialHeight
 		);
 
 		m_CMLoggerRef.LogInfoNLVariadic(
@@ -525,7 +527,7 @@ namespace CMRenderer
 
 			return DefWindowProcW(hWnd, msgCode, wParam, lParam);
 		case WM_SIZE:
-			GetClientRect(m_WindowHandle, &m_ClientArea);
+			GetClientRect(m_WindowHandle, &m_WindowSettingsRef.Current.ClientArea);
 			[[fallthrough]];
 		default:
 			return DefWindowProcW(hWnd, msgCode, wParam, lParam);

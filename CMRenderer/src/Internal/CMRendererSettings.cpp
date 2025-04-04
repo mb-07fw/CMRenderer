@@ -4,19 +4,19 @@
 namespace CMRenderer
 {
 	CMWindowData::CMWindowData() noexcept
-		: WindowTitle(S_DEFAULT_WINDOW_TITLE), Width(S_DEFAULT_WIDTH),
-		  Height(S_DEFAULT_HEIGHT), UseFullscreen(false)
+		: WindowTitle(S_DEFAULT_WINDOW_TITLE), InitialWidth(S_DEFAULT_WIDTH),
+		  InitialHeight(S_DEFAULT_HEIGHT), UseFullscreen(false)
 	{
 	}
 
 	CMWindowData::CMWindowData(
 		std::wstring_view windowTitle,
 		bool useFullscreen,
-		uint32_t width,
-		uint32_t height
+		LONG width,
+		LONG height
 	) noexcept
 		: WindowTitle(windowTitle), UseFullscreen(useFullscreen),
-		Width(width), Height(height)
+		  InitialWidth(width), InitialHeight(height)
 	{
 	}
 
@@ -33,12 +33,12 @@ namespace CMRenderer
 
 	void CMWindowSettings::SetWidthToDefault() noexcept
 	{
-		Current.Width = DEFAULT.Width;
+		Current.InitialWidth = DEFAULT.InitialWidth;
 	}
 
 	void CMWindowSettings::SetHeightToDefault() noexcept
 	{
-		Current.Height = DEFAULT.Height;
+		Current.InitialHeight = DEFAULT.InitialHeight;
 	}
 
 	void CMWindowSettings::SetFullscreenToDefault() noexcept

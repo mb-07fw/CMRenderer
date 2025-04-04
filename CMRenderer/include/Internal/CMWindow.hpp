@@ -41,7 +41,7 @@ namespace CMRenderer
 		inline [[nodiscard]] bool IsFocused() const noexcept { return m_Focused; }
 
 		inline [[nodiscard]] const HWND Handle() const noexcept { return m_WindowHandle; }
-		inline [[nodiscard]] RECT ClientArea() const noexcept { return m_ClientArea; }
+		inline [[nodiscard]] RECT ClientArea() const noexcept { return m_WindowSettingsRef.Current.ClientArea; }
 		inline [[nodiscard]] CMKeyboard& Keyboard() noexcept { return m_Keyboard; }
 	private:
 		void SetShutdownState() noexcept;
@@ -67,7 +67,6 @@ namespace CMRenderer
 		HINSTANCE m_hInstance = nullptr;
 		HWND m_WindowHandle = nullptr;
 		CMKeyboard m_Keyboard;
-		RECT m_ClientArea = {};
 		bool m_Initialized = false;
 		bool m_Shutdown = false;
 		bool m_Running = false;

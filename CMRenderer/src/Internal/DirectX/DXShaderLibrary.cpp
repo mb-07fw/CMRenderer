@@ -145,7 +145,7 @@ namespace CMRenderer::CMDirectX
 			L"CMShaderLibrary [GetCompiledShaderDirectory] | Working directory : ",
 			workingPath.wstring()
 		);
-
+	
 		outPathRef = workingPath.parent_path() / "build" / CM_CONFIG / "Out";
 		m_CompiledShaderDirectory = outPathRef.wstring();
 
@@ -281,8 +281,10 @@ namespace CMRenderer::CMDirectX
 	{
 		if (fileName == S_DEFAULT_VS_NAME || fileName == S_DEFAULT_PS_NAME)
 			return CMImplementedShaderType::DEFAULT;
-		else if (fileName == S_POS2D_COLOR_TRANSFORM_VS_NAME || fileName == S_POS2D_COLOR_TRANSFORM_PS_NAME)
-			return CMImplementedShaderType::POS2D_COLOR_TRANSFORM;
+		else if (fileName == S_DEFAULT3D_VS_NAME || fileName == S_DEFAULT3D_PS_NAME)
+			return CMImplementedShaderType::DEFAULT3D;
+		else if (fileName == S_POS2D_INTERCOLOR_VS_NAME || fileName == S_POS2D_INTERCOLOR_PS_NAME)
+			return CMImplementedShaderType::POS2D_INTERCOLOR;
 
 		return CMImplementedShaderType::INVALID;
 	}
@@ -291,11 +293,29 @@ namespace CMRenderer::CMDirectX
 	{
 		switch (implementedType)
 		{
-		case CMImplementedShaderType::POS2D_COLOR_TRANSFORM: [[fallthrough]];
+		case CMImplementedShaderType::POS2D_INTERCOLOR:
+		{
+			D3D11_INPUT_ELEMENT_DESC descs[] = {
+				{ "InterColor", 0u, DXGI_FORMAT_R8G8B8A8_UNORM, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u },
+				{ "Pos2D", 0u, DXGI_FORMAT_R32G32_UINT, 0u, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0u}
+			};
+
+			outDesc.Set(descs);
+			return;
+		}
 		case CMImplementedShaderType::DEFAULT:
 		{
 			D3D11_INPUT_ELEMENT_DESC descs[] = {
-				{ "POSITION", 0u, DXGI_FORMAT_R32G32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u }
+				{ "Pos2D", 0u, DXGI_FORMAT_R32G32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u }
+			};
+
+			outDesc.Set(descs);
+			return;
+		}
+		case CMImplementedShaderType::DEFAULT3D:
+		{
+			D3D11_INPUT_ELEMENT_DESC descs[] = {
+				{ "Pos3D", 0u, DXGI_FORMAT_R32G32B32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u }
 			};
 
 			outDesc.Set(descs);

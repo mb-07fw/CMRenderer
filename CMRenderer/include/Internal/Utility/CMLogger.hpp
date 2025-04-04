@@ -2,6 +2,7 @@
 
 #include "Core/CMMacros.hpp"
 
+#include <iostream>
 #include <string_view>
 #include <fstream>
 #include <type_traits>

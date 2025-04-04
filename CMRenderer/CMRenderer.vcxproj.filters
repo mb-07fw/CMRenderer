@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\CMRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -40,6 +37,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Internal\DirectX\DXComponents.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Internal\CMKeyboard.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Internal\DirectX\DXShape.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Internal\DirectX\DXCamera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -92,11 +101,19 @@
     <ClInclude Include="include\Internal\CMKeyboard.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\Internal\DirectX\DXShape.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Internal\DirectX\DXCamera.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="resources\shaders\DefaultVS.hlsl" />
     <FxCompile Include="resources\shaders\DefaultPS.hlsl" />
-    <FxCompile Include="resources\shaders\Pos2D_Color_TransformVS.hlsl" />
-    <FxCompile Include="resources\shaders\Pos2D_Color_TransformPS.hlsl" />
+    <FxCompile Include="resources\shaders\Pos2D_InterColorVS.hlsl" />
+    <FxCompile Include="resources\shaders\Pos2D_InterColorPS.hlsl" />
+    <FxCompile Include="resources\shaders\Default3D_VS.hlsl" />
+    <FxCompile Include="resources\shaders\Default3D_PS.hlsl" />
   </ItemGroup>
 </Project>

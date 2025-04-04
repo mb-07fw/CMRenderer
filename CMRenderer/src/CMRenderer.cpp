@@ -7,7 +7,7 @@ namespace CMRenderer
 		: m_CMLogger(S_LIFETIME_LOG_FILE_NAME),
 		  m_Settings(settings),
 		  m_Window(m_Settings, m_CMLogger),
-		  m_RenderContext(m_CMLogger)
+		  m_RenderContext(m_CMLogger, m_Settings.WindowSettings.Current)
 	{
 		m_CMLogger.LogInfoNL(L"CMRenderer [()] | Constructed.");
 	}
@@ -30,7 +30,7 @@ namespace CMRenderer
 		}
 
 		m_Window.Init();
-		m_RenderContext.Init(m_Window.Handle(), m_Window.ClientArea());
+		m_RenderContext.Init(m_Window.Handle());
 
 		m_Initialized = true;
 		m_Shutdown = false;
@@ -53,21 +53,17 @@ namespace CMRenderer
 
 	void CMRenderer::Run() noexcept
 	{
-		std::array<float, 12> array = {
-			 -0.5f,  0.5f,
-			  0.5f, -0.5f,
-			 -0.5f, -0.5f,
-			  0.5f,  0.5f,
-		};
-
-		std::array<short, 6> indices = {
-			0, 1, 2,
-			0, 3, 1
-		};
-
 		CMKeyboard& keyboardRef = m_Window.Keyboard();
 
-		float angle = 0.0f;
+		constexpr float ROTATION_CONSTANT = 1.0f;
+		constexpr float ROTATION_DEFAULT = 30.0f;
+		float rotAngleX = 0.0f;
+		float rotAngleY = ROTATION_DEFAULT;
+
+		constexpr float OFFSET_CONSTANT = 0.5f;
+		float offsetX = 0.0f;
+		float offsetY = 0.0f;
+
 		while (m_Window.IsRunning())
 		{
 			m_Window.HandleMessages();
@@ -97,15 +93,37 @@ namespace CMRenderer
 				else
 					m_CMLogger.LogInfoNL(L"CMRenderer [Run] | Minimize key was pressed, but window is already minimized.");
 			}
-
-			if (m_Window.IsFocused())
+			else
 			{
-				m_RenderContext.Clear({ 0.5f, 0.0f, 0.5f, 0.0f });
-				m_RenderContext.DrawIndexed(array, indices, angle);
-				m_RenderContext.Present();
+				if (keyboardRef.IsPressed('w'))
+					offsetY -= OFFSET_CONSTANT;
+				if (keyboardRef.IsPressed('s'))
+					offsetY += OFFSET_CONSTANT;
+				if (keyboardRef.IsPressed('a'))
+					offsetX += OFFSET_CONSTANT;
+				if (keyboardRef.IsPressed('d'))
+					offsetX -= OFFSET_CONSTANT;
+				if (keyboardRef.IsPressed('1'))
+					rotAngleX += ROTATION_CONSTANT;
+				if (keyboardRef.IsPressed('2'))
+					rotAngleX -= ROTATION_CONSTANT;
+				if (keyboardRef.IsPressed('3'))
+					rotAngleY += ROTATION_CONSTANT;
+				if (keyboardRef.IsPressed('4'))
+					rotAngleY -= ROTATION_CONSTANT;
+				else if (keyboardRef.IsPressed('r'))
+				{
+					offsetX = 0.0f;
+					offsetY = 0.0f;
+
+					rotAngleX = 0.0f;
+					rotAngleY = ROTATION_DEFAULT;
+				}
 			}
 
-			angle += 0.05f;
+			m_RenderContext.Clear({ 0.0f, 0.0f, 0.0f, 0.0f });
+			m_RenderContext.TestDraw(rotAngleX, rotAngleY, offsetX, offsetY);
+			m_RenderContext.Present();
 
 			Sleep(10);
 		}

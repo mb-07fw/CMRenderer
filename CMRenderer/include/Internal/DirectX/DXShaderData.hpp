@@ -6,21 +6,30 @@
 #include <string>
 #include <string_view>
 #include <array>
+#include <cstdint>
 
 #include "Internal/Utility/CMStaticArray.hpp"
 
 namespace CMRenderer::CMDirectX
 {
+	struct CMPos2DInterColorInput
+	{
+		uint8_t r, g, b, a;
+		uint32_t x, y;
+	};
+
 	enum class CMImplementedShaderType
 	{
 		INVALID = -1,
 		DEFAULT,
-		POS2D_COLOR_TRANSFORM
+		DEFAULT3D,
+		POS2D_INTERCOLOR
 	};
 
-	inline constexpr std::array<CMImplementedShaderType, 2> G_IMPLEMENTED_SHADER_TYPES = {
+	inline constexpr std::array<CMImplementedShaderType, 3> G_IMPLEMENTED_SHADER_TYPES = {
 		CMImplementedShaderType::DEFAULT,
-		CMImplementedShaderType::POS2D_COLOR_TRANSFORM
+		CMImplementedShaderType::DEFAULT3D,
+		CMImplementedShaderType::POS2D_INTERCOLOR
 	};
 
 	enum class CMShaderType
@@ -83,7 +92,8 @@ namespace CMRenderer::CMDirectX
 		{
 		case CMImplementedShaderType::INVALID:				 return std::wstring_view(L"INVALID");
 		case CMImplementedShaderType::DEFAULT:				 return std::wstring_view(L"DEFAULT");
-		case CMImplementedShaderType::POS2D_COLOR_TRANSFORM: return std::wstring_view(L"POS2D_COLOR_TRANSFORM");
+		case CMImplementedShaderType::DEFAULT3D:			 return std::wstring_view(L"DEFAULT3D");
+		case CMImplementedShaderType::POS2D_INTERCOLOR:		 return std::wstring_view(L"POS2D_INTERCOLOR");
 		default:											 return std::wstring_view(L"NONE");
 		}
 	}
