@@ -4,13 +4,8 @@
 
 namespace CMRenderer::CMDirectX
 {
-	CMCube::CMCube(uint32_t width, uint32_t height, uint32_t depth) noexcept
-		: Width(width), Height(height), Depth(depth)
+	DXCube::DXCube(DirectX::XMFLOAT3 pos) noexcept
+		: Pos(pos)
 	{
-	}
-
-	CMNormCube::CMNormCube(CMCube cube, uint32_t width, uint32_t height) noexcept
-	{
-		
 	}
 }

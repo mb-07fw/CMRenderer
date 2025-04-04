@@ -37,6 +37,7 @@ namespace CMRenderer::CMDirectX
 
 		void Clear(NormColor normColor) noexcept;
 		void TestDraw(float rotAngleX, float rotAngleY, float offsetX, float offsetY) noexcept;
+		void TestTextureDraw() noexcept;
 		void Present() noexcept;
 
 		//void Draw(CMRect rect) noexcept;
@@ -58,8 +59,8 @@ namespace CMRenderer::CMDirectX
 		Components::DXSwapChain m_SwapChain;
 		CM_IF_NDEBUG_REPLACE(
 			HMODULE m_DebugInterfaceModule = nullptr;
-		Microsoft::WRL::ComPtr<IDXGIDebug> mP_DebugInterface;
-		Components::DXInfoQueue m_InfoQueue;
+			Microsoft::WRL::ComPtr<IDXGIDebug> mP_DebugInterface;
+			Components::DXInfoQueue m_InfoQueue;
 		)
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> mP_RTV;
 		CMShaderLibrary m_ShaderLibrary;

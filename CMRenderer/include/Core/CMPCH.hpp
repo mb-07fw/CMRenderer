@@ -4,6 +4,8 @@
 #include <Windows.h>
 #include <WinUser.h>
 
+#include <roapi.h>
+
 #include <d3d11.h>
 #include <d3dcompiler.h>
 
@@ -12,6 +14,8 @@
 
 #include <wrl/client.h>
 #include <DirectXMath.h>
+
+#include <WICTextureLoader.h>
 
 #include <cstdint>
 #include <cstring>

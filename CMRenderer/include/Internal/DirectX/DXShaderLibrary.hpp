@@ -21,20 +21,24 @@ namespace CMRenderer::CMDirectX
 		CMShaderLibrary(Utility::CMLoggerWide& cmLoggerRef) noexcept;
 		~CMShaderLibrary() noexcept;
 	public:
-		void Init() noexcept;
+		void Init(Components::DXDevice& deviceRef) noexcept;
 		void Shutdown() noexcept;
 
-		[[nodiscard]] const CMShaderSet& GetSetOfType(CMImplementedShaderType implementedType) noexcept;
+		[[nodiscard]] DXShaderSet& GetSetOfType(DXImplementedShaderType implementedType) noexcept;
 
 		inline [[nodiscard]] bool IsInitialized() const noexcept { return m_Initialized; }
 		inline [[nodiscard]] bool IsShutdown() const noexcept { return m_Shutdown; }
 	private:
+		void LoadShaders() noexcept;
+
+		void CreateAllShaders(Components::DXDevice& deviceRef) noexcept;
+
 		void GetCompiledShaderDirectory(std::filesystem::path& outPathRef) noexcept;
-		void GetAllShaderData(std::vector<CMShaderData>& outDataRef, const std::filesystem::path& compiledShaderPathRef) noexcept;
+		void GetAllShaderData(std::vector<DXShaderData>& outDataRef, const std::filesystem::path& compiledShaderPathRef) noexcept;
 
 		[[nodiscard]] size_t TotalCompiledShaders(const std::filesystem::path& compiledShaderPathRef) const noexcept;
-		[[nodiscard]] CMImplementedShaderType CorrespondingImplementedType(const std::wstring& fileName) const noexcept;
-		[[nodiscard]] void GetCorrespondingDescription(Utility::CMStaticArray<D3D11_INPUT_ELEMENT_DESC>& outDesc, CMImplementedShaderType implementedType) const noexcept;
+		[[nodiscard]] DXImplementedShaderType CorrespondingImplementedType(const std::wstring& fileName) const noexcept;
+		[[nodiscard]] void GetCorrespondingDescription(Utility::CMStaticArray<D3D11_INPUT_ELEMENT_DESC>& outDesc, DXImplementedShaderType implementedType) const noexcept;
 	private:
 		static constexpr size_t S_EXPECTED_NUM_SHADERS = 6;
 		static constexpr size_t S_EXPECTED_NUM_SHADER_SETS = 3;
@@ -46,7 +50,7 @@ namespace CMRenderer::CMDirectX
 		static constexpr std::wstring_view S_POS2D_INTERCOLOR_PS_NAME = L"Pos2D_InterColorPS.cso";
 		Utility::CMLoggerWide& m_CMLoggerRef;
 		std::wstring m_CompiledShaderDirectory;
-		std::vector<CMShaderSet> m_ShaderSets;
+		std::vector<DXShaderSet> m_ShaderSets;
 		bool m_Initialized = false;
 		bool m_Shutdown = false;
 	};

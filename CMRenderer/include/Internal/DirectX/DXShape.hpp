@@ -2,9 +2,11 @@
 
 #include <cstdint>
 
+#include <DirectXMath.h>
+
 namespace CMRenderer::CMDirectX
 {
-	struct CMRect 
+	struct DXRect 
 	{
 		uint32_t Left = 0;
 		uint32_t Top = 0;
@@ -12,21 +14,20 @@ namespace CMRenderer::CMDirectX
 		uint32_t Bottom = 0;
 	};
 
-	struct CMCube
+	struct DXCube
 	{
-		CMCube(uint32_t width, uint32_t height, uint32_t depth) noexcept;
+		DXCube() = default;
+		DXCube(DirectX::XMFLOAT3 pos) noexcept;
 
-		uint32_t Width = 0;
-		uint32_t Height = 0;
-		uint32_t Depth = 0;
+		DirectX::XMFLOAT3 Pos;
 	};
 
-	struct CMNormCube
+	/*struct CMNormCube
 	{
 		CMNormCube(CMCube cube, uint32_t width, uint32_t height) noexcept;
 
 		float NormWidth = 0;
 		float NormHeight = 0;
 		float NormDepth = 0;
-	};
+	};*/
 }

@@ -116,4 +116,7 @@
     <FxCompile Include="resources\shaders\Default3D_VS.hlsl" />
     <FxCompile Include="resources\shaders\Default3D_PS.hlsl" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
 </Project>

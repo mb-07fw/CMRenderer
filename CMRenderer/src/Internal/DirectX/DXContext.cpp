@@ -74,13 +74,15 @@ namespace CMRenderer::CMDirectX
 			}
 		);
 
-		m_ShaderLibrary.Init();
+		m_ShaderLibrary.Init(m_Device);
 
 		CreateRTV();
 		SetViewport();
 		SetTopology();
 
 		m_CMLoggerRef.LogInfoNL(L"DXContext [Init] | Initialized.");
+
+		DXCube cube = {};
 
 		m_Initialized = true;
 		m_Shutdown = false;
@@ -184,7 +186,11 @@ namespace CMRenderer::CMDirectX
 
 		
 
-		const CMShaderSet& shaderSet = m_ShaderLibrary.GetSetOfType(CMImplementedShaderType::DEFAULT3D);
+		DXShaderSet& shaderSet = m_ShaderLibrary.GetSetOfType(DXImplementedShaderType::DEFAULT3D);
+
+		if (!shaderSet.IsCreated())
+			m_CMLoggerRef.LogFatalNL(L"DXContext [TestDraw] | Shader set wasn't created previously.");
+
 		Microsoft::WRL::ComPtr<ID3D11InputLayout> pInputLayout;
 
 		HRESULT hResult = m_Device->CreateInputLayout(
@@ -201,43 +207,15 @@ namespace CMRenderer::CMDirectX
 			m_CMLoggerRef.LogFatal(L"DXContext [TestDraw] | An error occured when creating the input layout.\n");
 		}
 
-		Microsoft::WRL::ComPtr<ID3D11VertexShader> pVertexShader;
-		hResult = m_Device->CreateVertexShader(
-			shaderSet.VertexData().pBytecode->GetBufferPointer(),
-			shaderSet.VertexData().pBytecode->GetBufferSize(),
-			nullptr,
-			&pVertexShader
-		);
-
-		if (hResult != S_OK)
-		{
-			CM_IF_DEBUG(m_InfoQueue.LogMessages());
-			m_CMLoggerRef.LogFatalNL(L"DXContext [TestDraw] | An error occured when creating the vertex shader.");
-		}
-
-		Microsoft::WRL::ComPtr<ID3D11PixelShader> pPixelShader;
-		hResult = m_Device->CreatePixelShader(
-			shaderSet.PixelData().pBytecode->GetBufferPointer(),
-			shaderSet.PixelData().pBytecode->GetBufferSize(),
-			nullptr,
-			&pPixelShader
-		);
-
-		if (hResult != S_OK)
-		{
-			CM_IF_DEBUG(m_InfoQueue.LogMessages());
-			m_CMLoggerRef.LogFatalNL(L"DXContext [TestDraw] | An error occured when creating the pixel shader.");
-		}
-
 		Microsoft::WRL::ComPtr<ID3D11Buffer> pVertexBuffer;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> pIndexBuffer;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> pCBTransform;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> pCBColors;
 
-		UINT stride = sizeof(CMPos2DInterColorInput);
+		UINT stride = sizeof(DXPos2DInterColorInput);
 		UINT offset = 0;
 
-		CD3D11_BUFFER_DESC vDesc((UINT)vertices.size() * sizeof(CMPos2DInterColorInput), D3D11_BIND_VERTEX_BUFFER);
+		CD3D11_BUFFER_DESC vDesc((UINT)vertices.size() * sizeof(DXPos2DInterColorInput), D3D11_BIND_VERTEX_BUFFER);
 		D3D11_SUBRESOURCE_DATA vData = {};
 		vData.pSysMem = vertices.data();
 
@@ -260,15 +238,10 @@ namespace CMRenderer::CMDirectX
 			CM_IF_DEBUG(m_InfoQueue.LogMessages());
 			m_CMLoggerRef.LogFatalNL(L"DXContext [TestDraw] | An error occured when creating the index buffer.");
 		}
-
-
 		
 		float aspectRatio = (float)m_CurrentWindowDataRef.ClientArea.right / m_CurrentWindowDataRef.ClientArea.bottom;
 
 		DXCamera camera(0.0f, 0.0f, -15.0f, 45.0f, aspectRatio);
-
-		/*DirectX::XMMATRIX worldMatrix = DirectX::XMMatrixTranslation(offsetX, offsetY, 0.0f) * 
-			DirectX::XMMatrixRotationZ(angle) * DirectX::XMMatrixRotationX(angle);*/
 
 		DirectX::XMMATRIX worldMatrix = DirectX::XMMatrixTranslation(offsetX, offsetY, 0.0f) * 
 			DirectX::XMMatrixRotationX(DirectX::XMConvertToRadians(rotAngleX)) * 
@@ -316,8 +289,8 @@ namespace CMRenderer::CMDirectX
 		m_Device.ContextRaw()->IASetIndexBuffer(pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
 		m_Device.ContextRaw()->IASetInputLayout(pInputLayout.Get());
 
-		m_Device.ContextRaw()->VSSetShader(pVertexShader.Get(), nullptr, 0);
-		m_Device.ContextRaw()->PSSetShader(pPixelShader.Get(), nullptr, 0);
+		m_Device.ContextRaw()->VSSetShader(shaderSet.VertexShader(), nullptr, 0);
+		m_Device.ContextRaw()->PSSetShader(shaderSet.PixelShader(), nullptr, 0);
 
 		m_Device.ContextRaw()->VSSetConstantBuffers(0, 1, pCBTransform.GetAddressOf());
 		m_Device.ContextRaw()->PSSetConstantBuffers(0, 1, pCBColors.GetAddressOf());
@@ -331,6 +304,12 @@ namespace CMRenderer::CMDirectX
 				m_CMLoggerRef.LogFatalNL(L"DXContext [TestDraw] | Debug messages generated after drawing.");
 			}
 		);
+	}
+
+
+	void DXContext::TestTextureDraw() noexcept
+	{
+
 	}
 
 	void DXContext::Present() noexcept

@@ -6,7 +6,8 @@ namespace CMRenderer::CMDirectX
 	CMShaderLibrary::CMShaderLibrary(Utility::CMLoggerWide& cmLoggerRef) noexcept
 		: m_CMLoggerRef(cmLoggerRef)
 	{
-		m_ShaderSets.reserve(S_EXPECTED_NUM_SHADER_SETS);
+		LoadShaders();
+
 		m_CMLoggerRef.LogInfoNL(L"CMShaderLibrary [()] | Constructed.");
 	}
 
@@ -18,7 +19,7 @@ namespace CMRenderer::CMDirectX
 		m_CMLoggerRef.LogInfoNL(L"CMShaderLibrary [~()] | Destroyed.");
 	}
 
-	void CMShaderLibrary::Init() noexcept
+	void CMShaderLibrary::Init(Components::DXDevice& deviceRef) noexcept
 	{
 		if (m_Initialized)
 		{
@@ -26,77 +27,7 @@ namespace CMRenderer::CMDirectX
 			return;
 		}
 
-		std::filesystem::path compiledShaderPath;
-		GetCompiledShaderDirectory(compiledShaderPath);
-
-		std::vector<CMShaderData> shaderData;
-		GetAllShaderData(shaderData, compiledShaderPath);
-
-		std::wstring message;
-		for (CMImplementedShaderType implementedType : G_IMPLEMENTED_SHADER_TYPES)
-		{
-			const CMShaderData* pVertexData = nullptr;
-			const CMShaderData* pPixelData = nullptr;
-
-			for (const CMShaderData& data : shaderData)
-			{
-				if (data.ImplementedType != implementedType)
-					continue;
-
-				switch (data.Type)
-				{
-				case CMShaderType::INVALID:
-					m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [Init] | A collected shader has an invalid CMShaderType.");
-					break; // LogFatal will terminate the program anyway...
-				case CMShaderType::VERTEX:
-					if (pVertexData != nullptr)
-						m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [Init] | A second vertex shader was found for the same CMImplementedShaderType.");
-
-					pVertexData = &data;
-					break;
-				case CMShaderType::PIXEL:
-					if (pVertexData != nullptr)
-						m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [Init] | A second pixel shader was found for the same CMImplementedShaderType.");
-
-					pPixelData = &data;
-					break;
-				default:
-					m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [Init] | No matching cases found for the CMShaderType of a shader.");
-				}
-			}
-
-			if (pVertexData == nullptr)
-			{
-				m_CMLoggerRef.LogFatalNLAppend(
-					L"CMShaderLibrary [Init] | No vertex shader was found for the CMImplementedType : ",
-					CMShaderData::ImplementedToWStrView(implementedType)
-				);
-				return; // Here so Intelisense doesn't yell at me for dereferencing a null pointer.
-			}
-			else if (pPixelData == nullptr)
-			{
-				m_CMLoggerRef.LogFatalNLAppend(
-					L"CMShaderLibrary [Init] | No pixel shader was found for the CMImplementedType : ",
-					CMShaderData::ImplementedToWStrView(implementedType)
-				);
-				return; // Here so Intelisense doesn't yell at me for dereferencing a null pointer.
-			}
-
-			Utility::CMStaticArray<D3D11_INPUT_ELEMENT_DESC> desc;
-			GetCorrespondingDescription(desc, implementedType);
-
-			m_ShaderSets.emplace_back(*pVertexData, *pPixelData, desc, implementedType);
-		}
-
-		if (m_ShaderSets.size() != S_EXPECTED_NUM_SHADER_SETS)
-		{
-			m_CMLoggerRef.LogFatalNLVariadic(
-				-1,
-				L"CMShaderLibrary [Init] | Failed to collect the expected amount of shader sets.",
-				"(Collected : ", m_ShaderSets.size(),
-				L" | Expected : ", S_EXPECTED_NUM_SHADER_SETS
-			);
-		}
+		CreateAllShaders(deviceRef);
 
 		m_Initialized = true;
 		m_Shutdown = false;
@@ -124,17 +55,100 @@ namespace CMRenderer::CMDirectX
 		m_CMLoggerRef.LogInfoNL(L"CMShaderLibrary [Shutdown] | Shutdown.");
 	}
 
-	[[nodiscard]] const CMShaderSet& CMShaderLibrary::GetSetOfType(CMImplementedShaderType implementedType) noexcept
+	[[nodiscard]] DXShaderSet& CMShaderLibrary::GetSetOfType(DXImplementedShaderType implementedType) noexcept
 	{
 		if (!m_Initialized)
 			m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [GetSetOfType] | Attempted to retrieve a shader set before initialization occured.");
 
-		for (const CMShaderSet& set : m_ShaderSets)
+		for (DXShaderSet& set : m_ShaderSets)
 			if (set.ImplementedType() == implementedType)
 				return set;
 
 		m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [GetSetOfType] | Couldn't find a shader set with the matching implemented type.");
 		return m_ShaderSets.back();
+	}
+
+	void CMShaderLibrary::LoadShaders() noexcept
+	{
+		m_ShaderSets.reserve(S_EXPECTED_NUM_SHADER_SETS);
+
+		std::filesystem::path compiledShaderPath;
+		GetCompiledShaderDirectory(compiledShaderPath);
+
+		std::vector<DXShaderData> shaderData;
+		GetAllShaderData(shaderData, compiledShaderPath);
+
+		std::wstring message;
+		for (DXImplementedShaderType implementedType : G_IMPLEMENTED_SHADER_TYPES)
+		{
+			const DXShaderData* pVertexData = nullptr;
+			const DXShaderData* pPixelData = nullptr;
+
+			for (const DXShaderData& data : shaderData)
+			{
+				if (data.ImplementedType != implementedType)
+					continue;
+
+				switch (data.Type)
+				{
+				case DXShaderType::INVALID:
+					m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [Init] | A collected shader has an invalid CMShaderType.");
+					break; // LogFatal will terminate the program anyway...
+				case DXShaderType::VERTEX:
+					if (pVertexData != nullptr)
+						m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [Init] | A second vertex shader was found for the same CMImplementedShaderType.");
+
+					pVertexData = &data;
+					break;
+				case DXShaderType::PIXEL:
+					if (pVertexData != nullptr)
+						m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [Init] | A second pixel shader was found for the same CMImplementedShaderType.");
+
+					pPixelData = &data;
+					break;
+				default:
+					m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [Init] | No matching cases found for the CMShaderType of a shader.");
+				}
+			}
+
+			if (pVertexData == nullptr)
+			{
+				m_CMLoggerRef.LogFatalNLAppend(
+					L"CMShaderLibrary [Init] | No vertex shader was found for the CMImplementedType : ",
+					DXShaderData::ImplementedToWStrView(implementedType)
+				);
+				return; // Here so Intelisense doesn't yell at me for dereferencing a null pointer.
+			}
+			else if (pPixelData == nullptr)
+			{
+				m_CMLoggerRef.LogFatalNLAppend(
+					L"CMShaderLibrary [Init] | No pixel shader was found for the CMImplementedType : ",
+					DXShaderData::ImplementedToWStrView(implementedType)
+				);
+				return; // Here so Intelisense doesn't yell at me for dereferencing a null pointer.
+			}
+
+			Utility::CMStaticArray<D3D11_INPUT_ELEMENT_DESC> desc;
+			GetCorrespondingDescription(desc, implementedType);
+
+			m_ShaderSets.emplace_back(*pVertexData, *pPixelData, desc, implementedType);
+		}
+
+		if (m_ShaderSets.size() != S_EXPECTED_NUM_SHADER_SETS)
+		{
+			m_CMLoggerRef.LogFatalNLVariadic(
+				-1,
+				L"CMShaderLibrary [Init] | Failed to collect the expected amount of shader sets.",
+				"(Collected : ", m_ShaderSets.size(),
+				L" | Expected : ", S_EXPECTED_NUM_SHADER_SETS
+			);
+		}
+	}
+
+	void CMShaderLibrary::CreateAllShaders(Components::DXDevice& deviceRef) noexcept
+	{
+		for (DXShaderSet& shaderSet : m_ShaderSets)
+			shaderSet.CreateShaders(deviceRef, m_CMLoggerRef);
 	}
 
 	void CMShaderLibrary::GetCompiledShaderDirectory(std::filesystem::path& outPathRef) noexcept
@@ -160,20 +174,20 @@ namespace CMRenderer::CMDirectX
 			m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [GetCompiledShaderDirectory] | Shader directory wasn't a directory.");
 	}
 
-	void CMShaderLibrary::GetAllShaderData(std::vector<CMShaderData>& outDataRef, const std::filesystem::path& compiledShaderPathRef) noexcept
+	void CMShaderLibrary::GetAllShaderData(std::vector<DXShaderData>& outDataRef, const std::filesystem::path& compiledShaderPathRef) noexcept
 	{
-		size_t totalShaders = TotalCompiledShaders(compiledShaderPathRef);
-		outDataRef.reserve(totalShaders);
+		outDataRef.reserve(S_EXPECTED_NUM_SHADERS);
+		size_t totalShadersPresent = TotalCompiledShaders(compiledShaderPathRef);
 
 		std::wstring message;
 
-		if (totalShaders == 0)
+		if (totalShadersPresent == 0)
 			m_CMLoggerRef.LogFatalNL(L"CMShaderLibrary [GetAllShaderData] | No shaders were found.");
-		else if (totalShaders != S_EXPECTED_NUM_SHADERS)
+		else if (totalShadersPresent != S_EXPECTED_NUM_SHADERS)
 			m_CMLoggerRef.LogFatalNLVariadic(
 				-1,
 				L"CMShaderLibrary [GetAllShaderData] | The amount of compiled shaders didn't match the expected amount.",
-				"(Collected : ", totalShaders,
+				"(Collected : ", totalShadersPresent,
 				L" | Expected : ", S_EXPECTED_NUM_SHADERS
 			);
 
@@ -201,12 +215,12 @@ namespace CMRenderer::CMDirectX
 
 			// Extract the flag (e.g., "VS", "PS") of the shader.
 			std::wstring shaderFlag = fileName.substr(fileName.size() - 6, 2);
-			CMShaderType shaderType = CMShaderType::INVALID;
+			DXShaderType shaderType = DXShaderType::INVALID;
 
-			if (shaderFlag == CMShaderData::S_VERTEX_FLAG)
-				shaderType = CMShaderType::VERTEX;
-			else if (shaderFlag == CMShaderData::S_PIXEL_FLAG)
-				shaderType = CMShaderType::PIXEL;
+			if (shaderFlag == DXShaderData::S_VERTEX_FLAG)
+				shaderType = DXShaderType::VERTEX;
+			else if (shaderFlag == DXShaderData::S_PIXEL_FLAG)
+				shaderType = DXShaderType::PIXEL;
 			else
 				m_CMLoggerRef.LogFatalNLVariadic(
 					-1,
@@ -222,7 +236,7 @@ namespace CMRenderer::CMDirectX
 					fileName
 				);
 
-			CMImplementedShaderType implementedType = CorrespondingImplementedType(fileName);
+			DXImplementedShaderType implementedType = CorrespondingImplementedType(fileName);
 			
 			m_CMLoggerRef.LogInfoNLAppend(
 				L"CMShaderLibrary [GetAllShaderData] | Found valid shader : ",
@@ -236,10 +250,10 @@ namespace CMRenderer::CMDirectX
 
 			m_CMLoggerRef.LogInfoNLAppend(
 				L"CMShaderLibrary [GetAllShaderData] | Implemented type : ",
-				CMShaderData::ImplementedToWStrView(implementedType)
+				DXShaderData::ImplementedToWStrView(implementedType)
 			);
 
-			if (implementedType == CMImplementedShaderType::INVALID)
+			if (implementedType == DXImplementedShaderType::INVALID)
 				m_CMLoggerRef.LogFatalNLAppend(
 					L"CMShaderLibrary [GetAllShaderData] | Failed to find a matching implemented type for the shader : ",
 					fileName
@@ -277,23 +291,23 @@ namespace CMRenderer::CMDirectX
 		return totalShaders;
 	}
 
-	[[nodiscard]] CMImplementedShaderType CMShaderLibrary::CorrespondingImplementedType(const std::wstring& fileName) const noexcept
+	[[nodiscard]] DXImplementedShaderType CMShaderLibrary::CorrespondingImplementedType(const std::wstring& fileName) const noexcept
 	{
 		if (fileName == S_DEFAULT_VS_NAME || fileName == S_DEFAULT_PS_NAME)
-			return CMImplementedShaderType::DEFAULT;
+			return DXImplementedShaderType::DEFAULT;
 		else if (fileName == S_DEFAULT3D_VS_NAME || fileName == S_DEFAULT3D_PS_NAME)
-			return CMImplementedShaderType::DEFAULT3D;
+			return DXImplementedShaderType::DEFAULT3D;
 		else if (fileName == S_POS2D_INTERCOLOR_VS_NAME || fileName == S_POS2D_INTERCOLOR_PS_NAME)
-			return CMImplementedShaderType::POS2D_INTERCOLOR;
+			return DXImplementedShaderType::POS2D_INTERCOLOR;
 
-		return CMImplementedShaderType::INVALID;
+		return DXImplementedShaderType::INVALID;
 	}
 
-	[[nodiscard]] void CMShaderLibrary::GetCorrespondingDescription(Utility::CMStaticArray<D3D11_INPUT_ELEMENT_DESC>& outDesc, CMImplementedShaderType implementedType) const noexcept
+	[[nodiscard]] void CMShaderLibrary::GetCorrespondingDescription(Utility::CMStaticArray<D3D11_INPUT_ELEMENT_DESC>& outDesc, DXImplementedShaderType implementedType) const noexcept
 	{
 		switch (implementedType)
 		{
-		case CMImplementedShaderType::POS2D_INTERCOLOR:
+		case DXImplementedShaderType::POS2D_INTERCOLOR:
 		{
 			D3D11_INPUT_ELEMENT_DESC descs[] = {
 				{ "InterColor", 0u, DXGI_FORMAT_R8G8B8A8_UNORM, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u },
@@ -303,7 +317,7 @@ namespace CMRenderer::CMDirectX
 			outDesc.Set(descs);
 			return;
 		}
-		case CMImplementedShaderType::DEFAULT:
+		case DXImplementedShaderType::DEFAULT:
 		{
 			D3D11_INPUT_ELEMENT_DESC descs[] = {
 				{ "Pos2D", 0u, DXGI_FORMAT_R32G32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u }
@@ -312,7 +326,7 @@ namespace CMRenderer::CMDirectX
 			outDesc.Set(descs);
 			return;
 		}
-		case CMImplementedShaderType::DEFAULT3D:
+		case DXImplementedShaderType::DEFAULT3D:
 		{
 			D3D11_INPUT_ELEMENT_DESC descs[] = {
 				{ "Pos3D", 0u, DXGI_FORMAT_R32G32B32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u }
