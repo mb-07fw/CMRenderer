@@ -8,6 +8,8 @@
 
 namespace CMRenderer
 {
+	// NOTE : char: ASCII hotkey support (e.g., 'A', 'Z').
+	// NOTE : wchar_t: Unicode key translation for localized input.
 	class CMKeyboard
 	{
 	public:
@@ -40,8 +42,8 @@ namespace CMRenderer
 		[[nodiscard]] BYTE VKOfChar(char c) noexcept;
 	private:
 		static constexpr USHORT S_TOTAL_VKS = 256;
-		Utility::CMLoggerWide& m_CMLoggerRef;
 		std::array<BYTE, S_TOTAL_VKS> m_KeyStates;
 		HKL m_CurrentInputLocale = nullptr;
+		Utility::CMLoggerWide& m_CMLoggerRef;
 	};
 }

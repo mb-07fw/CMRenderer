@@ -5,10 +5,10 @@
 
 #include <string>
 #include <string_view>
+#include <vector>
 #include <array>
 #include <cstdint>
 
-#include "Internal/Utility/CMStaticArray.hpp"
 #include "Internal/Utility/CMLogger.hpp"
 #include "Internal/DirectX/DXComponents.hpp"
 
@@ -25,12 +25,14 @@ namespace CMRenderer::CMDirectX
 		INVALID = -1,
 		DEFAULT,
 		DEFAULT3D,
+		DEFAULT_TEXTURE,
 		POS2D_INTERCOLOR
 	};
 
-	inline constexpr std::array<DXImplementedShaderType, 3> G_IMPLEMENTED_SHADER_TYPES = {
+	inline constexpr std::array<DXImplementedShaderType, 4> G_IMPLEMENTED_SHADER_TYPES = {
 		DXImplementedShaderType::DEFAULT,
 		DXImplementedShaderType::DEFAULT3D,
+		DXImplementedShaderType::DEFAULT_TEXTURE,
 		DXImplementedShaderType::POS2D_INTERCOLOR
 	};
 
@@ -71,7 +73,7 @@ namespace CMRenderer::CMDirectX
 		DXShaderSet(
 			const DXShaderData& vertexData,
 			const DXShaderData& pixelData,
-			const Utility::CMStaticArray<D3D11_INPUT_ELEMENT_DESC>& descRef, 
+			const std::vector<D3D11_INPUT_ELEMENT_DESC>& descRef, 
 			DXImplementedShaderType implementedType
 		) noexcept;
 
@@ -85,7 +87,7 @@ namespace CMRenderer::CMDirectX
 		inline [[nodiscard]] const DXShaderData& VertexData() const noexcept { return m_VertexData; }
 		inline [[nodiscard]] const DXShaderData& PixelData() const noexcept { return m_PixelData; }
 
-		inline [[nodiscard]] const Utility::CMStaticArray<D3D11_INPUT_ELEMENT_DESC>& Desc() const noexcept { return m_Desc; }
+		inline [[nodiscard]] const std::vector<D3D11_INPUT_ELEMENT_DESC>& Desc() const noexcept { return m_Desc; }
 		inline [[nodiscard]] DXImplementedShaderType ImplementedType() const noexcept { return m_ImplementedType; }
 
 		inline [[nodiscard]] bool IsCreated() const noexcept { return m_Created; }
@@ -93,7 +95,7 @@ namespace CMRenderer::CMDirectX
 		DXShaderData m_VertexData, m_PixelData;
 		Microsoft::WRL::ComPtr<ID3D11VertexShader> mP_VertexShader;
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> mP_PixelShader;
-		Utility::CMStaticArray<D3D11_INPUT_ELEMENT_DESC> m_Desc;
+		std::vector<D3D11_INPUT_ELEMENT_DESC> m_Desc;
 		DXImplementedShaderType m_ImplementedType = DXImplementedShaderType::INVALID;
 		bool m_Created = false;
 	};

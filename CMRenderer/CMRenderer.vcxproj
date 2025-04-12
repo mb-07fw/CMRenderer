@@ -101,26 +101,32 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)build\$(Configuration)\Out\</OutDir>
     <IntDir>$(SolutionDir)build\$(Configuration)\Intermediates\</IntDir>
+    <IncludePath>$(SolutionDir);$(SolutionDir)vendor\DearImGui_CMDep\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)build\$(Configuration)\Out\</OutDir>
     <IntDir>$(SolutionDir)build\$(Configuration)\Intermediates\</IntDir>
+    <IncludePath>$(SolutionDir);$(SolutionDir)vendor\DearImGui_CMDep\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Distribution|Win32'">
     <OutDir>$(SolutionDir)build\$(Configuration)\Out\</OutDir>
     <IntDir>$(SolutionDir)build\$(Configuration)\Intermediates\</IntDir>
+    <IncludePath>$(SolutionDir);$(SolutionDir)vendor\DearImGui_CMDep\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)build\$(Configuration)\Out\</OutDir>
     <IntDir>$(SolutionDir)build\$(Configuration)\Intermediates\</IntDir>
+    <IncludePath>$(SolutionDir);$(SolutionDir)vendor\DearImGui_CMDep\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)build\$(Configuration)\Out\</OutDir>
     <IntDir>$(SolutionDir)build\$(Configuration)\Intermediates\</IntDir>
+    <IncludePath>$(SolutionDir);$(SolutionDir)vendor\DearImGui_CMDep\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Distribution|x64'">
     <OutDir>$(SolutionDir)build\$(Configuration)\Out\</OutDir>
     <IntDir>$(SolutionDir)build\$(Configuration)\Intermediates\</IntDir>
+    <IncludePath>$(SolutionDir);$(SolutionDir)vendor\DearImGui_CMDep\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -138,6 +144,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EntryPointSymbol>
       </EntryPointSymbol>
+      <AdditionalLibraryDirectories>$(SolutionDir)build\vendor\$(Configuration)\Out;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -160,6 +167,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EntryPointSymbol>
       </EntryPointSymbol>
+      <AdditionalLibraryDirectories>$(SolutionDir)build\vendor\$(Configuration)\Out;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Distribution|Win32'">
@@ -182,6 +190,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EntryPointSymbol>
       </EntryPointSymbol>
+      <AdditionalLibraryDirectories>$(SolutionDir)build\vendor\$(Configuration)\Out;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -200,6 +209,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EntryPointSymbol>
       </EntryPointSymbol>
+      <AdditionalLibraryDirectories>$(SolutionDir)build\vendor\$(Configuration)\Out;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -222,6 +232,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EntryPointSymbol>
       </EntryPointSymbol>
+      <AdditionalLibraryDirectories>$(SolutionDir)build\vendor\$(Configuration)\Out;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Distribution|x64'">
@@ -244,11 +255,13 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EntryPointSymbol>
       </EntryPointSymbol>
+      <AdditionalLibraryDirectories>$(SolutionDir)build\vendor\$(Configuration)\Out;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Internal\CMTypes.cpp" />
     <ClCompile Include="src\Internal\DirectX\DXCamera.cpp" />
-    <ClCompile Include="src\Internal\DirectX\DXShape.cpp" />
+    <ClCompile Include="src\Internal\CMShapes.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\CMRenderer.cpp" />
     <ClCompile Include="src\Core\CMPCH.cpp">
@@ -271,8 +284,9 @@
     <ClInclude Include="include\CMRenderer.hpp" />
     <ClInclude Include="include\Core\CMMacros.hpp" />
     <ClInclude Include="include\Internal\CMKeyboard.hpp" />
+    <ClInclude Include="include\Internal\CMTypes.hpp" />
     <ClInclude Include="include\Internal\DirectX\DXCamera.hpp" />
-    <ClInclude Include="include\Internal\DirectX\DXShape.hpp" />
+    <ClInclude Include="include\Internal\CMShapes.hpp" />
     <ClInclude Include="include\Internal\Utility\Utility.hpp" />
     <ClInclude Include="include\Internal\DirectX\DXContext.hpp" />
     <ClInclude Include="include\Internal\Utility\CMLogger.hpp" />
@@ -281,7 +295,6 @@
     <ClInclude Include="include\Internal\CMRendererSettings.hpp" />
     <ClInclude Include="include\Internal\DirectX\DXShaderData.hpp" />
     <ClInclude Include="include\Internal\DirectX\DXShaderLibrary.hpp" />
-    <ClInclude Include="include\Internal\Utility\CMStaticArray.hpp" />
     <ClInclude Include="include\Internal\CMWindow.hpp" />
     <ClInclude Include="include\Internal\DirectX\DXComponents.hpp" />
     <ClInclude Include="include\Internal\DirectX\DXUtility.hpp" />
@@ -303,6 +316,34 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
     <FxCompile Include="resources\shaders\Default3D_VS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Distribution|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Distribution|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Distribution|Win32'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Distribution|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="resources\shaders\DefaultTexture_PS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Distribution|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Distribution|Win32'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Distribution|Win32'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Distribution|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="resources\shaders\DefaultTexture_VS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
@@ -374,6 +415,7 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="cpp.hint" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

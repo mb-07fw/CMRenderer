@@ -5,10 +5,14 @@
 #endif
 
 #pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "d3dcompiler.lib")
+#pragma comment(lib, "D2D1.lib")
+#pragma comment(lib, "Dwrite.lib")
 #pragma comment(lib, "DXGI.lib")
 #pragma comment(lib, "dxguid.lib")
-#pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "runtimeobject.lib") // Windows::Foundation::Initialize, RoInitialize, RoUninitialize
+
+#pragma comment(lib, "DearImGUI_CMDep.lib")
 
 #include "Core/CMMacros.hpp"
 #include "Internal/Utility/CMLogger.hpp"

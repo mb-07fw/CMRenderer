@@ -6,6 +6,8 @@
 
 #include <chrono>
 
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 namespace CMRenderer
 {
 #pragma region Public
@@ -17,49 +19,40 @@ namespace CMRenderer
 		LogCurrentSettings();
 
 		m_hInstance = GetCurrentHINSTANCE();
+
+		m_CMLoggerRef.LogInfoNL(L"CMWindow [()] Initialized.");
 	}
 
 	CMWindow::~CMWindow() noexcept
 	{
 		if (!m_Shutdown)
 			Shutdown();
+
+		m_CMLoggerRef.LogInfoNL(L"CMWindow [~()] | Destroyed.");
 	}
 
 	void CMWindow::Init() noexcept
 	{
-		if (m_Initialized)
-		{
-			m_CMLoggerRef.LogWarningNL(L"CMWindow [Init] | Initialization has been attempted after CMWindow has already been initialized.");
-			return;
-		};
+		m_CMLoggerRef.LogFatalNLIf(m_Initialized, L"CMWindow [Init] | Initialization has been attempted after CMWindow has already been initialized.");
 
 		bool createdWindow = Create();
 
-		if (!createdWindow)
-			m_CMLoggerRef.LogFatalNL(L"CMWindow [Init] | Failed to create the window.");
+		m_CMLoggerRef.LogFatalNLIf(!createdWindow, L"CMWindow [Init] | Failed to create the window.");
 
 		m_Initialized = true;
 		m_Shutdown = false;
+
+		m_CMLoggerRef.LogInfoNL(L"CMWindow [Init] | Initialzed.");
 	}
 
 	void CMWindow::Shutdown() noexcept
 	{
-		if (m_Shutdown)
-		{
-			m_CMLoggerRef.LogWarningNL(L"CMWindow [Shutdown] | Shutdown has been attempted after CMWindow has already been shutdown.");
-			return;
-		}
-		else if (!m_Initialized)
-		{
-			m_CMLoggerRef.LogWarningNL(L"CMWindow [Shutdown] | Shutdown has been attempted before CMWindow has been initialized.");
-			return;
-		}
+		m_CMLoggerRef.LogFatalNLIf(m_Shutdown, L"CMWindow [Shutdown] | Shutdown has been attempted after CMWindow has already been shutdown.");
+		m_CMLoggerRef.LogFatalNLIf(!m_Initialized, L"CMWindow [Shutdown] | Shutdown has been attempted before CMWindow has been initialized.");
 
 		bool destroyed = Destroy();
 
-		if (!destroyed)
-			m_CMLoggerRef.LogFatalNL(L"CMWindow [Shutdown] | Failed to destroy the window.");
-
+		m_CMLoggerRef.LogFatalNLIf(!destroyed, L"CMWindow [Shutdown] | Failed to destroy the window.");
 		m_Initialized = false;
 		m_Shutdown = true;
 
@@ -120,19 +113,14 @@ namespace CMRenderer
 
 	void CMWindow::Maximize() noexcept
 	{
-		if (!m_Initialized)
-		{
-			m_CMLoggerRef.LogWarningNL(L"CMWindow [Maximize] | Attempted to maximize the window before initializing it.");
-			return;
-		}
+		m_CMLoggerRef.LogFatalNLIf(!m_Initialized, L"CMWindow [Maximize] | Attempted to maximize the window before initializing it.");
 
-		if (m_Maximized)
-		{
-			m_CMLoggerRef.LogWarningNL(L"CMWindow [Minimize] | Attempted to maximized the window while it is already in maximized state.");
+		if (m_CMLoggerRef.LogWarningNLIf(m_Maximized, L"CMWindow [Minimize] | Attempted to maximized the window while it is already in maximized state."))
 			return;
-		}
 
 		SetWindowLongPtrW(m_WindowHandle, GWL_STYLE, WS_POPUP);
+
+		//  If nonzero, the return value is nonzero. Otherwise, the window was previously hidden.
 		ShowWindow(m_WindowHandle, SW_SHOWMAXIMIZED);
 
 		m_CMLoggerRef.LogInfoNL(L"CMWindow [Maximize] | Maximized window.");
@@ -144,18 +132,11 @@ namespace CMRenderer
 
 	void CMWindow::Minimize() noexcept
 	{
-		if (!m_Initialized)
-		{
-			m_CMLoggerRef.LogWarningNL(L"CMWindow [Minimize] | Attempted to minimize the window before initializing it.");
+		if (m_CMLoggerRef.LogWarningNLIf(!m_Initialized, L"CMWindow [Minimize] | Attempted to minimize the window before initializing it.") ||
+			m_CMLoggerRef.LogWarningNLIf(m_Minimized, L"CMWindow [Minimize] | Attempted to minimize the window while it is already in minimized state."))
 			return;
-		}
 
-		if (m_Minimized)
-		{
-			m_CMLoggerRef.LogWarningNL(L"CMWindow [Minimize] | Attempted to minimize the window while it is already in minimized state.");
-			return;
-		}
-
+		//  If nonzero, the return value is nonzero. Otherwise, the window was previously hidden.
 		ShowWindow(m_WindowHandle, SW_SHOWMINIMIZED);
 		m_CMLoggerRef.LogInfoNL(L"CMWindow [Minimize] | Minimized window.");
 
@@ -166,31 +147,25 @@ namespace CMRenderer
 
 	void CMWindow::Restore() noexcept
 	{
-		if (!m_Initialized)
-		{
-			m_CMLoggerRef.LogWarningNL(L"CMWindow [Restore] | Attempted to restore the window before initializing it.");
+		if (m_CMLoggerRef.LogWarningNLIf(!m_Initialized, L"CMWindow [Restore] | Attempted to restore the window before initializing it.") ||
+			m_CMLoggerRef.LogWarningNLIf(m_Windowed, L"CMWindow [Restore] | Attempted to restore the window when it is already in windowed state."))
 			return;
-		}
-
-		if (m_Windowed)
-		{
-			m_CMLoggerRef.LogWarningNL(L"CMWindow [Restore] | Attempted to restore the window when it is already in windowed state.");
-			return;
-		}
 
 		LONG_PTR currentStyle = GetWindowLongPtrW(m_WindowHandle, GWL_STYLE);
 
-		if (currentStyle == 0)
-			m_CMLoggerRef.LogWarningNL(L"CMWindow [Restore] | Failed to retrieve window style.");
-		else
+		if (!m_CMLoggerRef.LogWarningNLIf(currentStyle == 0, L"CMWindow [Restore] | Failed to retrieve window style."))
 		{
+			// Bitwise witchery.
 			if (currentStyle & WS_POPUP)
 			{
 				m_CMLoggerRef.LogInfoNL(L"CMWindow [Restore] | WS_POPUP is set.");
 
-				SetWindowLongPtrW(m_WindowHandle, GWL_STYLE, WS_OVERLAPPEDWINDOW);
-
-				m_CMLoggerRef.LogInfoNL(L"CMWindow [Restore] | Set windowed style.");
+				// If the function succeeds, the return value is the previous value of the specified offset.
+				// If the function fails, the return value is zero.To get extended error information, call GetLastError.
+				if (SetWindowLongPtrW(m_WindowHandle, GWL_STYLE, WS_OVERLAPPEDWINDOW) == 0)
+					m_CMLoggerRef.LogInfoNL(L"CMWindow [Restore] | Failed to set windowed style.");
+				else
+					m_CMLoggerRef.LogInfoNL(L"CMWindow [Restore] | Set windowed style.");
 			}
 
 			BOOL succeeded = SetWindowPos(m_WindowHandle, nullptr, 0, 0, m_WindowSettingsRef.Current.InitialWidth, m_WindowSettingsRef.Current.InitialHeight, SWP_NOMOVE);
@@ -201,6 +176,7 @@ namespace CMRenderer
 				m_CMLoggerRef.LogInfoNL(L"CMWindow [Restore] | Set windowed pos.");
 		}
 
+		//  If nonzero, the return value is nonzero. Otherwise, the window was previously hidden.
 		ShowWindow(m_WindowHandle, SW_RESTORE);
 		m_CMLoggerRef.LogInfoNL(L"CMWindow [Restore] | Restored window.");
 
@@ -227,18 +203,18 @@ namespace CMRenderer
 		WNDCLASSEXW wndClass = {};
 
 		wndClass.cbSize = sizeof(WNDCLASSEXW);
-		wndClass.lpfnWndProc = WndProcSetup; /* Set the window procedure to the static setup function that will eventually thunk (redirect / forward)
-											  *  Window's messages to an instance function that has access to Window and Renderer state.
-											  *
-											  *  The function assigned to lpfnWndProc has to be static due to how instance functions work in C++,
-											  *  and how windows procedures are defined in the WinAPI.
-											  *
-											  *  For context, Instance functions implicitly take in an argument of this, which is incompatible with
-											  *  the WinAPI window procedure standard, thus static functions are required as they omit the this argument.
-											  *
-											  *  In conclusion, the indirection is required to be able to access CTMRenderer::Window state in the window procedure without
-											  *  the introduction of global state.
-											  */
+		wndClass.lpfnWndProc = WndProcSetup;	/* Set the window procedure to the static setup function that will eventually thunk (redirect / forward)
+												 *   Window's messages to an instance function that has access to Window and Renderer state.
+												 *	  
+												 *   The function assigned to lpfnWndProc has to be static due to how instance functions work in C++,
+												 *   and how windows procedures are defined in the WinAPI.
+												 *	  
+												 *   For context, Instance functions implicitly take in an argument of this, which is incompatible with
+												 *   the WinAPI window procedure standard, thus static functions are required as they omit the this argument.
+												 *	  
+												 *   In conclusion, the indirection is required to be able to access CTMRenderer::Window state in the window procedure without
+												 *   the introduction of global state.
+												 */
 
 		wndClass.hInstance = m_hInstance;
 		wndClass.lpszClassName = S_CLASS_NAME.data();
@@ -271,28 +247,24 @@ namespace CMRenderer
 			 */
 		);
 
+		m_CMLoggerRef.LogFatalNLIf(m_WindowHandle == nullptr, L"CMWindow [Create] | Failed to get a valid window handle. Window handle is nullptr.");
+
+		// Here so Intelisense doesn't yell at me for de-referencing a nullptr, even though fatal logs terminate the program.
 		if (m_WindowHandle == nullptr)
-		{
-			m_CMLoggerRef.LogFatalNL(L"CMWindow [Create] | Failed to get a valid window handle. Window handle is nullptr.");
 			return false;
-		}
 
 		int showCmd = m_WindowSettingsRef.Current.UseFullscreen ? SW_SHOWMAXIMIZED : SW_SHOW;
 
-		// If nonzero, the return value is nonzero. Otherwise, the window was previously hidden.
+		//  If nonzero, the return value is nonzero. Otherwise, the window was previously hidden.
 		BOOL previouslyVisible = ShowWindow(m_WindowHandle, showCmd);
 
 		BOOL result = GetClientRect(m_WindowHandle, &clientAreaRef);
-		
-		if (!result)
-		{
-			m_CMLoggerRef.LogFatalNL(L"CMWindow [Create] | Failed to update window size.");
-			return false;
-		}
+		m_CMLoggerRef.LogFatalNLIf(!result, L"CMWindow [Create] | Failed to update window size.");
 
 		m_Maximized = m_WindowSettingsRef.Current.UseFullscreen;
 		m_Windowed = !m_Maximized;
 		m_Running = true;
+		
 		return true;
 	}
 
@@ -305,20 +277,10 @@ namespace CMRenderer
 		}
 
 		int destroyedWindow = DestroyWindow(m_WindowHandle);
-
-		if (destroyedWindow == 0)
-		{
-			m_CMLoggerRef.LogWarningNL(L"CMWindow [Destroy] | Failed to destroy the window handle.");
-			return false;
-		}
+		m_CMLoggerRef.LogFatalNLIf(destroyedWindow == 0, L"CMWindow [Destroy] | Failed to destroy the window. Please help me.");
 
 		int unregisteredClass = UnregisterClassW(S_CLASS_NAME.data(), m_hInstance);
-
-		if (unregisteredClass == 0)
-		{
-			m_CMLoggerRef.LogWarningNL(L"CMWindow [Destroy] | Failed to unregisted the window's class. How did you manage to do this???");
-			return false;
-		}
+		m_CMLoggerRef.LogFatalNLIf(unregisteredClass == 0, L"CMWindow [Destroy] | Failed to unregisted the window's class. How did you manage to do this???");
 
 		return true;
 	}
@@ -326,91 +288,80 @@ namespace CMRenderer
 	[[nodiscard]] HINSTANCE CMWindow::GetCurrentHINSTANCE() noexcept
 	{
 		HMODULE hModule = nullptr;
-		GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, NULL, &hModule);
 
-		if (hModule == nullptr)
-			m_CMLoggerRef.LogFatalNL(L"CMWindow [GetCurrentHINSTANCE] | Unable to retrieve the current HINSTANCE. Retrieved HINSTANCE was nullptr.");
+		// If this parameter is NULL, the function returns a handle to the file used to create the calling process (.exe file).
+		BOOL succeeded = GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, NULL, &hModule);
+
+		m_CMLoggerRef.LogFatalNLIf(succeeded == 0, L"CMWindow [GetCurrentHINSTANCE] | Call to GetModuleHandleExW failed.");
+		m_CMLoggerRef.LogFatalNLIf(hModule == nullptr, L"CMWindow [GetCurrentHINSTANCE] | Unable to retrieve the current HINSTANCE. Retrieved HINSTANCE was nullptr.");
 
 		return static_cast<HINSTANCE>(hModule);
 	}
 
 	void CMWindow::RegisterWindowClass(const WNDCLASSEX& wndClassRef) noexcept
 	{
-		bool registeredClass = RegisterClassExW(&wndClassRef);
+		/* https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerclassexw
+		 * If the function succeeds, the return value is a class atom that uniquely identifies the class being registered.
+		 * This atom can only be used by the CreateWindow, CreateWindowEx, GetClassInfo, GetClassInfoEx, FindWindow,
+		 * FindWindowEx, and UnregisterClass functions and the IActiveIMMap::FilterClientWindows method.
 
-		if (!registeredClass)
-			m_CMLoggerRef.LogFatalNL(L"CMWindow [RegisterWindowClass] | Failed to register CMWindow's WNDCLASSEX.");
+		 * If the function fails, the return value is zero. To get extended error information, call GetLastError.
+		 */
+		bool registeredClass = RegisterClassExW(&wndClassRef);
+		m_CMLoggerRef.LogFatalNLIf(!registeredClass, L"CMWindow [RegisterWindowClass] | Failed to register CMWindow's WNDCLASSEX.");
 	}
 #pragma endregion
 
 #pragma region Settings
 	void CMWindow::ValidateSettings() noexcept
 	{
-		if (m_WindowSettingsRef.Current.WindowTitle.data() == nullptr)
-		{
-			m_CMLoggerRef.LogWarningNLAppend(
-				L"CMWindow [ValidateSettings] | Window title is nullptr."
-				"Resorting to default : ", CMWindowData::S_DEFAULT_WINDOW_TITLE.data()
-			);
-
+		if (m_CMLoggerRef.LogWarningNLAppendIf(
+			m_WindowSettingsRef.Current.WindowTitle.data() == nullptr,
+			L"CMWindow [ValidateSettings] | Window title is nullptr. "
+			L"Resorting to default : ", CMWindowData::S_DEFAULT_WINDOW_TITLE.data()
+		))
 			m_WindowSettingsRef.SetTitleToDefault();
-		}
 
-		else if (m_WindowSettingsRef.Current.WindowTitle.size() == 0)
-		{
-			m_CMLoggerRef.LogWarningNLAppend(
-				L"CMWindow [ValidateSettings] | Window title has a size of 0."
-				"Resorting to default : ", CMWindowData::S_DEFAULT_WINDOW_TITLE.data()
-			);
-
+		else if (m_CMLoggerRef.LogWarningNLAppendIf(
+			m_WindowSettingsRef.Current.WindowTitle.size() == 0,
+			L"CMWindow [ValidateSettings] | Window title has a character size of 0. "
+			L"Resorting to default : ", CMWindowData::S_DEFAULT_WINDOW_TITLE.data()
+		))
 			m_WindowSettingsRef.SetTitleToDefault();
-		}
 
-		if (m_WindowSettingsRef.Current.InitialWidth <= 0)
-		{
-			m_CMLoggerRef.LogWarningNLVariadic(
-				L"CMWindow [ValidateSettings] | Window width is negative."
-				"(Width : ", m_WindowSettingsRef.Current.InitialWidth,
-				L") Resorting to default : ", CMWindowData::S_DEFAULT_WIDTH
-			);
-
+		if (m_CMLoggerRef.LogWarningNLVariadicIf(
+			m_WindowSettingsRef.Current.InitialWidth <= 0,
+			L"CMWindow [ValidateSettings] | Window width is negative. "
+			L"(Width : ", m_WindowSettingsRef.Current.InitialWidth,
+			L") Resorting to default : ", CMWindowData::S_DEFAULT_WIDTH
+		))
 			m_WindowSettingsRef.SetWidthToDefault();
-		}
 
-		else if (m_WindowSettingsRef.Current.InitialWidth >= m_WindowSettingsRef.MaxWidth)
-		{
-			m_CMLoggerRef.LogWarningNLVariadic(
-				L"CMWindow [ValidateSettings] | Window width is greater than max width."
-				"(Width : ", m_WindowSettingsRef.Current.InitialWidth,
-				L" | Max Width : ", m_WindowSettingsRef.MaxWidth,
-				L") Resorting to default: ", CMWindowData::S_DEFAULT_WIDTH
-			);
-
+		else if (m_CMLoggerRef.LogWarningNLVariadicIf(
+			m_WindowSettingsRef.Current.InitialWidth >= m_WindowSettingsRef.MaxWidth,
+			L"CMWindow [ValidateSettings] | Window width is greater than max width. "
+			L"(Width : ", m_WindowSettingsRef.Current.InitialWidth,
+			L" | Max Width : ", m_WindowSettingsRef.MaxWidth,
+			L") Resorting to default: ", CMWindowData::S_DEFAULT_WIDTH
+		))
 			m_WindowSettingsRef.SetWidthToDefault();
-		}
 
-		if (m_WindowSettingsRef.Current.InitialHeight <= 0)
-		{
-			m_CMLoggerRef.LogWarningNLVariadic(
-				L"CMWindow [ValidateSettings] | Window height is negative."
-				"(Height : ", m_WindowSettingsRef.Current.InitialHeight,
-				L") Resorting to default : ", CMWindowData::S_DEFAULT_HEIGHT
-			);
-
+		if (m_CMLoggerRef.LogWarningNLVariadicIf(
+			m_WindowSettingsRef.Current.InitialHeight <= 0,
+			L"CMWindow [ValidateSettings] | Window height is negative. "
+			L"(Height : ", m_WindowSettingsRef.Current.InitialHeight,
+			L") Resorting to default : ", CMWindowData::S_DEFAULT_HEIGHT
+		))
 			m_WindowSettingsRef.SetHeightToDefault();
-		}
 
-		else if (m_WindowSettingsRef.Current.InitialHeight >= m_WindowSettingsRef.MaxHeight)
-		{
-			m_CMLoggerRef.LogWarningNLVariadic(
-				L"CMWindow [ValidateSettings] | Window height is greater than max width."
-				"(Height : ", m_WindowSettingsRef.Current.InitialHeight,
-				L" | Max Height : ", m_WindowSettingsRef.MaxHeight, 
-				L") Resorting to default: ", CMWindowData::S_DEFAULT_HEIGHT
-			);
-
+		else if (m_CMLoggerRef.LogWarningNLVariadicIf(
+			m_WindowSettingsRef.Current.InitialHeight >= m_WindowSettingsRef.MaxHeight,
+			L"CMWindow [ValidateSettings] | Window height is greater than max width. "
+			L"(Height : ", m_WindowSettingsRef.Current.InitialHeight,
+			L" | Max Height : ", m_WindowSettingsRef.MaxHeight, 
+			L") Resorting to default: ", CMWindowData::S_DEFAULT_HEIGHT
+		))
 			m_WindowSettingsRef.SetHeightToDefault();
-		}
 		
 		m_WindowSettingsRef.Current.ClientArea = { 0, 0, m_WindowSettingsRef.Current.InitialWidth, m_WindowSettingsRef.Current.InitialHeight };
 	}
@@ -472,6 +423,9 @@ namespace CMRenderer
 
 	[[nodiscard]] LRESULT CALLBACK CMWindow::WndProc(HWND hWnd, UINT msgCode, WPARAM wParam, LPARAM lParam) noexcept
 	{
+		if (ImGui_ImplWin32_WndProcHandler(m_WindowHandle, msgCode, wParam, lParam))
+			return true;
+
 		switch (msgCode)
 		{
 		case WM_KEYDOWN:

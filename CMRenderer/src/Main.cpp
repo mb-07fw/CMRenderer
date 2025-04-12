@@ -3,7 +3,7 @@
 
 void Entry()
 {
-	CMRenderer::CMWindowData windowSettings(L"TITLE!!!", false, 640, 480);
+	CMRenderer::CMWindowData windowSettings(std::wstring_view(nullptr, 0), static_cast<bool>(-72), -48, 5000000);
 	CMRenderer::CMRendererSettings rendererSettings(windowSettings);
 
 	{

@@ -7,6 +7,18 @@
 #include <fstream>
 #include <type_traits>
 
+/*
+ *
+ *	CMLogger :
+ * 
+ *		A fail - fast - type logger where fatal logs == abandon ship (termination). 
+ *      I spent too much time writing this not to be biased, but this is clearly
+ *		the best logger ever invented.
+ * 
+ *	-- mb-07fw.
+ * 
+ */
+
 namespace CMRenderer::Utility
 {
 	template <typename Ty>
@@ -83,6 +95,24 @@ namespace CMRenderer::Utility
 		inline void LogFatalNLVariadic(int exitCode, DataTy data, Args&&... args) noexcept;
 
 		inline void LogInline(DataTy data) noexcept;
+
+
+		inline bool LogWarningNLIf(bool condition, DataTy data) noexcept;
+		inline void LogFatalNLIf(bool condition, DataTy data, int exitCode = -1) noexcept;
+
+		template <typename AppendTy>
+		inline bool LogWarningNLAppendIf(bool condition, DataTy data, AppendTy appendData) noexcept;
+
+		template <typename AppendTy>
+		inline void LogFatalNLAppendIf(bool condition, DataTy data, AppendTy appendData, int exitCode = -1) noexcept;
+
+		template <typename... Args>
+		inline bool LogWarningNLVariadicIf(bool condition, DataTy data, Args&&... args) noexcept;
+
+		template <typename... Args>
+		inline void LogFatalNLVariadicIf(bool condition, DataTy data, Args&&... args) noexcept;
+
+		
 
 		inline void OpenStream() noexcept;
 		inline void CloseStream() noexcept;
@@ -201,6 +231,69 @@ namespace CMRenderer::Utility
 
 		m_LogStream << data;
 	}
+
+#pragma region Conditionals
+	template <CMLoggerType EnumLoggerType, typename DataTy, typename StreamTy>
+		requires LoggableType<DataTy>&& ValidStream<StreamTy>
+	inline void CMLogger<EnumLoggerType, DataTy, StreamTy>::LogFatalNLIf(bool condition, DataTy data, int exitCode) noexcept
+	{
+		if (condition)
+			LogFatalNL(data, exitCode);
+	}
+
+	template <CMLoggerType EnumLoggerType, typename DataTy, typename StreamTy>
+		requires LoggableType<DataTy>&& ValidStream<StreamTy>
+	inline bool CMLogger<EnumLoggerType, DataTy, StreamTy>::LogWarningNLIf(bool condition, DataTy data) noexcept
+	{
+		if (!condition)
+			return false;
+
+		LogWarningNL(data);
+		return true;
+	}
+
+	template <CMLoggerType EnumLoggerType, typename DataTy, typename StreamTy>
+		requires LoggableType<DataTy>&& ValidStream<StreamTy>
+	template <typename AppendTy>
+	inline bool CMLogger<EnumLoggerType, DataTy, StreamTy>::LogWarningNLAppendIf(bool condition, DataTy data, AppendTy append) noexcept
+	{
+		if (!condition)
+			return false;
+
+		LogWarningNLAppend(data, append);
+		return true;
+	}
+
+	template <CMLoggerType EnumLoggerType, typename DataTy, typename StreamTy>
+		requires LoggableType<DataTy>&& ValidStream<StreamTy>
+	template <typename AppendTy>
+	inline void CMLogger<EnumLoggerType, DataTy, StreamTy>::LogFatalNLAppendIf(bool condition, DataTy data, AppendTy append, int exitCode) noexcept
+	{
+		if (condition)
+			LogFatalNLAppend(data, append, exitCode);
+	}
+
+	template <CMLoggerType EnumLoggerType, typename DataTy, typename StreamTy>
+		requires LoggableType<DataTy>&& ValidStream<StreamTy>
+	template <typename... Args>
+	inline bool CMLogger<EnumLoggerType, DataTy, StreamTy>::LogWarningNLVariadicIf(bool condition, DataTy data, Args&&... args) noexcept
+	{
+		if (!condition)
+			return false;
+
+		LogWarningNLVariadic(data, std::forward<Args>(args)...);
+		return true;
+	}
+
+	template <CMLoggerType EnumLoggerType, typename DataTy, typename StreamTy>
+		requires LoggableType<DataTy>&& ValidStream<StreamTy>
+	template <typename... Args>
+	inline void CMLogger<EnumLoggerType, DataTy, StreamTy>::LogFatalNLVariadicIf(bool condition, DataTy data, Args&&... args) noexcept
+	{
+		if (condition)
+			LogFatalNLVariadic(-1, data, std::forward<Args>(args)...);
+	}
+#pragma endregion
 
 #pragma region NL
 	template <CMLoggerType EnumLoggerType, typename DataTy, typename StreamTy>
@@ -408,6 +501,7 @@ namespace CMRenderer::Utility
 		m_TargetFileSet = true;
 	}
 #pragma endregion
+
 #pragma endregion
 
 #pragma region Private
@@ -518,6 +612,7 @@ namespace CMRenderer::Utility
 		else
 			m_LogTag = "[CMLoggerNarrow] ";
 	}
+#pragma endregion
 #pragma endregion
 #pragma endregion
 

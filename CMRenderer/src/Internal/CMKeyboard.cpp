@@ -1,14 +1,14 @@
 #include "Core/CMPCH.hpp"
 #include "Internal/CMKeyboard.hpp"
 
-#define CM_KEYSTATE_IS_PRESSED_BIT  0x80 // Reserved "pressed" flag.
-#define CM_KEYSTATE_WAS_PRESSED_BIT 0x40 // Custom flag to track if a key was pressed previously.
+#define CM_KEYSTATE_IS_PRESSED_BIT  0x80 // Reserved "pressed" flag by Windows OS.
+#define CM_KEYSTATE_WAS_PRESSED_BIT 0x40 // Custom flag to track if a key was pressed previously. My bit now hehe...
 #define CM_KEYSTATE_LOW_ORDER_BYTE  0xFF
 
 namespace CMRenderer
 {
 	CMKeyboard::CMKeyboard(Utility::CMLoggerWide& cmLoggerRef) noexcept
-		: m_CMLoggerRef(cmLoggerRef), m_KeyStates()
+		: m_CMLoggerRef(cmLoggerRef), m_KeyStates() // Not sure if std::array initializes to defaults automatically...
 	{
 		ClearAllState();
 
@@ -22,12 +22,10 @@ namespace CMRenderer
 		*  https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getkeyboardlayout
 		* 
 		*   Since the keyboard layout can be dynamically changed,
-		*     applications that cache information about the current keyboard layout should
-		*     process the WM_INPUTLANGCHANGE message to be informed of changes in the input language.
+		*   applications that cache information about the current keyboard layout should
+		*   process the WM_INPUTLANGCHANGE message to be informed of changes in the input language.
 		*/
 	}
-
-
 
 	void CMKeyboard::SetPressedVK(BYTE virtualKey) noexcept
 	{
@@ -40,8 +38,6 @@ namespace CMRenderer
 		// Clear the high-order bit (bit 7; pressed flag) while preserving other bits.
 		m_KeyStates[virtualKey] &= ~CM_KEYSTATE_IS_PRESSED_BIT;
 	}
-
-
 
 	[[nodiscard]] bool CMKeyboard::IsPressedVK(BYTE virtualKey) noexcept
 	{
@@ -80,8 +76,6 @@ namespace CMRenderer
 
 		return isPressed;
 	}
-
-
 
 	[[nodiscard]] bool CMKeyboard::IsReleasedVK(BYTE virtualKey) noexcept
 	{
@@ -129,8 +123,6 @@ namespace CMRenderer
 		return isReleased;
 	}
 
-
-
 	void CMKeyboard::ClearStateVK(BYTE virtualKey) noexcept
 	{
 		m_KeyStates[virtualKey] = 0;
@@ -153,25 +145,17 @@ namespace CMRenderer
 		memset(m_KeyStates.data(), 0, S_TOTAL_VKS);
 	}
 
-
-
 	[[nodiscard]] wchar_t CMKeyboard::TranslateVK(BYTE virtualKey) noexcept
 	{
 		BOOL succeeded = GetKeyboardState(m_KeyStates.data());
 
-		if (!succeeded)
-		{
-			m_CMLoggerRef.LogWarning(L"CMKeyboard [TranslateVK] | Failed to get keyboard state.\n");
-			return 0;
-		}
+		m_CMLoggerRef.LogFatalNLIf(!succeeded, L"CMKeyboard [TranslateVK] | Failed to get keyboard state.");
 
 		wchar_t translatedChar = 0;
 		UINT scanCode = MapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC);
 
 		int result = ToUnicode(virtualKey, scanCode, m_KeyStates.data(), &translatedChar, 1, 0);
-
-		if (!result)
-			m_CMLoggerRef.LogWarning(L"CMKeyboard [TranslateVK] | No translation found.\n");
+		m_CMLoggerRef.LogFatalNLIf(!result, L"CMKeyboard [TranslateVK] | No translation found.");
 
 		return translatedChar;
 	}
@@ -180,8 +164,7 @@ namespace CMRenderer
 	{
 		SHORT vkInfo = VkKeyScanExW(c, m_CurrentInputLocale);
 
-		if (vkInfo == -1)
-			m_CMLoggerRef.LogFatalNLAppend(L"CMKeyboard [IsKeyPressed] | Failed to get a valid VK for the wchar_t : ", c);
+		m_CMLoggerRef.LogFatalNLAppendIf(vkInfo == -1, L"CMKeyboard [IsKeyPressed] | Failed to get a valid VK for the wchar_t : ", c);
 
 		BYTE virtualKey = vkInfo & CM_KEYSTATE_LOW_ORDER_BYTE;
 		return virtualKey;

@@ -10,7 +10,6 @@
 
 namespace CMRenderer::CMDirectX::Components
 {
-#pragma region DXDevice
 	class DXDevice
 	{
 	public:
@@ -33,13 +32,12 @@ namespace CMRenderer::CMDirectX::Components
 	private:
 		void CreateDevice() noexcept;
 	private:
-		Utility::CMLoggerWide& m_CMLoggerRef;
 		Microsoft::WRL::ComPtr<ID3D11Device> mP_Device;
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> mP_Context;
+		Utility::CMLoggerWide& m_CMLoggerRef;
 		bool m_Created = false;
 		bool m_Released = false;
 	};
-#pragma endregion
 
 
 	
@@ -60,8 +58,8 @@ namespace CMRenderer::CMDirectX::Components
 		inline [[nodiscard]] bool IsCreated() const noexcept { return m_Created; }
 		inline [[nodiscard]] bool IsReleased() const noexcept { return m_Released; }
 	private:
-		Utility::CMLoggerWide& m_CMLoggerRef;
 		Microsoft::WRL::ComPtr<IDXGIFactory1> mP_Factory;
+		Utility::CMLoggerWide& m_CMLoggerRef;
 		bool m_Created = false;
 		bool m_Released = false;
 	};
@@ -85,9 +83,9 @@ namespace CMRenderer::CMDirectX::Components
 		inline [[nodiscard]] bool IsCreated() const noexcept { return m_Created; }
 		inline [[nodiscard]] bool IsReleased() const noexcept { return m_Released; }
 	private:
-		Utility::CMLoggerWide& m_CMLoggerRef;
 		DXGI_SWAP_CHAIN_DESC m_Desc = {};
 		Microsoft::WRL::ComPtr<IDXGISwapChain> mP_SwapChain;
+		Utility::CMLoggerWide& m_CMLoggerRef;
 		bool m_Created = false;
 		bool m_Released = false;
 	};
@@ -111,8 +109,37 @@ namespace CMRenderer::CMDirectX::Components
 		inline [[nodiscard]] bool IsCreated() const noexcept { return m_Created; }
 		inline [[nodiscard]] bool IsReleased() const noexcept { return m_Released; }
 	private:
-		Utility::CMLoggerWide& m_CMLoggerRef;
 		Microsoft::WRL::ComPtr<ID3D11InfoQueue> mP_InfoQueue;
+		Utility::CMLoggerWide& m_CMLoggerRef;
+		bool m_Created = false;
+		bool m_Released = false;
+	};
+
+
+
+	class DXWriter
+	{
+	public:
+		DXWriter(Utility::CMLoggerWide& cmLoggerRef) noexcept;
+		~DXWriter() noexcept;
+	public:
+		void Create(DXSwapChain& swapChainRef) noexcept;
+		void Release() noexcept;
+
+		void WriteText(std::wstring_view text) noexcept;
+
+		inline [[nodiscard]] bool IsCreated() const noexcept { return m_Created; }
+		inline [[nodiscard]] bool IsReleased() const noexcept { return m_Released; }
+	private:
+		void CreateIndependentResources() noexcept;
+		void CreateDependentResources(DXSwapChain& swapChainRef) noexcept;
+	private:
+		Microsoft::WRL::ComPtr<ID2D1Factory> mP_D2DFactory;
+		Microsoft::WRL::ComPtr<ID2D1RenderTarget> mP_D2DRenderTarget;
+		Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> mP_Brush;
+		Microsoft::WRL::ComPtr<IDWriteFactory> mP_DWriteFactory;
+		Microsoft::WRL::ComPtr<IDWriteTextFormat> mP_TextFormat;
+		Utility::CMLoggerWide& m_CMLoggerRef;
 		bool m_Created = false;
 		bool m_Released = false;
 	};
