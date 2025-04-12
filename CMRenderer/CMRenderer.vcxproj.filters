@@ -15,99 +15,81 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\CMRenderer.cpp">
+    <ClCompile Include="src\CMR_Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\CMPCH.cpp">
+    <ClCompile Include="src\CMR_PCH.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Internal\CMWindow.cpp">
+    <ClCompile Include="src\CMR_Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Internal\CMRendererSettings.cpp">
+    <ClCompile Include="src\CMR_RendererSettings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Internal\DirectX\DXContext.cpp">
+    <ClCompile Include="src\CMR_DXContext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Internal\DirectX\DXShaderLibrary.cpp">
+    <ClCompile Include="src\CMR_DXShaderLibrary.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Internal\DirectX\DXShaderData.cpp">
+    <ClCompile Include="src\CMR_DXShaderData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Internal\DirectX\DXComponents.cpp">
+    <ClCompile Include="src\CMR_DXComponents.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Internal\CMKeyboard.cpp">
+    <ClCompile Include="src\CMR_Keyboard.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Main.cpp">
+    <ClCompile Include="src\CMR_Shapes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Internal\CMShapes.cpp">
+    <ClCompile Include="src\CMR_DXCamera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Internal\DirectX\DXCamera.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Internal\CMTypes.cpp">
+    <ClCompile Include="src\CMR_Types.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\Core\CMPCH.hpp">
+    <ClInclude Include="include\CMR_PCH.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Core\WindowsDefines.hpp">
+    <ClInclude Include="include\CMR_Renderer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\CMRenderer.hpp">
+    <ClInclude Include="include\CMR_Window.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Internal\Utility\CMLogger.hpp">
+    <ClInclude Include="include\CMR_RendererSettings.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Internal\CMWindow.hpp">
+    <ClInclude Include="include\CMR_DXContext.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Internal\CMRendererSettings.hpp">
+    <ClInclude Include="include\CMR_DXShaderLibrary.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Internal\DirectX\DXContext.hpp">
+    <ClInclude Include="include\CMR_DXShaderData.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Internal\Utility\WindowsUtility.hpp">
+    <ClInclude Include="include\CMR_DXUtility.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Internal\Utility\Utility.hpp">
+    <ClInclude Include="include\CMR_DXComponents.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Internal\DirectX\DXShaderLibrary.hpp">
+    <ClInclude Include="include\CMR_Keyboard.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Internal\DirectX\DXShaderData.hpp">
+    <ClInclude Include="include\CMR_Shapes.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Internal\DirectX\DXUtility.hpp">
+    <ClInclude Include="include\CMR_DXCamera.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Internal\DirectX\DXComponents.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Core\CMMacros.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Internal\CMKeyboard.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Internal\CMShapes.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Internal\DirectX\DXCamera.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Internal\CMTypes.hpp">
+    <ClInclude Include="include\CMR_Types.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
