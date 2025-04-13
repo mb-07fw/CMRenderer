@@ -1,21 +1,9 @@
-#include <iostream>
-
-#include "CMR_Renderer.hpp"
-#include "CMC_Paths.hpp"
-#include "CMC_Utility.hpp"
+#include "CME_Engine.hpp"
 
 void Entry()
 {
-	CMRenderer::CMWindowData windowSettings(std::wstring_view(nullptr, 0), static_cast<bool>(-72), -48, 5000000);
-	CMRenderer::CMRendererSettings rendererSettings(windowSettings);
-
-	{
-		CMRenderer::CMRenderer renderer(rendererSettings);
-
-		renderer.Init();
-		renderer.Run();
-		renderer.Shutdown();
-	}
+	CMEngine::CMEngine engine;
+	engine.Run();
 }
 
 #if !defined(CM_DISTRIBUTION)

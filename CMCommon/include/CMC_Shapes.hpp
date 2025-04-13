@@ -1,12 +1,17 @@
 #pragma once
 
-#include "CMR_Types.hpp"
+#include "CMC_Types.hpp"
 
-namespace CMRenderer::CMDirectX
+namespace CMCommon
 {
-	struct CMRect 
+	enum class CMShapeType : uint8_t {
+		RECT, CUBE
+	};
+
+	struct CMRect
 	{
 		CMRect(CMFloat2 pos) noexcept;
+		CMRect(CMRect&) = default;
 
 		CMRect() = default;
 		~CMRect() = default;

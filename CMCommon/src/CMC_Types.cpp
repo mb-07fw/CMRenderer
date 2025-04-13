@@ -1,7 +1,6 @@
-#include "CMR_PCH.hpp"
-#include "CMR_Types.hpp"
+#include "CMC_Types.hpp"
 
-namespace CMRenderer
+namespace CMCommon
 {
 	CMFloat2::CMFloat2(float x, float y) noexcept
 		: x(x), y(y)

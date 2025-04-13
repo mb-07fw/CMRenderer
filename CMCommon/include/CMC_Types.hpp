@@ -2,15 +2,16 @@
 
 #include <cstdint>
 
-namespace CMRenderer
+namespace CMCommon
 {
+#pragma region Float Containers
 	struct CMFloat3;
 
 	struct CMFloat2
 	{
 		CMFloat2(float x, float y) noexcept;
 		CMFloat2(CMFloat3 float3) noexcept;
-		
+
 		CMFloat2() = default;
 		~CMFloat2() = default;
 
@@ -30,7 +31,9 @@ namespace CMRenderer
 		float y = 0;
 		float z = 0;
 	};
+#pragma endregion
 
+#pragma region Pointer Types
 	template <typename Ty>
 	struct CMViewPtr
 	{
@@ -85,5 +88,9 @@ namespace CMRenderer
 	{
 		Ptr = ptr;
 	}
+#pragma endregion
 
+	struct NormColor {
+		float rgba[4];
+	};
 }

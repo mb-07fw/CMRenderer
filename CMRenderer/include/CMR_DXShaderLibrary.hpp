@@ -11,7 +11,6 @@
 #include "CMC_Logger.hpp"
 #include "CMR_RendererSettings.hpp"
 #include "CMR_DXShaderData.hpp"
-#include "CMR_Shapes.hpp"
 
 namespace CMRenderer::CMDirectX
 {

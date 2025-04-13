@@ -99,32 +99,32 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\other\dev\projects\cpp\Direct3D\CMRenderer\CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>include;C:\other\dev\projects\cpp\Direct3D\CMRenderer\CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <OutDir>$(SolutionDir)build\CMEngine\$(Configuration)\Out\</OutDir>
     <IntDir>$(SolutionDir)build\CMEngine\$(Configuration)\Intermediates\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Distribution|Win32'">
-    <IncludePath>C:\other\dev\projects\cpp\Direct3D\CMRenderer\CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>include;C:\other\dev\projects\cpp\Direct3D\CMRenderer\CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <OutDir>$(SolutionDir)build\CMEngine\$(Configuration)\Out\</OutDir>
     <IntDir>$(SolutionDir)build\CMEngine\$(Configuration)\Intermediates\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>C:\other\dev\projects\cpp\Direct3D\CMRenderer\CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>include;C:\other\dev\projects\cpp\Direct3D\CMRenderer\CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <OutDir>$(SolutionDir)build\CMEngine\$(Configuration)\Out\</OutDir>
     <IntDir>$(SolutionDir)build\CMEngine\$(Configuration)\Intermediates\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\other\dev\projects\cpp\Direct3D\CMRenderer\CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>include;C:\other\dev\projects\cpp\Direct3D\CMRenderer\CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <OutDir>$(SolutionDir)build\CMEngine\$(Configuration)\Out\</OutDir>
     <IntDir>$(SolutionDir)build\CMEngine\$(Configuration)\Intermediates\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Distribution|x64'">
-    <IncludePath>C:\other\dev\projects\cpp\Direct3D\CMRenderer\CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>include;C:\other\dev\projects\cpp\Direct3D\CMRenderer\CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <OutDir>$(SolutionDir)build\CMEngine\$(Configuration)\Out\</OutDir>
     <IntDir>$(SolutionDir)build\CMEngine\$(Configuration)\Intermediates\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\other\dev\projects\cpp\Direct3D\CMRenderer\CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>include;C:\other\dev\projects\cpp\Direct3D\CMRenderer\CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <OutDir>$(SolutionDir)build\CMEngine\$(Configuration)\Out\</OutDir>
     <IntDir>$(SolutionDir)build\CMEngine\$(Configuration)\Intermediates\</IntDir>
   </PropertyGroup>
@@ -235,7 +235,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\CME_Engine.cpp" />
     <ClCompile Include="src\CME_Main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\CME_Engine.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

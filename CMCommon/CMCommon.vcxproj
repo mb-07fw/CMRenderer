@@ -151,14 +151,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="include\CMC_MetaArena.hpp" />
     <ClInclude Include="include\CMC_Logger.hpp" />
     <ClInclude Include="include\CMC_Macros.hpp" />
     <ClInclude Include="include\CMC_Paths.hpp" />
+    <ClInclude Include="include\CMC_Shapes.hpp" />
+    <ClInclude Include="include\CMC_Types.hpp" />
     <ClInclude Include="include\CMC_Utility.hpp" />
     <ClInclude Include="include\CMC_WindowsDefines.hpp" />
     <ClInclude Include="include\CMC_WindowsUtility.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\CMC_Shapes.cpp" />
+    <ClCompile Include="src\CMC_Types.cpp" />
     <ClCompile Include="src\CMC_WindowsUtility.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

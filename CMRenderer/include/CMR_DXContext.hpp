@@ -12,26 +12,20 @@
 
 #include "CMC_Macros.hpp"
 #include "CMC_Logger.hpp"
+#include "CMC_Types.hpp"
+#include "CMC_Shapes.hpp"
 #include "CMR_DXComponents.hpp"
 #include "CMR_DXShaderLibrary.hpp"
 #include "CMR_DXCamera.hpp"
-#include "CMR_Shapes.hpp"
-#include "CMR_Types.hpp"
 
 namespace CMRenderer::CMDirectX
 {
-	struct NormColor {
-		float rgba[4];
-	};
-
 	struct CBViewportSize
 	{
 		long Width;
 		long Height;
 		long padding[2] = { 0, 0 };
 	};
-
-
 
 	class DXContextState
 	{
@@ -47,11 +41,9 @@ namespace CMRenderer::CMDirectX
 	public:
 		DXShaderLibrary& m_ShaderLibraryRef;
 		Components::DXDevice& m_DeviceRef;
-		CMViewPtr<DXShaderSet> mP_CurrentShaderSet;
+		CMCommon::CMViewPtr<DXShaderSet> mP_CurrentShaderSet;
 		Utility::CMLoggerWide& m_CMLoggerRef;
 	};
-
-
 	
 	class DXContext
 	{
@@ -62,10 +54,10 @@ namespace CMRenderer::CMDirectX
 		void Init(const HWND hWnd) noexcept;
 		void Shutdown() noexcept;
 
-		void Clear(NormColor normColor) noexcept;
+		void Clear(CMCommon::NormColor normColor) noexcept;
 		void Present() noexcept;
 
-		void DrawRect(CMRect rect) noexcept;
+		void DrawRect(CMCommon::CMRect rect) noexcept;
 
 		//void TestDraw(float rotAngleX, float rotAngleY, float offsetX, float offsetY, float offsetZ) noexcept;
 		//void TestTextureDraw(float rotAngleX, float rotAngleY, float offsetX, float offsetY, float offsetZ) noexcept;

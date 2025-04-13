@@ -1,7 +1,6 @@
-#include "CMR_PCH.hpp"
-#include "CMR_Shapes.hpp"
+#include "CMC_Shapes.hpp"
 
-namespace CMRenderer::CMDirectX
+namespace CMCommon
 {
 	CMRect::CMRect(CMFloat2 pos) noexcept
 		: Pos(pos)

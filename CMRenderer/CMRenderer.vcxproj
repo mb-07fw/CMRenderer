@@ -259,9 +259,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\CMR_Types.cpp" />
     <ClCompile Include="src\CMR_DXCamera.cpp" />
-    <ClCompile Include="src\CMR_Shapes.cpp" />
     <ClCompile Include="src\CMR_Renderer.cpp" />
     <ClCompile Include="src\CMR_PCH.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -282,17 +280,18 @@
   <ItemGroup>
     <ClInclude Include="include\CMR_Renderer.hpp" />
     <ClInclude Include="include\CMR_Keyboard.hpp" />
-    <ClInclude Include="include\CMR_Types.hpp" />
     <ClInclude Include="include\CMR_DXCamera.hpp" />
-    <ClInclude Include="include\CMR_Shapes.hpp" />
     <ClInclude Include="include\CMR_DXContext.hpp" />
     <ClInclude Include="include\CMR_PCH.hpp" />
     <ClInclude Include="include\CMR_RendererSettings.hpp" />
     <ClInclude Include="include\CMR_DXShaderData.hpp" />
     <ClInclude Include="include\CMR_DXShaderLibrary.hpp" />
+    <ClInclude Include="include\CMR_ShapeQueue.hpp" />
+    <ClInclude Include="include\CMR_VertexArray.hpp" />
     <ClInclude Include="include\CMR_Window.hpp" />
     <ClInclude Include="include\CMR_DXComponents.hpp" />
     <ClInclude Include="include\CMR_DXUtility.hpp" />
+    <ClCompile Include="src\CMR_ShapeQueue.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="resources\shaders\Default3D_PS.hlsl">

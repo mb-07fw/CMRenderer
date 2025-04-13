@@ -25,6 +25,7 @@
 #include "CMR_RendererSettings.hpp"
 #include "CMR_Window.hpp"
 #include "CMR_DXContext.hpp"
+#include "CMR_ShapeQueue.hpp"
 
 namespace CMRenderer
 {
@@ -37,13 +38,24 @@ namespace CMRenderer
 		void Init() noexcept;
 		void Shutdown() noexcept;
 		
-		void Run() noexcept;
+		void UpdateWindow() noexcept;
+
+		void Clear(CMCommon::NormColor normalizedColor) noexcept;
+		void Present() noexcept;
+
+		void DrawRect(CMCommon::CMRect rect) noexcept;
+
+		void QueueShape(CMCommon::CMRect rect) noexcept;
+
+		inline [[nodiscard]] CMWindow& Window() noexcept { return m_Window; }
+		inline [[nodiscard]] CMDirectX::DXContext& RenderContext() noexcept { return m_RenderContext; }
 	private:
 		static constexpr std::wstring_view S_LIFETIME_LOG_FILE_NAME = L"../CMRenderer/logs/CMRendererLifetime.log";
 		Utility::CMLoggerWide m_CMLogger;
 		CMRendererSettings m_Settings;
 		CMWindow m_Window;
 		CMDirectX::DXContext m_RenderContext;
+		CMShapeQueue m_ShapeQueue;
 		bool m_Initialized = false;
 		bool m_Shutdown = false;
 	};

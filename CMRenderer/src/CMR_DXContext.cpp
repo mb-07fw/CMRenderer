@@ -131,11 +131,76 @@ namespace CMRenderer::CMDirectX
 		m_CMLoggerRef.LogInfoNL(L"DXContext [Init] | Initialized.");
 	}
 
-	void DXContext::DrawRect(CMRect rect) noexcept
+	void DXContext::Clear(CMCommon::NormColor normColor) noexcept
+	{
+		m_Device.ContextRaw()->ClearRenderTargetView(mP_RTV.Get(), normColor.rgba);
+		m_Device.ContextRaw()->ClearDepthStencilView(mP_DSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
+	}
+
+	void DXContext::Present() noexcept
+	{
+		/*ImGui_ImplDX11_NewFrame();
+		ImGui_ImplWin32_NewFrame();
+		ImGui::NewFrame();
+
+		ImGui::Begin("My Test Window!");
+
+		ImGui::SliderFloat("Camera X", &posX, -20.0f, 20.0f);
+		ImGui::SliderFloat("Camera Y", &posY, -20.0f, 20.0f);
+		ImGui::SliderFloat("Camera Z", &posZ, -50.0f, -10.0f);
+
+		ImGui::SliderFloat("Face One X", &faceOneX, -20.0f, 20.0f);
+		ImGui::SliderFloat("Face One Y", &faceOneY, -20.0f, 20.0f);
+		ImGui::SliderFloat("Face One Z", &faceOneZ, -20.0f, 20.0f);
+
+		ImGui::SliderFloat("Face Two X", &faceTwoX, -20.0f, 20.0f);
+		ImGui::SliderFloat("Face Two Y", &faceTwoY, -20.0f, 20.0f);
+		ImGui::SliderFloat("Face Two Z", &faceTwoZ, -20.0f, 20.0f);
+
+		ImGui::SliderFloat("Face One Rotation X", &faceOneRotX, 0, 360);
+		ImGui::SliderFloat("Face One Rotation Y", &faceOneRotY, 0, 360);
+
+		ImGui::SliderFloat("Face Two Rotation X", &faceTwoRotX, 0, 360);
+		ImGui::SliderFloat("Face Two Rotation Y", &faceTwoRotY, 0, 360);
+
+		ImGui::End();
+
+		ImGui::Render();
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());*/
+
+		HRESULT hResult = m_SwapChain->Present(1, 0);
+
+		if (hResult == DXGI_ERROR_DEVICE_REMOVED || hResult == DXGI_ERROR_DEVICE_RESET)
+		{
+			CM_IF_DEBUG(
+				if (!m_InfoQueue.IsQueueEmpty())
+					m_InfoQueue.LogMessages();
+					);
+
+			m_CMLoggerRef.LogFatalNLAppend(
+				L"DXContext [Present] | Device removed error : ",
+				WindowsUtility::TranslateDWORDError(hResult)
+			);
+		}
+		else if (hResult != S_OK)
+		{
+			CM_IF_DEBUG(
+				if (!m_InfoQueue.IsQueueEmpty())
+					m_InfoQueue.LogMessages();
+					);
+
+			m_CMLoggerRef.LogFatalNLAppend(
+				L"DXContext [Present] | Present error : ",
+				WindowsUtility::TranslateDWORDError(hResult)
+			);
+		}
+	}
+
+	void DXContext::DrawRect(CMCommon::CMRect rect) noexcept
 	{
 		m_CMLoggerRef.LogFatalNLIf(!m_Initialized, L"DXContext [DrawRect] | Attempted to draw before initializing context.");
 
-		
+
 	}
 
 	void DXContext::Shutdown() noexcept
@@ -730,72 +795,6 @@ namespace CMRenderer::CMDirectX
 #endif
 #pragma endregion
 #pragma endregion
-
-
-	void DXContext::Clear(NormColor normColor) noexcept
-	{
-		m_Device.ContextRaw()->ClearRenderTargetView(mP_RTV.Get(), normColor.rgba);
-		m_Device.ContextRaw()->ClearDepthStencilView(mP_DSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
-	}
-
-	void DXContext::Present() noexcept
-	{
-		/*ImGui_ImplDX11_NewFrame();
-		ImGui_ImplWin32_NewFrame();
-		ImGui::NewFrame();
-		
-		ImGui::Begin("My Test Window!");
-
-		ImGui::SliderFloat("Camera X", &posX, -20.0f, 20.0f);
-		ImGui::SliderFloat("Camera Y", &posY, -20.0f, 20.0f);
-		ImGui::SliderFloat("Camera Z", &posZ, -50.0f, -10.0f);
-
-		ImGui::SliderFloat("Face One X", &faceOneX, -20.0f, 20.0f);
-		ImGui::SliderFloat("Face One Y", &faceOneY, -20.0f, 20.0f);
-		ImGui::SliderFloat("Face One Z", &faceOneZ, -20.0f, 20.0f);
-
-		ImGui::SliderFloat("Face Two X", &faceTwoX, -20.0f, 20.0f);
-		ImGui::SliderFloat("Face Two Y", &faceTwoY, -20.0f, 20.0f);
-		ImGui::SliderFloat("Face Two Z", &faceTwoZ, -20.0f, 20.0f);
-
-		ImGui::SliderFloat("Face One Rotation X", &faceOneRotX, 0, 360);
-		ImGui::SliderFloat("Face One Rotation Y", &faceOneRotY, 0, 360);
-
-		ImGui::SliderFloat("Face Two Rotation X", &faceTwoRotX, 0, 360);
-		ImGui::SliderFloat("Face Two Rotation Y", &faceTwoRotY, 0, 360);
-
-		ImGui::End();
-
-		ImGui::Render();
-		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());*/
-
-		HRESULT hResult = m_SwapChain->Present(1, 0);
-
-		if (hResult == DXGI_ERROR_DEVICE_REMOVED || hResult == DXGI_ERROR_DEVICE_RESET)
-		{
-			CM_IF_DEBUG(
-				if (!m_InfoQueue.IsQueueEmpty())
-					m_InfoQueue.LogMessages();
-			);
-
-			m_CMLoggerRef.LogFatalNLAppend(
-				L"DXContext [Present] | Device removed error : ",
-				WindowsUtility::TranslateDWORDError(hResult)
-			);
-		}
-		else if (hResult != S_OK)
-		{
-			CM_IF_DEBUG(
-				if (!m_InfoQueue.IsQueueEmpty())
-					m_InfoQueue.LogMessages();
-			);
-
-			m_CMLoggerRef.LogFatalNLAppend(
-				L"DXContext [Present] | Present error : ", 
-				WindowsUtility::TranslateDWORDError(hResult)
-			);
-		}
-	}
 
 	void DXContext::InitImGui(const HWND hWnd) noexcept
 	{

@@ -42,14 +42,11 @@
     <ClCompile Include="src\CMR_Keyboard.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\CMR_Shapes.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\CMR_DXCamera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\CMR_Types.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\CMR_ShapeQueue.cpp">
+      <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -83,13 +80,13 @@
     <ClInclude Include="include\CMR_Keyboard.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\CMR_Shapes.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\CMR_DXCamera.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\CMR_Types.hpp">
+    <ClInclude Include="include\CMR_VertexArray.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\CMR_ShapeQueue.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

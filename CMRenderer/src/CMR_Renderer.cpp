@@ -57,95 +57,121 @@ namespace CMRenderer
 		m_CMLogger.LogInfoNL(L"CMRenderer [Shutdown] | Shutdown.");
 	}
 
-	void CMRenderer::Run() noexcept
+	void CMRenderer::UpdateWindow() noexcept
 	{
-		CMKeyboard& keyboardRef = m_Window.Keyboard();
-
-		/*constexpr float ROTATION_CONSTANT = 1.0f;
-		constexpr float ROTATION_DEFAULT = 30.0f;
-		float rotAngleX = 0.0f;
-		float rotAngleY = 0.0f;
-		float angle = 0.0f;
-
-		constexpr float OFFSET_CONSTANT = 0.5f;
-
-		float offsetX = 0.0f;
-		float offsetY = 0.0f;
-		float offsetZ = 0.0f;*/
-
-
-		while (m_Window.IsRunning())
-		{
-			m_Window.HandleMessages();
-
-			// Quit message has been received.
-			if (!m_Window.IsRunning())
-				break;
-
-			if (keyboardRef.IsReleasedClear('i'))
-			{
-				if (!m_Window.IsWindowed())
-					m_Window.Restore();
-				else
-					m_CMLogger.LogInfoNL(L"CMRenderer [Run] | Windowed key was released, but window is already windowed.");
-			}
-			else if (keyboardRef.IsReleasedClear('o'))
-			{
-				if (!m_Window.IsMaximized())
-					m_Window.Maximize();
-				else
-					m_CMLogger.LogInfoNL(L"CMRenderer [Run] | Maximize key was released, but window is already maximized.");
-			}
-			else if (keyboardRef.IsReleasedClear('p'))
-			{
-				if (!m_Window.IsMinimized())
-					m_Window.Minimize();
-				else
-					m_CMLogger.LogInfoNL(L"CMRenderer [Run] | Minimize key was pressed, but window is already minimized.");
-			}
-			/*else
-			{
-				if (keyboardRef.IsPressed('w'))
-					offsetZ += OFFSET_CONSTANT;
-				if (keyboardRef.IsPressed('s'))
-					offsetZ -= OFFSET_CONSTANT;
-				if (keyboardRef.IsPressed('a'))
-					offsetX -= OFFSET_CONSTANT;
-				if (keyboardRef.IsPressed('d'))
-					offsetX += OFFSET_CONSTANT;
-				if (keyboardRef.IsPressed(' '))
-					offsetY += OFFSET_CONSTANT;
-				if (keyboardRef.IsPressedVK(VK_SHIFT))
-					offsetY -= OFFSET_CONSTANT;
-				if (keyboardRef.IsPressed('1'))
-					rotAngleX += ROTATION_CONSTANT;
-				if (keyboardRef.IsPressed('2'))
-					rotAngleX -= ROTATION_CONSTANT;
-				if (keyboardRef.IsPressed('3'))
-					rotAngleY += ROTATION_CONSTANT;
-				if (keyboardRef.IsPressed('4'))
-					rotAngleY -= ROTATION_CONSTANT;
-				else if (keyboardRef.IsPressed('r'))
-				{
-					offsetX = 0.0f;
-					offsetY = 0.0f;
-					offsetZ = 0.0f;
-
-					rotAngleX = 0.0f;
-					rotAngleY = 0.0f;
-				}
-			}*/
-
-			m_RenderContext.Clear({ 0.0f, 0.0f, 0.0f, 0.0f });
-			//m_RenderContext.TestDraw(rotAngleX, rotAngleY, offsetX, offsetY, offsetZ);
-			//m_RenderContext.TestTextureDraw(rotAngleX, rotAngleY, offsetX, offsetY, offsetZ);
-			m_RenderContext.Present();
-
-			//angle += 0.05f;
-
-			Sleep(10);
-		}
+		m_Window.HandleMessages();
 	}
+
+	void CMRenderer::Clear(CMCommon::NormColor normalizedColor) noexcept
+	{
+		m_RenderContext.Clear(normalizedColor);
+	}
+
+	void CMRenderer::Present() noexcept
+	{
+		m_RenderContext.Present();
+	}
+
+	void CMRenderer::DrawRect(CMCommon::CMRect rect) noexcept
+	{
+		m_RenderContext.DrawRect(rect);
+	}
+
+	void CMRenderer::QueueShape(CMCommon::CMRect rect) noexcept
+	{
+		m_ShapeQueue.Queue(rect);
+	}
+
+
+	//void CMRenderer::Run() noexcept
+	//{
+	//	CMKeyboard& keyboardRef = m_Window.Keyboard();
+
+	//	/*constexpr float ROTATION_CONSTANT = 1.0f;
+	//	constexpr float ROTATION_DEFAULT = 30.0f;
+	//	float rotAngleX = 0.0f;
+	//	float rotAngleY = 0.0f;
+	//	float angle = 0.0f;
+
+	//	constexpr float OFFSET_CONSTANT = 0.5f;
+
+	//	float offsetX = 0.0f;
+	//	float offsetY = 0.0f;
+	//	float offsetZ = 0.0f;*/
+
+
+	//	while (m_Window.IsRunning())
+	//	{
+	//		m_Window.HandleMessages();
+
+	//		// Quit message has been received.
+	//		if (!m_Window.IsRunning())
+	//			break;
+
+	//		if (keyboardRef.IsReleasedClear('i'))
+	//		{
+	//			if (!m_Window.IsWindowed())
+	//				m_Window.Restore();
+	//			else
+	//				m_CMLogger.LogInfoNL(L"CMRenderer [Run] | Windowed key was released, but window is already windowed.");
+	//		}
+	//		else if (keyboardRef.IsReleasedClear('o'))
+	//		{
+	//			if (!m_Window.IsMaximized())
+	//				m_Window.Maximize();
+	//			else
+	//				m_CMLogger.LogInfoNL(L"CMRenderer [Run] | Maximize key was released, but window is already maximized.");
+	//		}
+	//		else if (keyboardRef.IsReleasedClear('p'))
+	//		{
+	//			if (!m_Window.IsMinimized())
+	//				m_Window.Minimize();
+	//			else
+	//				m_CMLogger.LogInfoNL(L"CMRenderer [Run] | Minimize key was pressed, but window is already minimized.");
+	//		}
+	//		/*else
+	//		{
+	//			if (keyboardRef.IsPressed('w'))
+	//				offsetZ += OFFSET_CONSTANT;
+	//			if (keyboardRef.IsPressed('s'))
+	//				offsetZ -= OFFSET_CONSTANT;
+	//			if (keyboardRef.IsPressed('a'))
+	//				offsetX -= OFFSET_CONSTANT;
+	//			if (keyboardRef.IsPressed('d'))
+	//				offsetX += OFFSET_CONSTANT;
+	//			if (keyboardRef.IsPressed(' '))
+	//				offsetY += OFFSET_CONSTANT;
+	//			if (keyboardRef.IsPressedVK(VK_SHIFT))
+	//				offsetY -= OFFSET_CONSTANT;
+	//			if (keyboardRef.IsPressed('1'))
+	//				rotAngleX += ROTATION_CONSTANT;
+	//			if (keyboardRef.IsPressed('2'))
+	//				rotAngleX -= ROTATION_CONSTANT;
+	//			if (keyboardRef.IsPressed('3'))
+	//				rotAngleY += ROTATION_CONSTANT;
+	//			if (keyboardRef.IsPressed('4'))
+	//				rotAngleY -= ROTATION_CONSTANT;
+	//			else if (keyboardRef.IsPressed('r'))
+	//			{
+	//				offsetX = 0.0f;
+	//				offsetY = 0.0f;
+	//				offsetZ = 0.0f;
+
+	//				rotAngleX = 0.0f;
+	//				rotAngleY = 0.0f;
+	//			}
+	//		}*/
+
+	//		m_RenderContext.Clear({ 0.0f, 0.0f, 0.0f, 0.0f });
+	//		//m_RenderContext.TestDraw(rotAngleX, rotAngleY, offsetX, offsetY, offsetZ);
+	//		//m_RenderContext.TestTextureDraw(rotAngleX, rotAngleY, offsetX, offsetY, offsetZ);
+	//		m_RenderContext.Present();
+
+	//		//angle += 0.05f;
+
+	//		Sleep(10);
+	//	}
+	//}
 #pragma endregion
 #pragma region Private
 
