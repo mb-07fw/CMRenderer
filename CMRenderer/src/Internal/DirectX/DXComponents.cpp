@@ -9,12 +9,15 @@ namespace CMRenderer::CMDirectX::Components
 	DXDevice::DXDevice(Utility::CMLoggerWide& cmLoggerRef) noexcept
 		: m_CMLoggerRef(cmLoggerRef)
 	{
+		m_CMLoggerRef.LogInfoNL(L"DXDevice [()] | Constructed.");
 	}
 
 	DXDevice::~DXDevice() noexcept
 	{
 		if (m_Created)
 			Release();
+
+		m_CMLoggerRef.LogInfoNL(L"DXDevice [~()] | Destroyed.");
 	}
 
 	void DXDevice::Create() noexcept
@@ -43,7 +46,7 @@ namespace CMRenderer::CMDirectX::Components
 		mP_Context.Reset();
 		mP_Device.Reset();
 
-		m_CMLoggerRef.LogInfoNL(L"DXDevice [Create] | Released.");
+		m_CMLoggerRef.LogInfoNL(L"DXDevice [Release] | Released.");
 
 		m_Created = false;
 		m_Released = true;
@@ -80,19 +83,19 @@ namespace CMRenderer::CMDirectX::Components
 
 		m_CMLoggerRef.LogFatalNLAppendIf(
 			hResult != S_OK,
-			L"DXDevice [Create] | Failed to create device : ",
+			L"DXDevice [CreateDevice] | Failed to create device : ",
 			WindowsUtility::TranslateDWORDError(hResult)
 		);
 
 		m_CMLoggerRef.LogFatalNLVariadicIf(
 			succeededLevel < D3D_FEATURE_LEVEL_11_0,
-			L"DXDevice [Create] | DirectX Feature Level was less than 11.0 (",
+			L"DXDevice [CreateDevice] | DirectX Feature Level was less than 11.0 (",
 			CMDirectX::DXUtility::D3DFeatureLevelToWStrView(succeededLevel).data(),
 			L"), which is less than required for this program. Continuation will only result in errors."
 		);
 
 		m_CMLoggerRef.LogInfoNLAppend(
-			L"DXDevice [Create] | Feature level in use : ",
+			L"DXDevice [CreateDevice] | Feature level in use : ",
 			CMDirectX::DXUtility::D3DFeatureLevelToWStrView(succeededLevel)
 		);
 	}
@@ -102,12 +105,15 @@ namespace CMRenderer::CMDirectX::Components
 	DXFactory::DXFactory(CMRenderer::Utility::CMLoggerWide& cmLoggerRef) noexcept
 		: m_CMLoggerRef(cmLoggerRef)
 	{
+		m_CMLoggerRef.LogInfoNL(L"DXFactory [()] | Constructed.");
 	}
 
 	DXFactory::~DXFactory() noexcept
 	{
 		if (m_Created)
 			Release();
+
+		m_CMLoggerRef.LogInfoNL(L"DXFactory [~()] | Destroyed.");
 	}
 
 	void DXFactory::Create(DXDevice& deviceRef) noexcept
@@ -166,12 +172,16 @@ namespace CMRenderer::CMDirectX::Components
 		m_Desc.Windowed = true;
 
 		m_Desc.Flags = 0;
+
+		m_CMLoggerRef.LogInfoNL(L"DXSwapChain [()] | Constructed.");
 	}
 
 	DXSwapChain::~DXSwapChain() noexcept
 	{
 		if (m_Created)
 			Release();
+
+		m_CMLoggerRef.LogInfoNL(L"DXSwapChain [~()] | Destroyed.");
 	}
 
 	void DXSwapChain::Create(const HWND hWnd, const RECT clientArea, DXFactory& factoryRef, DXDevice& deviceRef) noexcept
@@ -190,23 +200,23 @@ namespace CMRenderer::CMDirectX::Components
 			WindowsUtility::TranslateDWORDError(hResult)
 		);
 	
-		m_CMLoggerRef.LogInfoNL(L"DXSwapChain [Create] | Created.");
-
 		m_Created = true;
 		m_Released = false;
+
+		m_CMLoggerRef.LogInfoNL(L"DXSwapChain [Create] | Created.");
 	}
 
 	void DXSwapChain::Release() noexcept
 	{
-		m_CMLoggerRef.LogWarningNLIf(!m_Created, L"DXSwapChain [Release] | Attempted to release DXSwapChain before it has been created.");
-		m_CMLoggerRef.LogWarningNLIf(m_Released, L"DXSwapChain [Release] | Attempted to release DXSwapChain after it has already been released.");
+		m_CMLoggerRef.LogFatalNLIf(!m_Created, L"DXSwapChain [Release] | Attempted to release DXSwapChain before it has been created.");
+		m_CMLoggerRef.LogFatalNLIf(m_Released, L"DXSwapChain [Release] | Attempted to release DXSwapChain after it has already been released.");
 
 		mP_SwapChain.Reset();
 
-		m_CMLoggerRef.LogInfoNL(L"DXSwapChain [Release] | Released.");
-
 		m_Created = false;
 		m_Released = true;
+
+		m_CMLoggerRef.LogInfoNL(L"DXSwapChain [Release] | Released.");
 	}
 
 	IDXGISwapChain* DXSwapChain::operator->() noexcept
@@ -219,12 +229,15 @@ namespace CMRenderer::CMDirectX::Components
 	DXInfoQueue::DXInfoQueue(Utility::CMLoggerWide& cmLoggerRef) noexcept
 		: m_CMLoggerRef(cmLoggerRef)
 	{
+		m_CMLoggerRef.LogInfoNL(L"DXSwapChain [()] | Constructed.");
 	}
 
 	DXInfoQueue::~DXInfoQueue() noexcept
 	{
 		if (m_Created)
 			Release();
+
+		m_CMLoggerRef.LogInfoNL(L"DXSwapChain [~()] | Destroyed.");
 	}
 
 	void DXInfoQueue::Create(DXDevice& deviceRef) noexcept
@@ -236,10 +249,10 @@ namespace CMRenderer::CMDirectX::Components
 		HRESULT hResult = deviceRef->QueryInterface(IID_PPV_ARGS(&mP_InfoQueue));
 		m_CMLoggerRef.LogFatalNLIf(hResult != S_OK, L"DXInfoQueue [Create] | Failed to retrieve an ID3D11InfoQueue, meaning no debug output will be generated. Is the debug layer enabled?");
 
-		m_CMLoggerRef.LogInfoNL(L"DXInfoQueue [Create] | Created.");
-
 		m_Created = true;
 		m_Released = false;
+
+		m_CMLoggerRef.LogInfoNL(L"DXInfoQueue [Create] | Created.");
 	}
 
 	void DXInfoQueue::Release() noexcept
@@ -249,10 +262,10 @@ namespace CMRenderer::CMDirectX::Components
 
 		mP_InfoQueue.Reset();
 
-		m_CMLoggerRef.LogInfoNL(L"DXInfoQueue [Release] | Released.");
-
 		m_Created = false;
 		m_Released = true;
+
+		m_CMLoggerRef.LogInfoNL(L"DXInfoQueue [Release] | Released.");
 	}
 
 	void DXInfoQueue::LogMessages() noexcept
@@ -312,6 +325,7 @@ namespace CMRenderer::CMDirectX::Components
 	DXWriter::DXWriter(Utility::CMLoggerWide& cmLoggerRef) noexcept
 		: m_CMLoggerRef(cmLoggerRef)
 	{
+		m_CMLoggerRef.LogInfoNL(L"DXWriter [()] | Constructed.");
 	}
 
 	DXWriter::~DXWriter() noexcept
@@ -324,9 +338,7 @@ namespace CMRenderer::CMDirectX::Components
 
 	void DXWriter::Create(DXSwapChain& swapChainRef) noexcept
 	{
-		if (m_CMLoggerRef.LogWarningNLIf(m_Created, L"DXWriter [Create] | Attempted to recreate component."))
-			return;
-
+		m_CMLoggerRef.LogFatalNLIf(m_Created, L"DXWriter [Create] | Attempted to recreate component.");
 		m_CMLoggerRef.LogFatalNLIf(!swapChainRef.IsCreated(), L"DXWriter [Create] | Swap chain was not created previously.");
 
 		CreateIndependentResources();
@@ -334,12 +346,13 @@ namespace CMRenderer::CMDirectX::Components
 
 		m_Created = true;
 		m_Released = false;
+
+		m_CMLoggerRef.LogInfoNL(L"DXWriter [Create] | Created.");
 	}
 
 	void DXWriter::WriteText(std::wstring_view text) noexcept
 	{
-		if (m_CMLoggerRef.LogWarningNLIf(!m_Created, L"DXWriter [WriteText] | Attempted to write text before component was created."))
-			return;
+		m_CMLoggerRef.LogFatalNLIf(!m_Created, L"DXWriter [WriteText] | Attempted to write text before component was created.");
 
 	}
 
@@ -457,6 +470,8 @@ namespace CMRenderer::CMDirectX::Components
 
 		m_Created = false;
 		m_Released = true;
+
+		m_CMLoggerRef.LogInfoNL(L"DXWriter [Release] | Released.");
 	}
 
 #pragma endregion

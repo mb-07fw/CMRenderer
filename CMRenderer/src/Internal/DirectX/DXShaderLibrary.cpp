@@ -1,5 +1,6 @@
-#include "Core/CMPCH.hpp"
-#include "Internal/DirectX/DXShaderLibrary.hpp"
+#include "CMR_PCH.hpp"
+#include "CMR_DXShaderLibrary.hpp"
+#include "CMC_Paths.hpp"
 
 namespace CMRenderer::CMDirectX
 {
@@ -131,14 +132,7 @@ namespace CMRenderer::CMDirectX
 
 	void DXShaderLibrary::GetCompiledShaderDirectory(std::filesystem::path& outPathRef) noexcept
 	{
-		std::filesystem::path workingPath = std::filesystem::current_path();
-
-		m_CMLoggerRef.LogInfoNLAppend(
-			L"CMShaderLibrary [GetCompiledShaderDirectory] | Working directory : ",
-			workingPath.wstring()
-		);
-	
-		outPathRef = workingPath.parent_path() / "build" / CM_CONFIG / "Out";
+		outPathRef = Utility::RendererOutDirectoryRelativeToEngine();
 		m_CompiledShaderDirectory = outPathRef.wstring();
 
 		m_CMLoggerRef.LogInfoNLAppend(

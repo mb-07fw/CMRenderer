@@ -33,7 +33,7 @@ namespace CMRenderer
 		
 		void Run() noexcept;
 	private:
-		static constexpr std::wstring_view S_LIFETIME_LOG_FILE_NAME = L"logs/CMRendererLifetime.log";
+		static constexpr std::wstring_view S_LIFETIME_LOG_FILE_NAME = L"../CMRenderer/logs/CMRendererLifetime.log";
 		Utility::CMLoggerWide m_CMLogger;
 		CMRendererSettings m_Settings;
 		CMWindow m_Window;
