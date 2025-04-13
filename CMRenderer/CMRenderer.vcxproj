@@ -35,40 +35,40 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Distribution|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Distribution|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -99,34 +99,34 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)build\$(Configuration)\Out\</OutDir>
-    <IntDir>$(SolutionDir)build\$(Configuration)\Intermediates\</IntDir>
-    <IncludePath>$(SolutionDir);$(SolutionDir)vendor\DearImGui_CMDep\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <OutDir>$(SolutionDir)build\CMRenderer\$(Configuration)\Out\</OutDir>
+    <IntDir>$(SolutionDir)build\CMRenderer\$(Configuration)\Intermediates\</IntDir>
+    <IncludePath>$(SolutionDir)CMCommon\include\;$(SolutionDir);$(SolutionDir)vendor\CMDep_DearImGui\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)build\$(Configuration)\Out\</OutDir>
-    <IntDir>$(SolutionDir)build\$(Configuration)\Intermediates\</IntDir>
-    <IncludePath>$(SolutionDir);$(SolutionDir)vendor\DearImGui_CMDep\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <OutDir>$(SolutionDir)build\CMRenderer\$(Configuration)\Out\</OutDir>
+    <IntDir>$(SolutionDir)build\CMRenderer\$(Configuration)\Intermediates\</IntDir>
+    <IncludePath>$(SolutionDir)CMCommon\include\;$(SolutionDir);$(SolutionDir)vendor\CMDep_DearImGui\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Distribution|Win32'">
-    <OutDir>$(SolutionDir)build\$(Configuration)\Out\</OutDir>
-    <IntDir>$(SolutionDir)build\$(Configuration)\Intermediates\</IntDir>
-    <IncludePath>$(SolutionDir);$(SolutionDir)vendor\DearImGui_CMDep\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <OutDir>$(SolutionDir)build\CMRenderer\$(Configuration)\Out\</OutDir>
+    <IntDir>$(SolutionDir)build\CMRenderer\$(Configuration)\Intermediates\</IntDir>
+    <IncludePath>$(SolutionDir)CMCommon\include\;$(SolutionDir);$(SolutionDir)vendor\CMDep_DearImGui\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)build\$(Configuration)\Out\</OutDir>
-    <IntDir>$(SolutionDir)build\$(Configuration)\Intermediates\</IntDir>
-    <IncludePath>$(SolutionDir);$(SolutionDir)vendor\DearImGui_CMDep\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <OutDir>$(SolutionDir)build\CMRenderer\$(Configuration)\Out\</OutDir>
+    <IntDir>$(SolutionDir)build\CMRenderer\$(Configuration)\Intermediates\</IntDir>
+    <IncludePath>$(SolutionDir)CMCommon\include\;$(SolutionDir);$(SolutionDir)vendor\CMDep_DearImGui\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)build\$(Configuration)\Out\</OutDir>
-    <IntDir>$(SolutionDir)build\$(Configuration)\Intermediates\</IntDir>
-    <IncludePath>$(SolutionDir);$(SolutionDir)vendor\DearImGui_CMDep\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <OutDir>$(SolutionDir)build\CMRenderer\$(Configuration)\Out\</OutDir>
+    <IntDir>$(SolutionDir)build\CMRenderer\$(Configuration)\Intermediates\</IntDir>
+    <IncludePath>$(SolutionDir)CMCommon\include\;$(SolutionDir);$(SolutionDir)vendor\CMDep_DearImGui\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Distribution|x64'">
-    <OutDir>$(SolutionDir)build\$(Configuration)\Out\</OutDir>
-    <IntDir>$(SolutionDir)build\$(Configuration)\Intermediates\</IntDir>
-    <IncludePath>$(SolutionDir);$(SolutionDir)vendor\DearImGui_CMDep\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <OutDir>$(SolutionDir)build\CMRenderer\$(Configuration)\Out\</OutDir>
+    <IntDir>$(SolutionDir)build\CMRenderer\$(Configuration)\Intermediates\</IntDir>
+    <IncludePath>$(SolutionDir)CMCommon\include\;$(SolutionDir);$(SolutionDir)vendor\CMDep_DearImGui\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -135,7 +135,7 @@
       <PreprocessorDefinitions>CM_CONFIG="$(Configuration)";CM_DEBUG;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>Core/CMPCH.hpp</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>CMR_PCH.hpp</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>include;</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
@@ -156,7 +156,7 @@
       <PreprocessorDefinitions>CM_CONFIG="$(Configuration)";CM_RELEASE;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>Core/CMPCH.hpp</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>CMR_PCH.hpp</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>include;</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
@@ -179,7 +179,7 @@
       <PreprocessorDefinitions>CM_CONFIG="$(Configuration)";CM_DISTRIBUTION;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>Core/CMPCH.hpp</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>CMR_PCH.hpp</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>include;</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
@@ -200,7 +200,7 @@
       <PreprocessorDefinitions>CM_CONFIG="$(Configuration)";CM_DEBUG;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>Core/CMPCH.hpp</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>CMR_PCH.hpp</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>include;</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
@@ -221,7 +221,7 @@
       <PreprocessorDefinitions>CM_CONFIG="$(Configuration)";CM_RELEASE;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>Core/CMPCH.hpp</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>CMR_PCH.hpp</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>include;</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
@@ -244,7 +244,7 @@
       <PreprocessorDefinitions>CM_CONFIG="$(Configuration)";CM_DISTRIBUTION;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>Core/CMPCH.hpp</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>CMR_PCH.hpp</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>include;</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
@@ -259,12 +259,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\Internal\CMTypes.cpp" />
-    <ClCompile Include="src\Internal\DirectX\DXCamera.cpp" />
-    <ClCompile Include="src\Internal\CMShapes.cpp" />
-    <ClCompile Include="src\Main.cpp" />
-    <ClCompile Include="src\CMRenderer.cpp" />
-    <ClCompile Include="src\Core\CMPCH.cpp">
+    <ClCompile Include="src\CMR_Types.cpp" />
+    <ClCompile Include="src\CMR_DXCamera.cpp" />
+    <ClCompile Include="src\CMR_Shapes.cpp" />
+    <ClCompile Include="src\CMR_Renderer.cpp" />
+    <ClCompile Include="src\CMR_PCH.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Distribution|Win32'">Create</PrecompiledHeader>
@@ -272,33 +271,28 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Distribution|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\Internal\DirectX\DXContext.cpp" />
-    <ClCompile Include="src\Internal\CMRendererSettings.cpp" />
-    <ClCompile Include="src\Internal\DirectX\DXShaderData.cpp" />
-    <ClCompile Include="src\Internal\DirectX\DXShaderLibrary.cpp" />
-    <ClCompile Include="src\Internal\CMWindow.cpp" />
-    <ClCompile Include="src\Internal\DirectX\DXComponents.cpp" />
-    <ClCompile Include="src\Internal\CMKeyboard.cpp" />
+    <ClCompile Include="src\CMR_DXContext.cpp" />
+    <ClCompile Include="src\CMR_RendererSettings.cpp" />
+    <ClCompile Include="src\CMR_DXShaderData.cpp" />
+    <ClCompile Include="src\CMR_DXShaderLibrary.cpp" />
+    <ClCompile Include="src\CMR_Window.cpp" />
+    <ClCompile Include="src\CMR_DXComponents.cpp" />
+    <ClCompile Include="src\CMR_Keyboard.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\CMRenderer.hpp" />
-    <ClInclude Include="include\Core\CMMacros.hpp" />
-    <ClInclude Include="include\Internal\CMKeyboard.hpp" />
-    <ClInclude Include="include\Internal\CMTypes.hpp" />
-    <ClInclude Include="include\Internal\DirectX\DXCamera.hpp" />
-    <ClInclude Include="include\Internal\CMShapes.hpp" />
-    <ClInclude Include="include\Internal\Utility\Utility.hpp" />
-    <ClInclude Include="include\Internal\DirectX\DXContext.hpp" />
-    <ClInclude Include="include\Internal\Utility\CMLogger.hpp" />
-    <ClInclude Include="include\Core\CMPCH.hpp" />
-    <ClInclude Include="include\Core\WindowsDefines.hpp" />
-    <ClInclude Include="include\Internal\CMRendererSettings.hpp" />
-    <ClInclude Include="include\Internal\DirectX\DXShaderData.hpp" />
-    <ClInclude Include="include\Internal\DirectX\DXShaderLibrary.hpp" />
-    <ClInclude Include="include\Internal\CMWindow.hpp" />
-    <ClInclude Include="include\Internal\DirectX\DXComponents.hpp" />
-    <ClInclude Include="include\Internal\DirectX\DXUtility.hpp" />
-    <ClInclude Include="include\Internal\Utility\WindowsUtility.hpp" />
+    <ClInclude Include="include\CMR_Renderer.hpp" />
+    <ClInclude Include="include\CMR_Keyboard.hpp" />
+    <ClInclude Include="include\CMR_Types.hpp" />
+    <ClInclude Include="include\CMR_DXCamera.hpp" />
+    <ClInclude Include="include\CMR_Shapes.hpp" />
+    <ClInclude Include="include\CMR_DXContext.hpp" />
+    <ClInclude Include="include\CMR_PCH.hpp" />
+    <ClInclude Include="include\CMR_RendererSettings.hpp" />
+    <ClInclude Include="include\CMR_DXShaderData.hpp" />
+    <ClInclude Include="include\CMR_DXShaderLibrary.hpp" />
+    <ClInclude Include="include\CMR_Window.hpp" />
+    <ClInclude Include="include\CMR_DXComponents.hpp" />
+    <ClInclude Include="include\CMR_DXUtility.hpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="resources\shaders\Default3D_PS.hlsl">
