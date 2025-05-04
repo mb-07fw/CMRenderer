@@ -12,7 +12,7 @@ namespace CMRenderer
 	class CMKeyboard
 	{
 	public:
-		CMKeyboard(Utility::CMLoggerWide& cmLoggerRef) noexcept;
+		CMKeyboard(CMCommon::CMLoggerWide& cmLoggerRef) noexcept;
 		~CMKeyboard() = default;
 	public:
 		void SetPressedVK(BYTE virtualKey) noexcept;
@@ -43,6 +43,6 @@ namespace CMRenderer
 		static constexpr USHORT S_TOTAL_VKS = 256;
 		std::array<BYTE, S_TOTAL_VKS> m_KeyStates;
 		HKL m_CurrentInputLocale = nullptr;
-		Utility::CMLoggerWide& m_CMLoggerRef;
+		CMCommon::CMLoggerWide& m_CMLoggerRef;
 	};
 }

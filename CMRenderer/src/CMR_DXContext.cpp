@@ -1,58 +1,141 @@
 ﻿#include "CMR_PCH.hpp"
 #include "CMR_DXContext.hpp"
-#include "CMR_DXUtility.hpp"
+#include "CMR_DXResources.hpp"
 #include "CMC_WindowsUtility.hpp"
-#include "CMC_Utility.hpp"
+#include "CMC_Macros.hpp"
 
 #define COMMA(x) x,
 
 namespace CMRenderer::CMDirectX
 {
-	DXContextState::DXContextState(Utility::CMLoggerWide& cmLoggerRef, DXShaderLibrary& shaderLibraryRef, Components::DXDevice& deviceRef) noexcept
+#pragma region DXContextState
+	DXContextState::DXContextState(
+		CMCommon::CMLoggerWide& cmLoggerRef,
+		DXShaderLibrary& shaderLibraryRef,
+		Components::DXDevice& deviceRef,
+		const CMWindowData& currentWindowDataRef
+	) noexcept
 		: m_ShaderLibraryRef(shaderLibraryRef), 
 		  m_DeviceRef(deviceRef),
+		  m_CurrentWindowDataRef(currentWindowDataRef),
+		  m_Camera(),
 		  m_CMLoggerRef(cmLoggerRef)
 	{
 	}
 
-	void DXContextState::SetCurrentShader(DXImplementedShaderType shaderType) noexcept
+	void DXContextState::SetCurrentShaderSet(DXShaderSetType shaderType) noexcept
 	{
-		EnforceInitializedState();
+		m_CMLoggerRef.LogFatalNLIf(!m_DeviceRef.IsCreated(), L"DXContextState [SetCurrentShaderSet] | Device is not created.");
+		m_CMLoggerRef.LogFatalNLIf(!m_ShaderLibraryRef.IsInitialized(), L"DXContextState [SetCurrentShaderSet] | Shader library is not initialized.");
 
-		mP_CurrentShaderSet = &m_ShaderLibraryRef.GetSetOfType(shaderType);
+		std::shared_ptr<IDXShaderSet> pCurrentShaderSet = nullptr;
+		if (!mP_CurrentShaderSet.expired())
+		{
+			pCurrentShaderSet = mP_CurrentShaderSet.lock();
 
-		if (!mP_CurrentShaderSet->IsCreated())
-			m_CMLoggerRef.LogFatalNL(L"DXContextState [SetCurrentShader] | Retrieved shader set wasn't created previously.");
+			if (m_CMLoggerRef.LogWarningNLIf(pCurrentShaderSet->Type == shaderType, L"DXContextState [SetCurrentShaderSet] | DXShaderSetType is already set."))
+				return;
+		}
 
-		m_DeviceRef.ContextRaw()->VSSetShader(mP_CurrentShaderSet->VertexShader(), nullptr, 0);
-		m_DeviceRef.ContextRaw()->PSSetShader(mP_CurrentShaderSet->PixelShader(), nullptr, 0);
+		mP_CurrentShaderSet = m_ShaderLibraryRef.GetSetOfType(shaderType);
+
+		m_CMLoggerRef.LogFatalNLIf(mP_CurrentShaderSet.expired(), L"DXContextState [SetCurrentShaderSet] | Retrieved shader set pointer is expired.");
+
+		if (pCurrentShaderSet == nullptr)
+			pCurrentShaderSet = mP_CurrentShaderSet.lock();
+
+		m_CMLoggerRef.LogFatalNLIf(!pCurrentShaderSet->IsCreated, L"DXContextState [SetCurrentShaderSet] | Retrieved shader set wasn't created previously.");
+
+		m_CMLoggerRef.LogFatalNLIf(pCurrentShaderSet->pVertexShader.Get() == nullptr, L"DXContextState [SetCurrentShaderSet] | Vertex Shader was nullptr.");
+		m_CMLoggerRef.LogFatalNLIf(pCurrentShaderSet->pPixelShader.Get() == nullptr, L"DXContextState [SetCurrentShaderSet] | Pixel Shader was nullptr.");
+		m_CMLoggerRef.LogFatalNLIf(pCurrentShaderSet->pInputLayout.Get() == nullptr, L"DXContextState [SetCurrentShaderSet] | Input Layout was nullptr.");
+
+		m_DeviceRef.ContextRaw()->VSSetShader(pCurrentShaderSet->pVertexShader.Get(), nullptr, 0);
+		m_DeviceRef.ContextRaw()->PSSetShader(pCurrentShaderSet->pPixelShader.Get(), nullptr, 0);
+		m_DeviceRef.ContextRaw()->IASetInputLayout(pCurrentShaderSet->pInputLayout.Get());
 	}
 
-	[[nodiscard]] DXImplementedShaderType DXContextState::CurrentShaderType() const noexcept
+	void DXContextState::SetCurrentModelMatrix(const DirectX::XMMATRIX& modelMatrixRef) noexcept
 	{
-		return mP_CurrentShaderSet.IsNull() ? DXImplementedShaderType::INVALID :
-			mP_CurrentShaderSet->ImplementedType();
+		m_CurrentModelMatrix = modelMatrixRef;
+		m_ModelMatrixSet = true;
 	}
 
-
-	void DXContextState::EnforceInitializedState() noexcept
+	void DXContextState::SetCurrentCameraData(const CMCameraData& cameraDataRef) noexcept
 	{
-		if (!m_DeviceRef.IsCreated())
-			m_CMLoggerRef.LogFatalNL(L"DXContextState [EnforceInitializedState] | Device is not created.");
-		else if (!m_ShaderLibraryRef.IsInitialized())
-			m_CMLoggerRef.LogFatalNL(L"DXContextState [EnforceInitializedState] | Shader library is not initialized.");
+		m_CameraData = cameraDataRef;
+		m_CameraUpdated = true;
 	}
+
+	void DXContextState::SetCurrentCameraTransform(const CMCommon::CMRigidTransform& rigidTransformRef) noexcept
+	{
+		m_CameraData.RigidTransform = rigidTransformRef;
+		m_CameraTransformUpdated = true;
+		m_CameraUpdated = true;
+	}
+
+	void DXContextState::UpdateResolution() noexcept
+	{
+		if (CurrentAspectRatio() == m_Camera.AspectRatio())
+			return;
+		
+		m_WindowResized = true;
+	}
+	
+	void DXContextState::UpdateCamera() noexcept
+	{
+		if (!m_CameraUpdated && !m_WindowResized)
+		{
+			m_CMLoggerRef.LogWarningNL(
+				L"DXContextState [UpdateCamera] | Attempted to update camera even though camera data "
+				L" and window resolution haven't changed."
+			);
+			return;
+		}
+
+		/* Camera updated and window resized, all V, P and VP matrices need to be recalculated. */
+		if (m_CameraUpdated && m_WindowResized)
+			m_Camera.SetAll(m_CameraData, CurrentAspectRatio());
+		/* Camera transform updated, only V and VP matrices need to be recalculated. */
+		else if (m_CameraTransformUpdated)
+			m_Camera.SetTransform(m_CameraData.RigidTransform);
+		/* Window resolution updated, only P and VP matrices need to be recalculated. */
+		else if (m_WindowResized)
+			m_Camera.SetAspectRatio(CurrentAspectRatio());
+
+		m_CameraUpdated = false;
+		m_CameraTransformUpdated = false;
+		m_WindowResized = false;
+	}
+
+	[[nodiscard]] DXShaderSetType DXContextState::CurrentShaderSet() const noexcept
+	{
+		if (mP_CurrentShaderSet.expired())
+			return DXShaderSetType::INVALID;
+
+		std::shared_ptr<IDXShaderSet> pCurrentShaderSet = mP_CurrentShaderSet.lock();
+
+		return pCurrentShaderSet.get() == nullptr ? DXShaderSetType::INVALID :
+			pCurrentShaderSet->Type;
+	}
+
+	[[nodiscard]] float DXContextState::CurrentAspectRatio() const noexcept
+	{
+		return static_cast<float>(m_CurrentWindowDataRef.ClientArea.right) /
+			m_CurrentWindowDataRef.ClientArea.bottom;
+	}
+#pragma endregion
 
 #pragma region DXContext
-	DXContext::DXContext(Utility::CMLoggerWide& cmLoggerRef, CMWindowData& currentWindowDataRef) noexcept
-		: m_CurrentWindowDataRef(currentWindowDataRef),
+	DXContext::DXContext(CMCommon::CMLoggerWide& cmLoggerRef, const CMWindowData& currentWindowDataRef) noexcept
+		: m_CMLoggerRef(cmLoggerRef),
 		  m_ShaderLibrary(cmLoggerRef),
-		  m_State(cmLoggerRef, m_ShaderLibrary, m_Device),
+		  m_State(cmLoggerRef, m_ShaderLibrary, m_Device, currentWindowDataRef),
 		  m_Device(cmLoggerRef),
 		  m_Factory(cmLoggerRef), 
 		  m_SwapChain(cmLoggerRef),
-		  CM_IF_NDEBUG_REPLACE(COMMA(m_InfoQueue(cmLoggerRef)))
-		  m_CMLoggerRef(cmLoggerRef)
+		  m_Writer(cmLoggerRef),
+		  CM_IF_NDEBUG_REPLACE(m_InfoQueue(cmLoggerRef))
 	{
 		CM_IF_DEBUG(
 			m_DebugInterfaceModule = LoadLibrary(L"Dxgidebug.dll");
@@ -99,27 +182,29 @@ namespace CMRenderer::CMDirectX
 
 		m_Device.Create();
 		m_Factory.Create(m_Device);
-		m_SwapChain.Create(hWnd, m_CurrentWindowDataRef.ClientArea, m_Factory, m_Device);
+		m_SwapChain.Create(hWnd, m_State.CurrentClientArea(), m_Factory, m_Device);
+		//m_Writer.Create(m_SwapChain);
 
 		CM_IF_DEBUG(
 			m_InfoQueue.Create(m_Device);
 			m_CMLoggerRef.LogFatalNLIf(!m_InfoQueue.IsCreated(), L"DXContext [Init] | Failed to initialize info queue.");
 		);
 
-		//InitImGui(hWnd);
+		InitImGui(hWnd);
 
 		m_ShaderLibrary.Init(m_Device);
 
-		/*D3D11_RASTERIZER_DESC rasterizerDesc = {};
+		/* Rasterizer testing...
+		D3D11_RASTERIZER_DESC rasterizerDesc = {};
 		rasterizerDesc.FillMode = D3D11_FILL_SOLID;
 		rasterizerDesc.CullMode = D3D11_CULL_NONE;
 		rasterizerDesc.FrontCounterClockwise = (BOOL)true;
 
 		HRESULT hResult = m_Device->CreateRasterizerState(&rasterizerDesc, mP_RasterizerState.GetAddressOf());
 
-		m_CMLoggerRef.LogFatalNL(hResult != S_OK, L"DXContext [Init] | Failed to create rasterizer state.");*/
+		m_CMLoggerRef.LogFatalNL(hResult != S_OK, L"DXContext [Init] | Failed to create rasterizer state.");
 
-		m_Device.ContextRaw()->RSSetState(mP_RasterizerState.Get());
+		m_Device.ContextRaw()->RSSetState(mP_RasterizerState.Get());*/
 
 		CreateRTV();
 		SetViewport();
@@ -131,89 +216,18 @@ namespace CMRenderer::CMDirectX
 		m_CMLoggerRef.LogInfoNL(L"DXContext [Init] | Initialized.");
 	}
 
-	void DXContext::Clear(CMCommon::NormColor normColor) noexcept
-	{
-		m_Device.ContextRaw()->ClearRenderTargetView(mP_RTV.Get(), normColor.rgba);
-		m_Device.ContextRaw()->ClearDepthStencilView(mP_DSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
-	}
-
-	void DXContext::Present() noexcept
-	{
-		/*ImGui_ImplDX11_NewFrame();
-		ImGui_ImplWin32_NewFrame();
-		ImGui::NewFrame();
-
-		ImGui::Begin("My Test Window!");
-
-		ImGui::SliderFloat("Camera X", &posX, -20.0f, 20.0f);
-		ImGui::SliderFloat("Camera Y", &posY, -20.0f, 20.0f);
-		ImGui::SliderFloat("Camera Z", &posZ, -50.0f, -10.0f);
-
-		ImGui::SliderFloat("Face One X", &faceOneX, -20.0f, 20.0f);
-		ImGui::SliderFloat("Face One Y", &faceOneY, -20.0f, 20.0f);
-		ImGui::SliderFloat("Face One Z", &faceOneZ, -20.0f, 20.0f);
-
-		ImGui::SliderFloat("Face Two X", &faceTwoX, -20.0f, 20.0f);
-		ImGui::SliderFloat("Face Two Y", &faceTwoY, -20.0f, 20.0f);
-		ImGui::SliderFloat("Face Two Z", &faceTwoZ, -20.0f, 20.0f);
-
-		ImGui::SliderFloat("Face One Rotation X", &faceOneRotX, 0, 360);
-		ImGui::SliderFloat("Face One Rotation Y", &faceOneRotY, 0, 360);
-
-		ImGui::SliderFloat("Face Two Rotation X", &faceTwoRotX, 0, 360);
-		ImGui::SliderFloat("Face Two Rotation Y", &faceTwoRotY, 0, 360);
-
-		ImGui::End();
-
-		ImGui::Render();
-		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());*/
-
-		HRESULT hResult = m_SwapChain->Present(1, 0);
-
-		if (hResult == DXGI_ERROR_DEVICE_REMOVED || hResult == DXGI_ERROR_DEVICE_RESET)
-		{
-			CM_IF_DEBUG(
-				if (!m_InfoQueue.IsQueueEmpty())
-					m_InfoQueue.LogMessages();
-					);
-
-			m_CMLoggerRef.LogFatalNLAppend(
-				L"DXContext [Present] | Device removed error : ",
-				WindowsUtility::TranslateDWORDError(hResult)
-			);
-		}
-		else if (hResult != S_OK)
-		{
-			CM_IF_DEBUG(
-				if (!m_InfoQueue.IsQueueEmpty())
-					m_InfoQueue.LogMessages();
-					);
-
-			m_CMLoggerRef.LogFatalNLAppend(
-				L"DXContext [Present] | Present error : ",
-				WindowsUtility::TranslateDWORDError(hResult)
-			);
-		}
-	}
-
-	void DXContext::DrawRect(CMCommon::CMRect rect) noexcept
-	{
-		m_CMLoggerRef.LogFatalNLIf(!m_Initialized, L"DXContext [DrawRect] | Attempted to draw before initializing context.");
-
-
-	}
-
 	void DXContext::Shutdown() noexcept
 	{
 		m_CMLoggerRef.LogFatalNLIf(m_Shutdown, L"DXContext [Shutdown] | Shutdown has been attempted after shutdown has already occured previously.");
 		m_CMLoggerRef.LogFatalNLIf(!m_Initialized, L"DXContext [Shutdown] | Shutdown has been attempted before initialization.");
 
-		/*ShutdownImGui();*/
+		ShutdownImGui();
 
 		mP_RTV.Reset();
 		m_Factory.Release();
 		m_Device.Release();
 		m_SwapChain.Release();
+		//m_Writer.Release();
 
 		CM_IF_DEBUG(
 			if (!m_InfoQueue.IsQueueEmpty())
@@ -227,6 +241,241 @@ namespace CMRenderer::CMDirectX
 		m_Initialized = false;
 		m_Shutdown = true;
 	}
+
+	void DXContext::SetShaderSet(DXShaderSetType setType) noexcept
+	{
+		m_CMLoggerRef.LogFatalNLIf(setType == DXShaderSetType::INVALID, L"DXContext [SetShaderSet] | The provided DXShaderSetType should not be DXShaderSetType::INVALID.");
+
+		if (m_State.CurrentShaderSet() == setType)
+		{
+			m_CMLoggerRef.LogWarningNL(L"DXContext [SetShaderSet] | The provided DXShaderSetType is already set.");
+			return;
+		}
+
+		m_State.SetCurrentShaderSet(setType);
+	}
+
+	void DXContext::SetModelMatrix(const DirectX::XMMATRIX& modelMatrixRef) noexcept
+	{
+		m_State.SetCurrentModelMatrix(modelMatrixRef);
+	}
+
+	void DXContext::SetCamera(const CMCameraData& cameraDataRef) noexcept
+	{
+		m_State.SetCurrentCameraData(cameraDataRef);
+	}
+
+	void DXContext::SetCameraTransform(const CMCommon::CMRigidTransform& rigidTransformRef) noexcept
+	{
+		m_State.SetCurrentCameraTransform(rigidTransformRef);
+	}
+
+	void DXContext::Clear(CMCommon::NormColor normColor) noexcept
+	{
+		m_Device.ContextRaw()->ClearRenderTargetView(mP_RTV.Get(), normColor.rgba);
+		m_Device.ContextRaw()->ClearDepthStencilView(mP_DSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
+	}
+
+	void DXContext::Present() noexcept
+	{
+		HRESULT hResult = m_SwapChain->Present(1, 0);
+
+		if (hResult == DXGI_ERROR_DEVICE_REMOVED || hResult == DXGI_ERROR_DEVICE_RESET)
+		{
+			CM_IF_DEBUG(
+				if (!m_InfoQueue.IsQueueEmpty())
+					m_InfoQueue.LogMessages();
+					);
+
+			m_CMLoggerRef.LogFatalNLAppend(
+				L"DXContext [Present] | Device error : ",
+				WindowsUtility::TranslateDWORDError(hResult)
+			);
+		}
+		/*else if (hResult != S_OK)
+		{
+			CM_IF_DEBUG(
+				if (!m_InfoQueue.IsQueueEmpty())
+					m_InfoQueue.LogMessages();
+					);
+
+			m_CMLoggerRef.LogFatalNLAppend(
+				L"DXContext [Present] | Present error : ",
+				WindowsUtility::TranslateDWORDError(hResult)
+			);
+		}*/
+	}
+
+	void DXContext::DrawIndexed(const std::span<float> vertices, const std::span<uint16_t> indices, UINT vertexStride, UINT vertexOffset) noexcept
+	{
+		m_CMLoggerRef.LogFatalNLIf(vertices.data() == nullptr, L"DXContext [DrawIndexed] | Vertices data is nullptr.");
+		m_CMLoggerRef.LogFatalNLIf(indices.data() == nullptr, L"DXContext [DrawIndexed] | Indices data is nullptr.");
+
+		m_CMLoggerRef.LogFatalNLIf(vertices.size() == 0, L"DXContext [DrawIndexed] | Vertices size is 0.");
+		m_CMLoggerRef.LogFatalNLIf(indices.size() == 0, L"DXContext [DrawIndexed] | Indices size is 0.");
+
+		BindRTV();
+
+		DXVertexBuffer<float> vertexBuffer(vertices, vertexStride, vertexOffset);
+		DXIndexBuffer<uint16_t> indexBuffer(indices, DXGI_FORMAT_R16_UINT, 0);
+
+		DirectX::XMMATRIX modelMatrix = {};
+		if (m_State.IsModelMatrixSet())
+			modelMatrix = m_State.CurrentModelMatrix();
+		else
+			modelMatrix = DirectX::XMMatrixTranslation(0.0f, 0.0f, 0.0f);
+
+		if (m_State.CameraUpdated() || m_State.WindowResized())
+			m_State.UpdateCamera();
+
+		DirectX::XMMATRIX mvpMatrix = DirectX::XMMatrixTranspose(modelMatrix * m_State.Camera().ViewProjectionMatrix());
+		DXConstantBuffer<DirectX::XMMATRIX> mvpBuffer(std::span<DirectX::XMMATRIX>(&mvpMatrix, 1u), 0);
+
+		m_CMLoggerRef.LogFatalNLIf(FAILED(vertexBuffer.Create(m_Device)), L"DXContext [DrawIndexed] | Failed to create vertex buffer.");
+		m_CMLoggerRef.LogFatalNLIf(FAILED(indexBuffer.Create(m_Device)), L"DXContext [DrawIndexed] | Failed to create index buffer.");
+		m_CMLoggerRef.LogFatalNLIf(FAILED(mvpBuffer.Create(m_Device)), L"DXContext [DrawIndexed] | Failed to create mvp constant buffer.");
+
+		vertexBuffer.Bind(m_Device);
+		indexBuffer.Bind(m_Device);
+		mvpBuffer.Bind(m_Device);
+
+		UINT indexCount = static_cast<UINT>(indices.size());
+
+		m_Device.ContextRaw()->DrawIndexed(indexCount, 0, 0);
+
+		/*CM_IF_DEBUG(
+			if (!m_InfoQueue.IsQueueEmpty())
+			{
+				m_InfoQueue.LogMessages();
+				m_CMLoggerRef.LogFatalNL(L"DXContext [DrawIndexed] | Debug messages generated after drawing.");
+			}
+		);*/
+	}
+
+#pragma region ImGui Wrappers
+	void DXContext::ImGuiNewFrame() noexcept
+	{
+		m_CMLoggerRef.LogFatalNLIf(
+			!m_Initialized,
+			L"DXContext [ImGuiNewFrame] Attempted to perform ImGui operation before context was initialized."
+		);
+
+		ImGui_ImplDX11_NewFrame();
+		ImGui_ImplWin32_NewFrame();
+		ImGui::NewFrame();
+	}
+
+	void DXContext::ImGuiBegin(std::string_view windowTitle, bool* pIsOpen, ImGuiWindowFlags windowFlags) noexcept
+	{
+		m_CMLoggerRef.LogFatalNLIf(
+			!m_Initialized,
+			L"DXContext [ImGuiBegin] Attempted to perform ImGui operation before context was initialized."
+		);
+
+		ImGui::Begin(windowTitle.data(), pIsOpen, windowFlags);
+	}
+
+	void DXContext::ImGuiEnd() noexcept
+	{
+		m_CMLoggerRef.LogFatalNLIf(
+			!m_Initialized,
+			L"DXContext [ImGuiEnd] Attempted to perform ImGui operation before context was initialized."
+		);
+
+		ImGui::End();
+	}
+
+	bool DXContext::ImGuiBeginChild(
+		std::string_view stringID,
+		ImVec2 size,
+		ImGuiChildFlags childFlags,
+		ImGuiWindowFlags windowFlags
+	) noexcept
+	{
+		m_CMLoggerRef.LogFatalNLIf(
+			!m_Initialized,
+			L"DXContext [ImGuiBeginChild] Attempted to perform ImGui operation before context was initialized."
+		);
+	
+		return ImGui::BeginChild(stringID.data(), size, childFlags, windowFlags);
+	}
+
+	bool DXContext::ImGuiBeginChild(
+		ImGuiID id,
+		ImVec2 size,
+		ImGuiChildFlags childFlags,
+		ImGuiWindowFlags windowFlags
+	) noexcept
+	{
+		m_CMLoggerRef.LogFatalNLIf(
+			!m_Initialized,
+			L"DXContext [ImGuiBeginChild] Attempted to perform ImGui operation before context was initialized."
+		);
+
+		return ImGui::BeginChild(id, size, childFlags, windowFlags);
+	}
+
+	void DXContext::ImGuiSlider(std::string_view label, float* pValue, float valueMin, float valueMax) noexcept
+	{
+		m_CMLoggerRef.LogFatalNLIf(
+			!m_Initialized,
+			L"DXContext [ImGuiSlider] Attempted to perform ImGui operation before context was initialized."
+		);
+
+		ImGui::SliderFloat(label.data(), pValue, valueMin, valueMax);
+	}
+
+	void DXContext::ImGuiSliderAngle(std::string_view label, float* pRadians, float angleMin, float angleMax) noexcept
+	{
+		m_CMLoggerRef.LogFatalNLIf(
+			!m_Initialized,
+			L"DXContext [ImGuiSliderAngle] Attempted to perform ImGui operation before context was initialized."
+		);
+
+		ImGui::SliderAngle(label.data(), pRadians, angleMin, angleMax);
+	}
+
+	void DXContext::ImGuiShowDemoWindow() noexcept
+	{
+		m_CMLoggerRef.LogFatalNLIf(
+			!m_Initialized,
+			L"DXContext [ImGuiShowDemoWindow] Attempted to perform ImGui operation before context was initialized."
+		);
+
+		ImGui::ShowDemoWindow();
+	}
+
+	[[nodiscard]] bool DXContext::ImGuiCollapsingHeader(std::string_view title, ImGuiTreeNodeFlags flags) noexcept
+	{
+		m_CMLoggerRef.LogFatalNLIf(
+			!m_Initialized,
+			L"DXContext [ImGuiCollapsingHeader] Attempted to perform ImGui operation before context was initialized."
+		);
+
+		return ImGui::CollapsingHeader(title.data(), flags);
+	}
+
+	void DXContext::ImGuiEndFrame() noexcept
+	{
+		m_CMLoggerRef.LogFatalNLIf(
+			!m_Initialized,
+			L"DXContext [ImGuiEndFrame] Attempted to perform ImGui operation before context was initialized."
+		);
+
+		ImGui::Render();
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+	}
+
+	void DXContext::ImGuiEndChild() noexcept
+	{
+		m_CMLoggerRef.LogFatalNLIf(
+			!m_Initialized, 
+			L"DXContext [ImGuiEndChild] Attempted to perform ImGui operation before context was initialized."
+		);
+
+		ImGui::EndChild();
+	}
+#pragma endregion
 
 #pragma region Test Drawing
 	/*void DXContext::TestDraw(float rotAngleX, float rotAngleY, float offsetX, float offsetY, float offsetZ) noexcept
@@ -798,12 +1047,10 @@ namespace CMRenderer::CMDirectX
 
 	void DXContext::InitImGui(const HWND hWnd) noexcept
 	{
-		if (!m_Device.IsCreated())
-			m_CMLoggerRef.LogFatalNL(L"DXContext [InitImGui] | Device was not created previously.");
+		m_CMLoggerRef.LogFatalNLIf(!m_Device.IsCreated(), L"DXContext [InitImGui] | Device was not created previously.");
 
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
-		//ImGuiIO& io = ImGui::GetIO();
 
 		ImGui_ImplWin32_Init(hWnd);
 		ImGui_ImplDX11_Init(m_Device.DeviceRaw(), m_Device.ContextRaw());
@@ -811,8 +1058,7 @@ namespace CMRenderer::CMDirectX
 
 	void DXContext::ShutdownImGui() noexcept
 	{
-		if (!m_Initialized)
-			m_CMLoggerRef.LogFatalNL(L"DXContext [InitImGui] | Context was not initialized previously.");
+		m_CMLoggerRef.LogFatalNLIf(!m_Initialized, L"DXContext [InitImGui] | Context was not initialized previously.");
 
 		ImGui_ImplDX11_Shutdown();
 		ImGui_ImplWin32_Shutdown();
@@ -842,12 +1088,10 @@ namespace CMRenderer::CMDirectX
 				WindowsUtility::TranslateDWORDError(hResult)
 			);
 
-
-
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> pDepthStencilTexture;
 		D3D11_TEXTURE2D_DESC dsTextureDesc = {};
-		dsTextureDesc.Width = m_CurrentWindowDataRef.ClientArea.right;
-		dsTextureDesc.Height = m_CurrentWindowDataRef.ClientArea.bottom;
+		dsTextureDesc.Width = static_cast<UINT>(m_State.CurrentClientArea().right);
+		dsTextureDesc.Height = static_cast<UINT>(m_State.CurrentClientArea().bottom);
 		dsTextureDesc.MipLevels = 1u;
 		dsTextureDesc.ArraySize = 1u;
 		dsTextureDesc.Format = DXGI_FORMAT_R32_TYPELESS;
@@ -864,9 +1108,6 @@ namespace CMRenderer::CMDirectX
 				WindowsUtility::TranslateDWORDError(hResult)
 			);
 
-
-
-		// Note : The Depth Stencil needs to be recreated if the render target resizes
 		D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
 		depthStencilDesc.DepthEnable = TRUE;
 		depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
@@ -883,7 +1124,6 @@ namespace CMRenderer::CMDirectX
 			);
 
 		m_Device.ContextRaw()->OMSetDepthStencilState(pDSState.Get(), 1u);
-
 
 		D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
 		dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
@@ -906,7 +1146,13 @@ namespace CMRenderer::CMDirectX
 
 	void DXContext::SetViewport() noexcept
 	{
-		CD3D11_VIEWPORT viewport(0.0f, 0.0f, (FLOAT)m_CurrentWindowDataRef.ClientArea.right, (FLOAT)m_CurrentWindowDataRef.ClientArea.bottom);
+		CD3D11_VIEWPORT viewport(
+			0.0f, 
+			0.0f, 
+			static_cast<FLOAT>(m_State.CurrentClientArea().right),
+			static_cast<FLOAT>(m_State.CurrentClientArea().bottom)
+		);
+
 		m_Device.ContextRaw()->RSSetViewports(1, &viewport);
 	}
 
@@ -918,9 +1164,38 @@ namespace CMRenderer::CMDirectX
 	void DXContext::ReleaseViews() noexcept
 	{
 		m_Device.ContextRaw()->OMSetRenderTargets(0, nullptr, nullptr);
+		m_Device.ContextRaw()->OMSetDepthStencilState(nullptr, 0);
 
 		mP_RTV.Reset();
 		mP_DSV.Reset();
+	}
+
+	void DXContext::OnWindowResize() noexcept
+	{
+		m_State.UpdateResolution();
+
+		/*if (!m_Initialized)
+			return;
+
+		ReleaseViews();
+
+		DXGI_SWAP_CHAIN_DESC desc;
+		HRESULT hResult = m_SwapChain->GetDesc(&desc);
+
+		m_CMLoggerRef.LogFatalNLIf(FAILED(hResult), L"DXContext [OnWindowResize] | Failed to retrieve swap chain desc.");
+
+		hResult = m_SwapChain->ResizeBuffers(
+			desc.BufferCount,
+			desc.BufferDesc.Width,
+			desc.BufferDesc.Height,
+			desc.BufferDesc.Format,
+			desc.Flags
+		);
+
+		m_CMLoggerRef.LogFatalNLIf(FAILED(hResult), L"DXContext [OnWindowResize] | Failed to resize buffers.");
+
+		CreateRTV();
+		BindRTV();*/
 	}
 #pragma endregion
 }

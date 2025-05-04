@@ -151,17 +151,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="include\CMC_ECS.hpp" />
+    <ClInclude Include="include\CMC_ECSEntity.hpp" />
+    <ClInclude Include="include\CMC_ECSTypeID.hpp" />
+    <ClInclude Include="include\CMC_ErasedArena.hpp" />
     <ClInclude Include="include\CMC_MetaArena.hpp" />
     <ClInclude Include="include\CMC_Logger.hpp" />
     <ClInclude Include="include\CMC_Macros.hpp" />
     <ClInclude Include="include\CMC_Paths.hpp" />
     <ClInclude Include="include\CMC_Shapes.hpp" />
+    <ClInclude Include="include\CMC_SparseSet.hpp" />
     <ClInclude Include="include\CMC_Types.hpp" />
     <ClInclude Include="include\CMC_Utility.hpp" />
     <ClInclude Include="include\CMC_WindowsDefines.hpp" />
     <ClInclude Include="include\CMC_WindowsUtility.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\CMC_ECS.cpp" />
+    <ClCompile Include="src\CMC_ECSEntity.cpp" />
+    <ClCompile Include="src\CMC_ErasedArena.cpp" />
     <ClCompile Include="src\CMC_Shapes.cpp" />
     <ClCompile Include="src\CMC_Types.cpp" />
     <ClCompile Include="src\CMC_WindowsUtility.cpp" />

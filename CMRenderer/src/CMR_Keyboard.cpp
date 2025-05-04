@@ -7,7 +7,7 @@
 
 namespace CMRenderer
 {
-	CMKeyboard::CMKeyboard(Utility::CMLoggerWide& cmLoggerRef) noexcept
+	CMKeyboard::CMKeyboard(CMCommon::CMLoggerWide& cmLoggerRef) noexcept
 		: m_CMLoggerRef(cmLoggerRef), m_KeyStates() // Not sure if std::array initializes to defaults automatically...
 	{
 		ClearAllState();

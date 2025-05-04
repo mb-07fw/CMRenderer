@@ -11,9 +11,12 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 namespace CMRenderer
 {
 #pragma region Public
-	CMWindow::CMWindow(CMRendererSettings& cmSettingsRef, Utility::CMLoggerWide& cmLoggerRef) noexcept
-		: m_CMSettingsRef(cmSettingsRef), m_WindowSettingsRef(cmSettingsRef.WindowSettings),
-		  m_CMLoggerRef(cmLoggerRef), m_Keyboard(cmLoggerRef)
+	CMWindow::CMWindow(CMCommon::CMLoggerWide& cmLoggerRef, CMRendererSettings& cmSettingsRef, std::function<void()> onResizeFunc) noexcept
+		: m_CMLoggerRef(cmLoggerRef),
+		  m_CMSettingsRef(cmSettingsRef),
+		  m_WindowSettingsRef(cmSettingsRef.WindowSettings),
+		  m_Keyboard(cmLoggerRef),
+		  m_OnResizeFunc(onResizeFunc)
 	{
 		ValidateSettings();
 		LogCurrentSettings();
@@ -184,6 +187,14 @@ namespace CMRenderer
 		m_Minimized = false;
 		m_Windowed = true;
 	}
+
+	[[nodiscard]] CMWindowResolution CMWindow::CurrentResolution() const noexcept
+	{
+		return CMWindowResolution { 
+			.Width = m_WindowSettingsRef.Current.ClientArea.right,
+			.Height = m_WindowSettingsRef.Current.ClientArea.bottom 
+		};
+	}
 #pragma endregion
 
 #pragma region Private
@@ -230,17 +241,18 @@ namespace CMRenderer
 
 		// Create the window.
 		m_WindowHandle = CreateWindowExW(
-			0,														// 0 for no optional window styles.
-			wndClass.lpszClassName,									// Window class.
-			m_WindowSettingsRef.Current.WindowTitle.data(),			// Window title.
-			dwStyle,												// Window styles. 
-			CW_USEDEFAULT, CW_USEDEFAULT,							// X, Y position.
-			clientAreaRef.right - clientAreaRef.left,				// Window width. 
-			clientAreaRef.bottom - clientAreaRef.top,				// Window height.
-			nullptr,												// Parent window.
-			nullptr,												// Menu.
-			wndClass.hInstance,										// Handle to the instance of the application. (HINSTANCE)
-			this													// Other optional program data. (LPVOID)
+			0,												 // 0 for no optional window styles.
+			wndClass.lpszClassName,							 // Window class.
+			m_WindowSettingsRef.Current.WindowTitle.data(),	 // Window title.
+			dwStyle,										 // Window styles. 
+			CW_USEDEFAULT,									 // X position.
+			CW_USEDEFAULT,									 // Y position.
+			clientAreaRef.right - clientAreaRef.left,		 // Window width. 
+			clientAreaRef.bottom - clientAreaRef.top,		 // Window height.
+			nullptr,										 // Parent window.
+			nullptr,										 // Menu.
+			wndClass.hInstance,								 // Handle to the instance of the application. (HINSTANCE)
+			this											 // Other optional program data. (LPVOID)
 
 			/* NOTE : We pass in @this to be able to encapsulate the WndProc
 			 *        as a instance member function so we have access to CMWindow state.
@@ -436,14 +448,13 @@ namespace CMRenderer
 				Utility::BoolToWStr(WindowsUtility::IsAlphabeticalVK((USHORT)wParam)), ')'
 			);*/
 
-			m_Keyboard.SetPressedVK((BYTE)wParam);
+			m_Keyboard.SetPressedVK(static_cast<BYTE>(wParam));
 			return DefWindowProcW(hWnd, msgCode, wParam, lParam);
 		case WM_KEYUP:
 			if (wParam != VK_ESCAPE)
 			{
-				m_Keyboard.SetReleasedVK((BYTE)wParam);
-				//return DefWindowProcW(hWnd, msgCode, wParam, lParam);
-				return S_OK;
+				m_Keyboard.SetReleasedVK(static_cast<BYTE>(wParam));
+				return DefWindowProcW(hWnd, msgCode, wParam, lParam);
 			}
 
 			[[fallthrough]];
@@ -482,6 +493,8 @@ namespace CMRenderer
 			return DefWindowProcW(hWnd, msgCode, wParam, lParam);
 		case WM_SIZE:
 			GetClientRect(m_WindowHandle, &m_WindowSettingsRef.Current.ClientArea);
+			m_OnResizeFunc();
+
 			[[fallthrough]];
 		default:
 			return DefWindowProcW(hWnd, msgCode, wParam, lParam);

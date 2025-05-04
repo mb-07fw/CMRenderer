@@ -14,7 +14,12 @@ namespace CMRenderer
 	class CMWindow
 	{
 	public:
-		CMWindow(CMRendererSettings& cmSettingsRef, Utility::CMLoggerWide& cmLoggerRef) noexcept;
+		CMWindow(
+			CMCommon::CMLoggerWide& cmLoggerRef,
+			CMRendererSettings& cmSettingsRef,
+			std::function<void()> onResizeFunc
+		) noexcept;
+
 		~CMWindow() noexcept;
 	public:
 		void Init() noexcept;
@@ -22,12 +27,14 @@ namespace CMRenderer
 
 		void HandleMessages() noexcept;
 		
-		// handleMillis : Time to handle messages before returning once an initial message is received.
+		/* @handleMillis: Time to handle messages before returning once an initial message is received. */
 		void WaitForMessages(long long handleMillis) noexcept;
 
 		void Maximize() noexcept;
 		void Minimize() noexcept;
 		void Restore() noexcept;
+
+		[[nodiscard]] CMWindowResolution CurrentResolution() const noexcept;
 
 		inline [[nodiscard]] bool IsInitialized() const noexcept { return m_Initialized; }
 		inline [[nodiscard]] bool IsShutdown() const noexcept { return m_Shutdown; }
@@ -60,9 +67,10 @@ namespace CMRenderer
 		[[nodiscard]] LRESULT CALLBACK WndProc(HWND hWnd, UINT msgCode, WPARAM wParam, LPARAM lParam) noexcept;
 	private:
 		static constexpr std::wstring_view S_CLASS_NAME = L"CMWindow";
+		CMCommon::CMLoggerWide& m_CMLoggerRef;
 		CMRendererSettings& m_CMSettingsRef;
 		CMWindowSettings& m_WindowSettingsRef;
-		Utility::CMLoggerWide& m_CMLoggerRef;
+		std::function<void()> m_OnResizeFunc;
 		HINSTANCE m_hInstance = nullptr;
 		HWND m_WindowHandle = nullptr;
 		CMKeyboard m_Keyboard;

@@ -1,41 +1,64 @@
 #include "CMR_PCH.hpp"
 #include "CMR_DXCamera.hpp"
 
-namespace CMRenderer
+namespace CMRenderer::CMDirectX
 {
-	DXCamera::DXCamera(float worldPosX, float worldPosY, float worldPosZ, float vFovDegrees, float aspectRatio) noexcept
+	DXCamera::DXCamera(const CMCameraData& cameraDataRef, float aspectRatio) noexcept
+	{	
+		SetAll(cameraDataRef, aspectRatio);
+	}
+
+	void DXCamera::SetTransform(const CMCommon::CMRigidTransform& rigidTransformRef) noexcept
 	{
-		m_CameraPos = DirectX::XMFLOAT4(worldPosX, worldPosY, worldPosZ, 1.0f);
-			
+		m_CameraPos = DXUtility::ToXMFloat4(rigidTransformRef.Translation, 1.0f);
+		m_Rotation = DXUtility::ToXMFloat3(rigidTransformRef.Rotation);
+
 		CalculateViewMatrix();
-
-		m_ProjectionMatrix = DirectX::XMMatrixPerspectiveFovLH(
-			DirectX::XMConvertToRadians(vFovDegrees), // 45 degree fov (in radians)
-			aspectRatio,
-			0.5f, // Near plane Z.
-			100.0f // Far plane Z.
-		);
-
 		CalculateViewProjectionMatrix();
 	}
 
-	void DXCamera::TranslatePos(float offsetX, float offsetY, float offsetZ) noexcept
+	void DXCamera::SetAspectRatio(float aspectRatio) noexcept
 	{
-		m_CameraPos.x += offsetX;
-		m_CameraPos.y += offsetY;
-		m_CameraPos.z += offsetZ;
+		m_AspectRatio = aspectRatio;
+
+		CalculateProjectionMatrix();
+		CalculateViewProjectionMatrix();
+	}
+
+	void DXCamera::SetAll(const CMCameraData& cameraDataRef, float aspectRatio) noexcept
+	{
+		m_CameraPos = DXUtility::ToXMFloat4(cameraDataRef.RigidTransform.Translation, 1.0f);
+		m_Rotation = DXUtility::ToXMFloat3(cameraDataRef.RigidTransform.Rotation);
+
+		m_VertFovDegrees = cameraDataRef.VertFovDegrees;
+
+		m_NearZ = cameraDataRef.NearZ;
+		m_FarZ = cameraDataRef.FarZ;
+
+		m_AspectRatio = aspectRatio;
 
 		CalculateViewMatrix();
+		CalculateProjectionMatrix();
 		CalculateViewProjectionMatrix();
 	}
 
 	void DXCamera::CalculateViewMatrix() noexcept
 	{
-		DirectX::XMVECTOR vecPos = DirectX::XMLoadFloat4(&m_CameraPos);
+		DirectX::XMVECTOR pos = DirectX::XMLoadFloat4(&m_CameraPos);
 
-		m_ViewMatrix = DirectX::XMMatrixLookAtLH(
-			vecPos, m_CameraOrientation, m_UpDirection
-		);
+		/* X -> Pitch, Y -> Yaw, Z -> Roll */
+		DirectX::XMMATRIX rotationMatrix = DirectX::XMMatrixRotationRollPitchYaw(m_Rotation.x, m_Rotation.y, m_Rotation.z);
+
+		DirectX::XMVECTOR lookDirection = DirectX::XMVector3TransformNormal(FORWARD_DIRECTION, rotationMatrix);
+
+		DirectX::XMVECTOR targetFocusPos = DirectX::XMVectorAdd(pos, lookDirection);
+
+		m_ViewMatrix = DirectX::XMMatrixLookAtLH(pos, targetFocusPos, UP_DIRECTION);
+	}
+
+	void DXCamera::CalculateProjectionMatrix() noexcept
+	{
+		m_ProjectionMatrix = DirectX::XMMatrixPerspectiveFovLH(m_VertFovDegrees, m_AspectRatio, m_NearZ, m_FarZ);
 	}
 
 	void DXCamera::CalculateViewProjectionMatrix() noexcept

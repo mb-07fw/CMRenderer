@@ -99,32 +99,32 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>include;C:\other\dev\projects\cpp\Direct3D\CMRenderer\CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>include;$(SolutionDir)vendor\CMDep_DearImGui\;$(SolutionDir)CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <OutDir>$(SolutionDir)build\CMEngine\$(Configuration)\Out\</OutDir>
     <IntDir>$(SolutionDir)build\CMEngine\$(Configuration)\Intermediates\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Distribution|Win32'">
-    <IncludePath>include;C:\other\dev\projects\cpp\Direct3D\CMRenderer\CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>include;$(SolutionDir)vendor\CMDep_DearImGui\;$(SolutionDir)CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <OutDir>$(SolutionDir)build\CMEngine\$(Configuration)\Out\</OutDir>
     <IntDir>$(SolutionDir)build\CMEngine\$(Configuration)\Intermediates\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>include;C:\other\dev\projects\cpp\Direct3D\CMRenderer\CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>include;$(SolutionDir)vendor\CMDep_DearImGui\;$(SolutionDir)CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <OutDir>$(SolutionDir)build\CMEngine\$(Configuration)\Out\</OutDir>
     <IntDir>$(SolutionDir)build\CMEngine\$(Configuration)\Intermediates\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>include;C:\other\dev\projects\cpp\Direct3D\CMRenderer\CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>include;$(SolutionDir)vendor\CMDep_DearImGui\;$(SolutionDir)CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <OutDir>$(SolutionDir)build\CMEngine\$(Configuration)\Out\</OutDir>
     <IntDir>$(SolutionDir)build\CMEngine\$(Configuration)\Intermediates\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Distribution|x64'">
-    <IncludePath>include;C:\other\dev\projects\cpp\Direct3D\CMRenderer\CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>include;$(SolutionDir)vendor\CMDep_DearImGui\;$(SolutionDir)CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <OutDir>$(SolutionDir)build\CMEngine\$(Configuration)\Out\</OutDir>
     <IntDir>$(SolutionDir)build\CMEngine\$(Configuration)\Intermediates\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>include;C:\other\dev\projects\cpp\Direct3D\CMRenderer\CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>include;$(SolutionDir)vendor\CMDep_DearImGui\;$(SolutionDir)CMCommon\include\;$(SolutionDir)CMRenderer\include\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <OutDir>$(SolutionDir)build\CMEngine\$(Configuration)\Out\</OutDir>
     <IntDir>$(SolutionDir)build\CMEngine\$(Configuration)\Intermediates\</IntDir>
   </PropertyGroup>
@@ -135,6 +135,8 @@
       <PreprocessorDefinitions>CM_CONFIG="$(Configuration)";CM_DEBUG;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <PrecompiledHeader>Create</PrecompiledHeader>
+      <PrecompiledHeaderFile>CME_PCH.hpp</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -152,6 +154,8 @@
       <PreprocessorDefinitions>CM_CONFIG="$(Configuration)";CM_RELEASE;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <PrecompiledHeader>Create</PrecompiledHeader>
+      <PrecompiledHeaderFile>CME_PCH.hpp</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -171,6 +175,8 @@
       <PreprocessorDefinitions>CM_CONFIG="$(Configuration)";CM_DISTRIBUTION;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <PrecompiledHeader>Create</PrecompiledHeader>
+      <PrecompiledHeaderFile>CME_PCH.hpp</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -188,6 +194,8 @@
       <PreprocessorDefinitions>CM_CONFIG="$(Configuration)";CM_DEBUG;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <PrecompiledHeader>Create</PrecompiledHeader>
+      <PrecompiledHeaderFile>CME_PCH.hpp</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -205,6 +213,8 @@
       <PreprocessorDefinitions>CM_CONFIG="$(Configuration)";CM_RELEASE;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <PrecompiledHeader>Create</PrecompiledHeader>
+      <PrecompiledHeaderFile>CME_PCH.hpp</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -224,6 +234,8 @@
       <PreprocessorDefinitions>CM_CONFIG="$(Configuration)";CM_DISTRIBUTION;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <PrecompiledHeader>Create</PrecompiledHeader>
+      <PrecompiledHeaderFile>CME_PCH.hpp</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -235,11 +247,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\CME_Component.cpp" />
     <ClCompile Include="src\CME_Engine.cpp" />
     <ClCompile Include="src\CME_Main.cpp" />
+    <ClCompile Include="src\CME_PCH.cpp" />
+    <ClCompile Include="src\CME_Scene.cpp" />
+    <ClCompile Include="src\CME_SceneManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\CME_Entity.hpp" />
+    <ClInclude Include="include\CME_Component.hpp" />
     <ClInclude Include="include\CME_Engine.hpp" />
+    <ClInclude Include="include\CME_PCH.hpp" />
+    <ClInclude Include="include\CME_Scene.hpp" />
+    <ClInclude Include="include\CME_SceneManager.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

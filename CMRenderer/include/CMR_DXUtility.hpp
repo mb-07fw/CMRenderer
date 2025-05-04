@@ -1,14 +1,15 @@
 #pragma once
 
-#include <d3dcommon.h>
-#include <string_view>
+#include <d3d11.h>
+#include <DirectXMath.h>
 
+#include <string_view>
 #include <cstdint>
+
+#include "CMC_Types.hpp"
 
 namespace CMRenderer::CMDirectX::DXUtility
 {
-	constexpr std::wstring_view D3DFeatureLevelToWStrView(D3D_FEATURE_LEVEL featureLevel) noexcept;
-	
 	constexpr std::wstring_view D3DFeatureLevelToWStrView(D3D_FEATURE_LEVEL featureLevel) noexcept
 	{
 		switch (featureLevel)
@@ -28,13 +29,23 @@ namespace CMRenderer::CMDirectX::DXUtility
 		}
 	}
 
-	inline constexpr float ScreenToNDCX(uint32_t x, uint32_t width)
+	inline constexpr float ScreenToNDCX(uint32_t x, uint32_t width) noexcept
 	{
 		return (2.0f * x) / width - 1.0f;
 	}
 
-	inline constexpr float ScreenToNDCY(uint32_t y, uint32_t height)
+	inline constexpr float ScreenToNDCY(uint32_t y, uint32_t height) noexcept
 	{
 		return 1.0f - (2.0f * y) / height;
+	}
+
+	inline constexpr DirectX::XMFLOAT4 ToXMFloat4(CMCommon::CMFloat3 float3, float w = 1.0f) noexcept
+	{
+		return DirectX::XMFLOAT4(float3.x, float3.y, float3.z, w);
+	}
+
+	inline constexpr DirectX::XMFLOAT3 ToXMFloat3(CMCommon::CMFloat3 float3) noexcept
+	{
+		return DirectX::XMFLOAT3(float3.x, float3.y, float3.z);
 	}
 }

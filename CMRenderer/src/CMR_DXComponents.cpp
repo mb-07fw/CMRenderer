@@ -6,7 +6,7 @@
 namespace CMRenderer::CMDirectX::Components
 {
 #pragma region DXDevice
-	DXDevice::DXDevice(Utility::CMLoggerWide& cmLoggerRef) noexcept
+	DXDevice::DXDevice(CMCommon::CMLoggerWide& cmLoggerRef) noexcept
 		: m_CMLoggerRef(cmLoggerRef)
 	{
 		m_CMLoggerRef.LogInfoNL(L"DXDevice [()] | Constructed.");
@@ -59,12 +59,15 @@ namespace CMRenderer::CMDirectX::Components
 
 	void DXDevice::CreateDevice() noexcept
 	{
-		D3D11_CREATE_DEVICE_FLAG flags = D3D11_CREATE_DEVICE_SINGLETHREADED;
+		D3D11_CREATE_DEVICE_FLAG flags = static_cast<D3D11_CREATE_DEVICE_FLAG>(D3D11_CREATE_DEVICE_SINGLETHREADED | D3D11_CREATE_DEVICE_BGRA_SUPPORT);
+		//D3D11_CREATE_DEVICE_FLAG flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
-		// flags | D3D11_CREATE_DEVICE_DEBUGGABLE // For complex debugging... more stuff here : https://learn.microsoft.com/en-us/windows/win32/api/d3d11/ne-d3d11-d3d11_create_device_flag
-		CM_IF_DEBUG(
-			flags = static_cast<D3D11_CREATE_DEVICE_FLAG>(D3D11_CREATE_DEVICE_SINGLETHREADED | D3D11_CREATE_DEVICE_DEBUG)
-		);
+		// flags | D3D11_CREATE_DEVICE_DEBUGGABLE // For complex debugging... 
+		// more stuff here : https://learn.microsoft.com/en-us/windows/win32/api/d3d11/ne-d3d11-d3d11_create_device_flag
+		CM_IF_DEBUG(flags = static_cast<D3D11_CREATE_DEVICE_FLAG>(flags | D3D11_CREATE_DEVICE_DEBUG));
+
+		Microsoft::WRL::ComPtr<ID3D11Device> pBaseDevice;
+		Microsoft::WRL::ComPtr<ID3D11DeviceContext> pBaseContext;
 
 		D3D_FEATURE_LEVEL succeededLevel;
 		HRESULT hResult = S_OK;
@@ -76,13 +79,13 @@ namespace CMRenderer::CMDirectX::Components
 			nullptr,
 			0,
 			D3D11_SDK_VERSION,
-			&mP_Device,
+			&pBaseDevice,
 			&succeededLevel,
-			&mP_Context
+			&pBaseContext
 		);
 
 		m_CMLoggerRef.LogFatalNLAppendIf(
-			hResult != S_OK,
+			FAILED(hResult),
 			L"DXDevice [CreateDevice] | Failed to create device : ",
 			WindowsUtility::TranslateDWORDError(hResult)
 		);
@@ -98,11 +101,21 @@ namespace CMRenderer::CMDirectX::Components
 			L"DXDevice [CreateDevice] | Feature level in use : ",
 			CMDirectX::DXUtility::D3DFeatureLevelToWStrView(succeededLevel)
 		);
+
+		// Upgrade device to ID3D11Device1. (D3D11.1)
+		hResult = pBaseDevice.As(&mP_Device);
+
+		m_CMLoggerRef.LogFatalNLIf(FAILED(hResult), L"DXDevice [CreateDevice] | Failed to upgrade device to ID3D11Device1.");
+
+		// Upgrade device context to ID3D11DeviceContext1. (D3D11.1)
+		hResult = pBaseContext.As(&mP_Context);
+
+		m_CMLoggerRef.LogFatalNLIf(FAILED(hResult), L"DXDevice [CreateDevice] | Failed to upgrade device context to ID3D11DeviceContext1.");
 	}
 #pragma endregion
 
 #pragma region DXFactory
-	DXFactory::DXFactory(CMRenderer::Utility::CMLoggerWide& cmLoggerRef) noexcept
+	DXFactory::DXFactory(CMCommon::CMLoggerWide& cmLoggerRef) noexcept
 		: m_CMLoggerRef(cmLoggerRef)
 	{
 		m_CMLoggerRef.LogInfoNL(L"DXFactory [()] | Constructed.");
@@ -151,14 +164,17 @@ namespace CMRenderer::CMDirectX::Components
 #pragma endregion
 
 #pragma region DXSwapChain
-	DXSwapChain::DXSwapChain(Utility::CMLoggerWide& cmLoggerRef) noexcept
+	DXSwapChain::DXSwapChain(CMCommon::CMLoggerWide& cmLoggerRef) noexcept
 		: m_CMLoggerRef(cmLoggerRef)
 	{
 		m_Desc.BufferDesc.Width = 0;
 		m_Desc.BufferDesc.Height = 0;
 		m_Desc.BufferDesc.RefreshRate.Numerator = 0;
 		m_Desc.BufferDesc.RefreshRate.Denominator = 0;
-		m_Desc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		//m_Desc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+		m_Desc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // Apparently use BGRA for Direct2D.
+
 		m_Desc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 		m_Desc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
 
@@ -167,8 +183,9 @@ namespace CMRenderer::CMDirectX::Components
 
 		m_Desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	
-		m_Desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		m_Desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT;
 		m_Desc.BufferCount = 2;
+
 		m_Desc.Windowed = true;
 
 		m_Desc.Flags = 0;
@@ -226,7 +243,7 @@ namespace CMRenderer::CMDirectX::Components
 #pragma endregion
 
 #pragma region DXInfoQueue
-	DXInfoQueue::DXInfoQueue(Utility::CMLoggerWide& cmLoggerRef) noexcept
+	DXInfoQueue::DXInfoQueue(CMCommon::CMLoggerWide& cmLoggerRef) noexcept
 		: m_CMLoggerRef(cmLoggerRef)
 	{
 		m_CMLoggerRef.LogInfoNL(L"DXSwapChain [()] | Constructed.");
@@ -322,7 +339,7 @@ namespace CMRenderer::CMDirectX::Components
 #pragma endregion
 
 #pragma region DXWriter
-	DXWriter::DXWriter(Utility::CMLoggerWide& cmLoggerRef) noexcept
+	DXWriter::DXWriter(CMCommon::CMLoggerWide& cmLoggerRef) noexcept
 		: m_CMLoggerRef(cmLoggerRef)
 	{
 		m_CMLoggerRef.LogInfoNL(L"DXWriter [()] | Constructed.");
@@ -350,10 +367,23 @@ namespace CMRenderer::CMDirectX::Components
 		m_CMLoggerRef.LogInfoNL(L"DXWriter [Create] | Created.");
 	}
 
-	void DXWriter::WriteText(std::wstring_view text) noexcept
+	void DXWriter::WriteText(std::wstring_view text, float layoutLeft, float layoutTop, float layoutRight, float layoutBottom) noexcept
 	{
 		m_CMLoggerRef.LogFatalNLIf(!m_Created, L"DXWriter [WriteText] | Attempted to write text before component was created.");
 
+		D2D1_RECT_F layoutRect = D2D1::RectF(layoutLeft, layoutTop, layoutRight, layoutBottom);
+
+		mP_D2DRenderTarget->BeginDraw();
+
+		mP_D2DRenderTarget->DrawText(
+			text.data(),
+			static_cast<UINT32>(text.size()),
+			mP_TextFormat.Get(),
+			&layoutRect,
+			mP_Brush.Get()
+		);
+
+		mP_D2DRenderTarget->EndDraw();
 	}
 
 	void DXWriter::CreateIndependentResources() noexcept
@@ -429,16 +459,24 @@ namespace CMRenderer::CMDirectX::Components
 		// More here : https://learn.microsoft.com/en-us/windows/win32/direct2d/direct2d-and-direct3d-interoperation-overview
 		D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
 			D2D1_RENDER_TARGET_TYPE_DEFAULT,
-			D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_STRAIGHT),
-			96,
-			96
+			D2D1::PixelFormat(
+				DXGI_FORMAT_UNKNOWN,  // Typical swap chain format
+				D2D1_ALPHA_MODE_UNKNOWN
+			),
+			0.0f,   // dpiX (use 0.0f to default to system DPI)
+			0.0f,   // dpiY
+			D2D1_RENDER_TARGET_USAGE_NONE,
+			D2D1_FEATURE_LEVEL_DEFAULT
 		);
 
+		DXGI_SWAP_CHAIN_DESC desc;
+		swapChainRef->GetDesc(&desc);
+			
 		hResult = mP_D2DFactory->CreateDxgiSurfaceRenderTarget(pSurface.Get(), props, mP_D2DRenderTarget.GetAddressOf());
 
 		m_CMLoggerRef.LogFatalNLAppendIf(
 			hResult != S_OK,
-			L"DXWriter [CreateDependentResources] | Failed to create render target from DXGI surface.",
+			L"DXWriter [CreateDependentResources] | Failed to create render target from DXGI surface. ",
 			WindowsUtility::TranslateDWORDError(hResult)
 		);
 

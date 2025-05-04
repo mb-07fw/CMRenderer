@@ -3,10 +3,17 @@
 #include <string_view>
 #include <cstdint>
 
+#include <Windows.h> // Include before minwindef.h to avoid : winnt.h(169,1): error C1189: #error:  "No Target Architecture".
 #include <minwindef.h>
 
 namespace CMRenderer
 {
+	struct CMWindowResolution
+	{
+		LONG Width = 0;
+		LONG Height = 0;
+	};
+
 	struct CMWindowData
 	{
 		CMWindowData() noexcept;

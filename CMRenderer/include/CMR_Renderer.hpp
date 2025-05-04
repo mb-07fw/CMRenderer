@@ -25,7 +25,7 @@
 #include "CMR_RendererSettings.hpp"
 #include "CMR_Window.hpp"
 #include "CMR_DXContext.hpp"
-#include "CMR_ShapeQueue.hpp"
+//#include "CMR_ShapeQueue.hpp"
 
 namespace CMRenderer
 {
@@ -43,19 +43,19 @@ namespace CMRenderer
 		void Clear(CMCommon::NormColor normalizedColor) noexcept;
 		void Present() noexcept;
 
-		void DrawRect(CMCommon::CMRect rect) noexcept;
-
-		void QueueShape(CMCommon::CMRect rect) noexcept;
+		inline [[nodiscard]] bool IsInitialized() const noexcept { return m_Initialized; }
+		inline [[nodiscard]] bool IsShutdown() const noexcept { return m_Shutdown; }
 
 		inline [[nodiscard]] CMWindow& Window() noexcept { return m_Window; }
-		inline [[nodiscard]] CMDirectX::DXContext& RenderContext() noexcept { return m_RenderContext; }
+		inline [[nodiscard]] CMDirectX::DXContext& RenderContext() noexcept { return m_Context; }
+	private:
+		void OnWindowResize() noexcept;
 	private:
 		static constexpr std::wstring_view S_LIFETIME_LOG_FILE_NAME = L"../CMRenderer/logs/CMRendererLifetime.log";
-		Utility::CMLoggerWide m_CMLogger;
+		CMCommon::CMLoggerWide m_CMLogger;
 		CMRendererSettings m_Settings;
 		CMWindow m_Window;
-		CMDirectX::DXContext m_RenderContext;
-		CMShapeQueue m_ShapeQueue;
+		CMDirectX::DXContext m_Context;
 		bool m_Initialized = false;
 		bool m_Shutdown = false;
 	};
