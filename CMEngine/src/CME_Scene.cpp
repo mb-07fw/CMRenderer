@@ -47,13 +47,15 @@ namespace CMEngine
 
 		m_MeshEntity = m_ECSRef.CreateEntity();
 
-		/*std::vector<float> vertices = {
+		/* Quad vertices...
+		std::vector<float> vertices = {
 			-1.0f,  1.0f,
 			 1.0f,  1.0f,
 			 1.0f, -1.0f,
 			-1.0f, -1.0f
-		};*/
+		};
 
+		* Cube vertices (duplicated)...
 		std::vector<float> vertices = {
 			// Front face
 			-1.0f,  1.0f, -1.0f,
@@ -92,6 +94,7 @@ namespace CMEngine
 			-1.0f, -1.0f, -1.0f
 		};
 
+		* Cube indices (duplicated)...
 		std::vector<uint16_t> indices = {
 			0, 1, 2,
 			0, 2, 3,
@@ -110,12 +113,28 @@ namespace CMEngine
 
 			22, 21, 20,
 			23, 22, 20
+		};*/
+
+		std::vector<float> vertices = {
+			-1.0f, 0.0f, -1.0f,
+			 1.0f, 0.0f, -1.0f,
+			 1.0f, 0.0f,  1.0f,
+			-1.0f, 0.0f,  1.0f
+		};
+
+		std::vector<uint16_t> indices = {
+			2, 1, 0,
+			3, 2, 0
 		};
 
 		m_EngineLoggerRef.LogFatalNLIf(
 			!m_ECSRef.EmplaceComponent<CMMeshComponent>(
 				m_MeshEntity, 
-				CMCommon::CMTransform(),
+				CMCommon::CMTransform(
+					CMCommon::CMFloat3(10.0f, 1.0f, 10.0f),
+					CMCommon::CMFloat3(),
+					CMCommon::CMFloat3(0.0f, -2.5f, 0.0f)
+				),
 				vertices,
 				indices,
 				CMRenderer::CMDirectX::DXShaderSetType::CMCUBE
@@ -151,6 +170,7 @@ namespace CMEngine
 		if (pMeshComponent == nullptr || pCameraTransformComponent == nullptr)
 			return;
 
+		// Update model matrix if transform changed.
 		if (!pMeshComponent->Transform.IsNearEqual(m_PreviousMeshTransform))
 		{
 			m_RendererRef.RenderContext().SetModelMatrix(
@@ -188,12 +208,8 @@ namespace CMEngine
 
 		renderContextRef.DrawIndexed(pMeshComponent->Vertices, pMeshComponent->Indices, sizeof(float) * 3);
 
-		renderContextRef.ImGuiNewFrame();
-
 		ShowMeshWindow(pMeshComponent->Transform);
 		ShowCameraWindow(pCameraTransformComponent->RigidTransform);
-
-		renderContextRef.ImGuiEndFrame();
 
 		/*RECT clientArea = m_RendererRef.Window().ClientArea();
 
@@ -220,9 +236,9 @@ namespace CMEngine
 			// Begin a child region inside the collapsing header
 			renderContextRef.ImGuiBeginChild("ChildScaling", childSize, ImGuiChildFlags_Border);
 
-			renderContextRef.ImGuiSlider("X", &meshTransform.Scaling.x, 0.01f, 5.0f);
-			renderContextRef.ImGuiSlider("Y", &meshTransform.Scaling.y, 0.01f, 5.0f);
-			renderContextRef.ImGuiSlider("Z", &meshTransform.Scaling.z, 0.01f, 5.0f);
+			renderContextRef.ImGuiSlider("X", &meshTransform.Scaling.x, 0.01f, 20.0f);
+			renderContextRef.ImGuiSlider("Y", &meshTransform.Scaling.y, 0.01f, 20.0f);
+			renderContextRef.ImGuiSlider("Z", &meshTransform.Scaling.z, 0.01f, 20.0f);
 
 			renderContextRef.ImGuiEndChild();
 		}
@@ -268,7 +284,7 @@ namespace CMEngine
 
 			renderContextRef.ImGuiSliderAngle("X", &cameraTransform.Rotation.x, -360.0f, 360.0f);
 			renderContextRef.ImGuiSliderAngle("Y", &cameraTransform.Rotation.y, -360.0f, 360.0f);
-			renderContextRef.ImGuiSliderAngle("Z", &cameraTransform.Rotation.z, -360.0f, 360.0f);
+			//renderContextRef.ImGuiSliderAngle("Z", &cameraTransform.Rotation.z, -360.0f, 360.0f);
 
 			renderContextRef.ImGuiEndChild();
 		}

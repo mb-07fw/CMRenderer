@@ -16,7 +16,14 @@ namespace CMRenderer::CMDirectX
 		case DXShaderSetType::CMRECT:
 			DXShaderSetCMRect::GetInputElementDescs(outInputElementDescs);
 			return;
-		default: return;
+		case DXShaderSetType::CMCUBE:
+			DXShaderSetCMCube::GetInputElementDescs(outInputElementDescs);
+			return;
+		case DXShaderSetType::CMCIRCLE:
+			DXShaderSetCMCircle::GetInputElementDescs(outInputElementDescs);
+			return;
+		default:
+			return;
 		}
 	}
 
@@ -59,20 +66,7 @@ namespace CMRenderer::CMDirectX
 	{
 		CreateMandatoryShaders(deviceRef, cmLoggerRef);
 
-		std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDescs;
-		GetInputElementDescs(inputElementDescs);
-
-		cmLoggerRef.LogFatalNLIf(inputElementDescs.size() == 0, L"DXShaderSetCMRect [CreateShaderSet] | Input element descriptor vector size is 0.");
-
-		HRESULT hResult = deviceRef->CreateInputLayout(
-			inputElementDescs.data(),
-			static_cast<UINT>(inputElementDescs.size()),
-			VertexData.pBytecode->GetBufferPointer(),
-			VertexData.pBytecode->GetBufferSize(),
-			pInputLayout.GetAddressOf()
-		);
-
-		cmLoggerRef.LogFatalNLIf(hResult != S_OK, L"DXShaderSetCMRect [CreateShaderSet] | Failed to create input layout.");
+		CreateInputLayout<DXShaderSetCMRect>(deviceRef, cmLoggerRef);
 
 		cmLoggerRef.LogInfoNL(L"DXShaderSetCMRect [CreateShaderSet] | Created shader set.");
 
@@ -100,20 +94,7 @@ namespace CMRenderer::CMDirectX
 	{
 		CreateMandatoryShaders(deviceRef, cmLoggerRef);
 
-		std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDescs;
-		GetInputElementDescs(inputElementDescs);
-
-		cmLoggerRef.LogFatalNLIf(inputElementDescs.size() == 0, L"DXShaderSetCMCube [CreateShaderSet] | Input element descriptor vector size is 0.");
-
-		HRESULT hResult = deviceRef->CreateInputLayout(
-			inputElementDescs.data(),
-			static_cast<UINT>(inputElementDescs.size()),
-			VertexData.pBytecode->GetBufferPointer(),
-			VertexData.pBytecode->GetBufferSize(),
-			pInputLayout.GetAddressOf()
-		);
-
-		cmLoggerRef.LogFatalNLIf(hResult != S_OK, L"DXShaderSetCMCube [CreateShaderSet] | Failed to create input layout.");
+		CreateInputLayout<DXShaderSetCMCube>(deviceRef, cmLoggerRef);
 
 		cmLoggerRef.LogInfoNL(L"DXShaderSetCMCube [CreateShaderSet] | Created shader set.");
 
@@ -127,6 +108,34 @@ namespace CMRenderer::CMDirectX
 
 		D3D11_INPUT_ELEMENT_DESC descs[] = {
 			{ "VertexPos3D", 0u, DXGI_FORMAT_R32G32B32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u }
+		};
+
+		outInputElementDescs.assign(std::begin(descs), std::end(descs));
+	}
+
+	DXShaderSetCMCircle::DXShaderSetCMCircle(const DXShaderData& vertexDataRef, const DXShaderData& pixelDataRef) noexcept
+		: IDXShaderSet(DXShaderSetType::CMCIRCLE, vertexDataRef, pixelDataRef)
+	{
+	}
+
+	void DXShaderSetCMCircle::CreateShaderSet(Components::DXDevice& deviceRef, CMCommon::CMLoggerWide& cmLoggerRef) noexcept
+	{
+		CreateMandatoryShaders(deviceRef, cmLoggerRef);
+
+		CreateInputLayout<DXShaderSetCMCircle>(deviceRef, cmLoggerRef);
+
+		cmLoggerRef.LogInfoNL(L"DXShaderSetCMCircle [CreateShaderSet] | Created shader set.");
+
+		IsCreated = true;
+	}
+
+	void DXShaderSetCMCircle::GetInputElementDescs(std::vector<D3D11_INPUT_ELEMENT_DESC>& outInputElementDescs) noexcept
+	{
+		outInputElementDescs.clear();
+		outInputElementDescs.reserve(S_TOTAL_INPUT_LAYOUT_DESC_ELEMENTS);
+
+		D3D11_INPUT_ELEMENT_DESC descs[] = {
+			{ "VertexPos2D", 0u, DXGI_FORMAT_R32G32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u }
 		};
 
 		outInputElementDescs.assign(std::begin(descs), std::end(descs));

@@ -14,26 +14,30 @@
 
 namespace CMRenderer::CMDirectX
 {
-	enum class DXShaderSetType : int8_t
+	enum class DXShaderSetType : uint8_t
 	{
-		INVALID = -1,
+		INVALID,
 		CMRECT,
-		CMCUBE
+		CMCUBE,
+		CMCIRCLE
 	};
 
-	inline constexpr std::array<DXShaderSetType, 2u> G_IMPLEMENTED_SET_TYPES = {
+	inline constexpr std::array<DXShaderSetType, 3u> G_IMPLEMENTED_SET_TYPES = {
 		DXShaderSetType::CMRECT,
 		DXShaderSetType::CMCUBE,
+		DXShaderSetType::CMCIRCLE,
 	};
 
-	enum class DXShaderType : int8_t
+	enum class DXShaderType : uint8_t
 	{
-		INVALID = -1,
-		VERTEX, PIXEL
+		INVALID,
+		VERTEX,
+		PIXEL
 	};
 
 	inline constexpr std::array<DXShaderType, 2> G_SHADER_TYPES = {
-		DXShaderType::VERTEX, DXShaderType::PIXEL
+		DXShaderType::VERTEX,
+		DXShaderType::PIXEL
 	};
 
 	struct DXShaderData

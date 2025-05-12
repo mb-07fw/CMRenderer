@@ -111,5 +111,7 @@
     <FxCompile Include="resources\shaders\CMRect_PS.hlsl" />
     <FxCompile Include="resources\shaders\CMCube_VS.hlsl" />
     <FxCompile Include="resources\shaders\CMCube_PS.hlsl" />
+    <FxCompile Include="resources\shaders\CMCircle_VS.hlsl" />
+    <FxCompile Include="resources\shaders\CMCircle_PS.hlsl" />
   </ItemGroup>
 </Project>

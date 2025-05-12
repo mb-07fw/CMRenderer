@@ -7,7 +7,7 @@
 
 /*
  *  TODO in order :
- *		1. Introduce a callback for window resizing so classes outside of CMRenderer don't have to manually set it for DXContext.
+ *		1. Add window state rememberance (Minimized -> Previous State)
  *	Future :
  *		Add instanced renderering, vertex array specialization, etc.
  */
@@ -40,16 +40,40 @@ namespace CMEngine
 
 			m_Renderer.UpdateWindow();
 
-			m_Renderer.Clear(CMCommon::NormColor{ 0.0f, 0.0f, 0.0f, 1.0f });
+			if (!m_Renderer.Window().IsMinimized())
+			{
+				m_Renderer.Clear(CMCommon::NormColor{ 0.0f, 0.0f, 0.0f, 1.0f });
 
-			m_SceneManager.UpdateActiveScene(deltaTime);
+				m_SceneManager.UpdateActiveScene(deltaTime);
 
-			m_Renderer.Present();
+				ShowWindowControl();
+
+				m_Renderer.Present();
+			}
 
 			auto endTime = std::chrono::high_resolution_clock::now();
 
 			deltaTime = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count());
 		}
+	}
+
+	void CMEngine::ShowWindowControl() noexcept
+	{
+		CMRenderer::CMDirectX::DXContext& renderContextRef = m_Renderer.RenderContext();
+
+		m_EngineLogger.LogFatalNLIf(
+			!renderContextRef.IsInitialized(),
+			L"CMEngine [ShowWindowControl] | Context isn't initialized."
+		);
+
+		renderContextRef.ImGuiBegin("Window Control");
+
+		if (renderContextRef.ImGuiButton("Maximize") && !m_Renderer.Window().IsMaximized())
+			m_Renderer.Window().Maximize();
+		else if (renderContextRef.ImGuiButton("Minimize"))
+			m_Renderer.Window().Minimize();
+
+		renderContextRef.ImGuiEnd();
 	}
 
 	CMEngine::~CMEngine() noexcept

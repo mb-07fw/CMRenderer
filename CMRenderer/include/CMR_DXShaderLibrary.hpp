@@ -38,12 +38,14 @@ namespace CMRenderer::CMDirectX
 		[[nodiscard]] size_t TotalCompiledShaders(const std::filesystem::path& compiledShaderPathRef) const noexcept;
 		[[nodiscard]] DXShaderSetType CorrespondingSetType(const std::wstring& fileName) const noexcept;
 	private:
-		static constexpr size_t S_EXPECTED_NUM_SHADERS = 4;
-		static constexpr size_t S_EXPECTED_NUM_SHADER_SETS = 2;
+		static constexpr size_t S_EXPECTED_NUM_SHADERS = 6;
+		static constexpr size_t S_EXPECTED_NUM_SHADER_SETS = 3;
 		static constexpr std::wstring_view S_CMRECT_VS_NAME = L"CMRect_VS.cso";
 		static constexpr std::wstring_view S_CMRECT_PS_NAME = L"CMRect_PS.cso";
 		static constexpr std::wstring_view S_CMCUBE_VS_NAME = L"CMCube_VS.cso";
 		static constexpr std::wstring_view S_CMCUBE_PS_NAME = L"CMCube_PS.cso";
+		static constexpr std::wstring_view S_CMCIRCLE_VS_NAME = L"CMCircle_VS.cso";
+		static constexpr std::wstring_view S_CMCIRCLE_PS_NAME = L"CMCircle_PS.cso";
 		CMCommon::CMLoggerWide& m_CMLoggerRef;
 		std::wstring m_CompiledShaderDirectory;
 		std::vector<std::shared_ptr<IDXShaderSet>> m_ShaderSets;

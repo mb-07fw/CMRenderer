@@ -49,8 +49,9 @@ namespace CMRenderer::CMDirectX
 		void SetCurrentCameraData(const CMCameraData& cameraDataRef) noexcept;
 		void SetCurrentCameraTransform(const CMCommon::CMRigidTransform& rigidTransformRef) noexcept;
 
-		void UpdateResolution() noexcept;
+		void RebindCurrentShaderSet() noexcept;
 
+		void UpdateResolution() noexcept;
 		void UpdateCamera() noexcept;
 
 		[[nodiscard]] DXShaderSetType CurrentShaderSet() const noexcept;
@@ -125,9 +126,12 @@ namespace CMRenderer::CMDirectX
 
 		void ImGuiSlider(std::string_view label, float* pValue, float valueMin, float valueMax) noexcept;
 		void ImGuiSliderAngle(std::string_view label, float* pRadians, float angleMin, float angleMax) noexcept;
-		void ImGuiShowDemoWindow() noexcept;
 
-		[[nodiscard]] bool ImGuiCollapsingHeader(std::string_view title, ImGuiTreeNodeFlags flags = 0) noexcept;
+		[[nodiscard]] bool ImGuiCollapsingHeader(std::string_view label, ImGuiTreeNodeFlags flags = 0) noexcept;
+
+		[[nodiscard]] bool ImGuiButton(std::string_view label, ImVec2 size = ImVec2(0, 0)) noexcept;
+
+		void ImGuiShowDemoWindow() noexcept;
 
 		void ImGuiEndChild() noexcept;
 		void ImGuiEndFrame() noexcept;
@@ -147,9 +151,11 @@ namespace CMRenderer::CMDirectX
 		void SetViewport() noexcept;
 		void SetTopology() noexcept;
 
-		void ReleaseViews() noexcept;
+		void ResetState() noexcept;
 
 		void OnWindowResize() noexcept;
+
+		void RebindCurrentShaderSet() noexcept;
 	private:
 		CMCommon::CMLoggerWide& m_CMLoggerRef;
 		DXShaderLibrary m_ShaderLibrary;

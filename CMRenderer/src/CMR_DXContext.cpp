@@ -4,8 +4,6 @@
 #include "CMC_WindowsUtility.hpp"
 #include "CMC_Macros.hpp"
 
-#define COMMA(x) x,
-
 namespace CMRenderer::CMDirectX
 {
 #pragma region DXContextState
@@ -74,6 +72,17 @@ namespace CMRenderer::CMDirectX
 		m_CameraUpdated = true;
 	}
 
+	void DXContextState::RebindCurrentShaderSet() noexcept
+	{
+		m_CMLoggerRef.LogFatalNLIf(mP_CurrentShaderSet.expired(), L"DXContextState [RebindCurrentShaderSet] | No shader set is currently set.");
+
+		DXShaderSetType currentSet = mP_CurrentShaderSet.lock()->Type;
+
+		mP_CurrentShaderSet.reset();
+
+		SetCurrentShaderSet(currentSet);
+	}
+
 	void DXContextState::UpdateResolution() noexcept
 	{
 		if (CurrentAspectRatio() == m_Camera.AspectRatio())
@@ -127,6 +136,9 @@ namespace CMRenderer::CMDirectX
 #pragma endregion
 
 #pragma region DXContext
+
+#define COMMA ,
+
 	DXContext::DXContext(CMCommon::CMLoggerWide& cmLoggerRef, const CMWindowData& currentWindowDataRef) noexcept
 		: m_CMLoggerRef(cmLoggerRef),
 		  m_ShaderLibrary(cmLoggerRef),
@@ -134,7 +146,7 @@ namespace CMRenderer::CMDirectX
 		  m_Device(cmLoggerRef),
 		  m_Factory(cmLoggerRef), 
 		  m_SwapChain(cmLoggerRef),
-		  m_Writer(cmLoggerRef),
+		  m_Writer(cmLoggerRef) CM_IF_NDEBUG_REPLACE(COMMA)
 		  CM_IF_NDEBUG_REPLACE(m_InfoQueue(cmLoggerRef))
 	{
 		CM_IF_DEBUG(
@@ -274,10 +286,14 @@ namespace CMRenderer::CMDirectX
 	{
 		m_Device.ContextRaw()->ClearRenderTargetView(mP_RTV.Get(), normColor.rgba);
 		m_Device.ContextRaw()->ClearDepthStencilView(mP_DSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
+
+		ImGuiNewFrame();
 	}
 
 	void DXContext::Present() noexcept
 	{
+		ImGuiEndFrame();
+
 		HRESULT hResult = m_SwapChain->Present(1, 0);
 
 		if (hResult == DXGI_ERROR_DEVICE_REMOVED || hResult == DXGI_ERROR_DEVICE_RESET)
@@ -292,7 +308,7 @@ namespace CMRenderer::CMDirectX
 				WindowsUtility::TranslateDWORDError(hResult)
 			);
 		}
-		/*else if (hResult != S_OK)
+		else if (FAILED(hResult))
 		{
 			CM_IF_DEBUG(
 				if (!m_InfoQueue.IsQueueEmpty())
@@ -303,7 +319,7 @@ namespace CMRenderer::CMDirectX
 				L"DXContext [Present] | Present error : ",
 				WindowsUtility::TranslateDWORDError(hResult)
 			);
-		}*/
+		}
 	}
 
 	void DXContext::DrawIndexed(const std::span<float> vertices, const std::span<uint16_t> indices, UINT vertexStride, UINT vertexOffset) noexcept
@@ -343,13 +359,13 @@ namespace CMRenderer::CMDirectX
 
 		m_Device.ContextRaw()->DrawIndexed(indexCount, 0, 0);
 
-		/*CM_IF_DEBUG(
+		CM_IF_DEBUG(
 			if (!m_InfoQueue.IsQueueEmpty())
 			{
 				m_InfoQueue.LogMessages();
 				m_CMLoggerRef.LogFatalNL(L"DXContext [DrawIndexed] | Debug messages generated after drawing.");
 			}
-		);*/
+		);
 	}
 
 #pragma region ImGui Wrappers
@@ -445,14 +461,24 @@ namespace CMRenderer::CMDirectX
 		ImGui::ShowDemoWindow();
 	}
 
-	[[nodiscard]] bool DXContext::ImGuiCollapsingHeader(std::string_view title, ImGuiTreeNodeFlags flags) noexcept
+	[[nodiscard]] bool DXContext::ImGuiCollapsingHeader(std::string_view label, ImGuiTreeNodeFlags flags) noexcept
 	{
 		m_CMLoggerRef.LogFatalNLIf(
 			!m_Initialized,
 			L"DXContext [ImGuiCollapsingHeader] Attempted to perform ImGui operation before context was initialized."
 		);
 
-		return ImGui::CollapsingHeader(title.data(), flags);
+		return ImGui::CollapsingHeader(label.data(), flags);
+	}
+
+	[[nodiscard]] bool DXContext::ImGuiButton(std::string_view label, ImVec2 size) noexcept
+	{
+		m_CMLoggerRef.LogFatalNLIf(
+			!m_Initialized,
+			L"DXContext [ImGuiButton] Attempted to perform ImGui operation before context was initialized."
+		);
+
+		return ImGui::Button(label.data(), size);
 	}
 
 	void DXContext::ImGuiEndFrame() noexcept
@@ -1067,31 +1093,35 @@ namespace CMRenderer::CMDirectX
 
 	void DXContext::CreateRTV() noexcept
 	{
-		ReleaseViews();
+		m_CMLoggerRef.LogFatalNLIf(mP_RTV.Get() != nullptr, L"DXContext [CreateRTV] | A RTV is still present.");
+		m_CMLoggerRef.LogFatalNLIf(mP_DSV.Get() != nullptr, L"DXContext [CreateRTV] | A DSV is still present.");
 
 		// Get the back buffer.
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> pBackBuffer;
 		HRESULT hResult = m_SwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
 
-		if (hResult != S_OK)
-			m_CMLoggerRef.LogFatalNLAppend(
-				L"DXContext [CreateRTV] | Failed to get back buffer : ",
-				WindowsUtility::TranslateDWORDError(hResult)
-			);
+		m_CMLoggerRef.LogFatalNLAppendIf(
+			FAILED(hResult),
+			L"DXContext [CreateRTV] | Failed to get back buffer : ",
+			WindowsUtility::TranslateDWORDError(hResult)
+		);
 
 		// Create the RTV.
 		hResult = m_Device->CreateRenderTargetView(pBackBuffer.Get(), nullptr, mP_RTV.GetAddressOf());
 
-		if (hResult != S_OK)
-			m_CMLoggerRef.LogFatalNLAppend(
-				L"DXContext [CreateRTV] | Failed to create render target view : ",
-				WindowsUtility::TranslateDWORDError(hResult)
-			);
+		m_CMLoggerRef.LogFatalNLAppendIf(
+			FAILED(hResult),
+			L"DXContext [CreateRTV] | Failed to create render target view : ",
+			WindowsUtility::TranslateDWORDError(hResult)
+		);
+
+		D3D11_TEXTURE2D_DESC backBufferDesc;
+		pBackBuffer->GetDesc(&backBufferDesc);
 
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> pDepthStencilTexture;
 		D3D11_TEXTURE2D_DESC dsTextureDesc = {};
-		dsTextureDesc.Width = static_cast<UINT>(m_State.CurrentClientArea().right);
-		dsTextureDesc.Height = static_cast<UINT>(m_State.CurrentClientArea().bottom);
+		dsTextureDesc.Width = backBufferDesc.Width;
+		dsTextureDesc.Height = backBufferDesc.Height;
 		dsTextureDesc.MipLevels = 1u;
 		dsTextureDesc.ArraySize = 1u;
 		dsTextureDesc.Format = DXGI_FORMAT_R32_TYPELESS;
@@ -1161,10 +1191,9 @@ namespace CMRenderer::CMDirectX
 		m_Device.ContextRaw()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
-	void DXContext::ReleaseViews() noexcept
+	void DXContext::ResetState() noexcept
 	{
-		m_Device.ContextRaw()->OMSetRenderTargets(0, nullptr, nullptr);
-		m_Device.ContextRaw()->OMSetDepthStencilState(nullptr, 0);
+		m_Device.ContextRaw()->ClearState();
 
 		mP_RTV.Reset();
 		mP_DSV.Reset();
@@ -1174,28 +1203,60 @@ namespace CMRenderer::CMDirectX
 	{
 		m_State.UpdateResolution();
 
-		/*if (!m_Initialized)
+		if (!m_Initialized)
 			return;
 
-		ReleaseViews();
+		DXGI_SWAP_CHAIN_DESC swapChainDesc;
+		HRESULT hResult = m_SwapChain->GetDesc(&swapChainDesc);
 
-		DXGI_SWAP_CHAIN_DESC desc;
-		HRESULT hResult = m_SwapChain->GetDesc(&desc);
+		m_CMLoggerRef.LogFatalNLIf(FAILED(hResult), L"DXContext [OnWindowResize] | Failed to retrieve swap chain description.");
 
-		m_CMLoggerRef.LogFatalNLIf(FAILED(hResult), L"DXContext [OnWindowResize] | Failed to retrieve swap chain desc.");
+		/*ImGuiIO& io = ImGui::GetIO();
+		io.DisplaySize = ImVec2(
+			static_cast<float>(swapChainDesc.BufferDesc.Width),
+			static_cast<float>(swapChainDesc.BufferDesc.Height)
+		);*/
 
+		ResetState();
+
+		SetViewport();
+		SetTopology();
+
+		/**
+		 * (According to DirectX Graphics Infrastructure (DXGI): Best Practices)
+		 * (https://learn.microsoft.com/en-us/windows/win32/direct3darticles/dxgi-best-practices#full-screen-issues)
+		 * 
+		 * In Direct3D 11, DXGI automatically resizes the front buffer when the window
+		 * is resized, but the application should call IDXGISwapChain::ResizeBuffers with
+		 * the correct size to resize the back buffer as well.
+		 * 
+		 * As such, any RTV's and DSV's should be recreated manually by the application when the window resizes.
+		 * 
+		 * When creating a full-screen swap chain, the Flags member of the DXGI_SWAP_CHAIN_DESC
+		 * structure must be set to DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH to override DXGI's 
+		 * default behavior. (Usually only for full-screen behavior)
+		 */
 		hResult = m_SwapChain->ResizeBuffers(
-			desc.BufferCount,
-			desc.BufferDesc.Width,
-			desc.BufferDesc.Height,
-			desc.BufferDesc.Format,
-			desc.Flags
+			swapChainDesc.BufferCount,
+			static_cast<UINT>(m_State.CurrentClientArea().right),
+			static_cast<UINT>(m_State.CurrentClientArea().bottom),
+			swapChainDesc.BufferDesc.Format,
+			swapChainDesc.Flags
 		);
 
 		m_CMLoggerRef.LogFatalNLIf(FAILED(hResult), L"DXContext [OnWindowResize] | Failed to resize buffers.");
 
 		CreateRTV();
-		BindRTV();*/
+		BindRTV();
+
+		RebindCurrentShaderSet();
+	}
+
+	void DXContext::RebindCurrentShaderSet() noexcept
+	{
+		m_CMLoggerRef.LogFatalNLIf(!m_Initialized, L"DXContext [RebindCurrentShaderSet] | Context isn't initialized.");
+
+		m_State.RebindCurrentShaderSet();
 	}
 #pragma endregion
 }

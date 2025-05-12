@@ -50,7 +50,7 @@ namespace CMRenderer::CMDirectX
 
 		m_CMLoggerRef.LogFatalNLIf(
 			setType == DXShaderSetType::INVALID,
-			L"DXShaderLibrary [GetSetOfType] | Attempted to a retrieve a shader set from DXShaderSetType::INVALID."
+			L"DXShaderLibrary [GetSetOfType] | Attempted to a retrieve a shader set from an invalid setType."
 		);
 
 		m_CMLoggerRef.LogFatalNLIf(m_ShaderSets.size() == 0, L"DXShaderLibrary [GetSetOfType] | No shader sets are present.");
@@ -58,7 +58,7 @@ namespace CMRenderer::CMDirectX
 		for (std::shared_ptr<IDXShaderSet>& pShaderSet : m_ShaderSets)
 			if (pShaderSet->Type == setType)
 				return std::weak_ptr(pShaderSet);
-		
+
 		m_CMLoggerRef.LogFatalNL(L"DXShaderLibrary [GetSetOfType] | Failed to retrieve a matching shader set.");
 		return std::weak_ptr<IDXShaderSet>();
 	}
@@ -88,7 +88,7 @@ namespace CMRenderer::CMDirectX
 
 				switch (data.Type)
 				{
-				case DXShaderType::INVALID: 
+				case DXShaderType::INVALID:
 					m_CMLoggerRef.LogFatalNLAppend(L"DXShaderLibrary [LoadShaders] | Collected shader data has an invalid DXShaderType : ", data.Filename);
 					return;
 				case DXShaderType::VERTEX:
@@ -138,6 +138,11 @@ namespace CMRenderer::CMDirectX
 					m_ShaderSets.emplace_back(std::make_shared<DXShaderSetCMCube>(*pVertexData, *pPixelData));
 
 				break;
+			case DXShaderSetType::CMCIRCLE:
+				if (pVertexData != nullptr && pPixelData != nullptr)
+					m_ShaderSets.emplace_back(std::make_shared<DXShaderSetCMCircle>(*pVertexData, *pPixelData));
+
+				break;
 			default:
 				m_CMLoggerRef.LogFatalNL(L"DXShaderLibrary [LoadShaders] | Failed to make a shader set of a DXShaderSetType.");
 			}
@@ -175,7 +180,7 @@ namespace CMRenderer::CMDirectX
 	{
 		outDataRef.reserve(S_EXPECTED_NUM_SHADERS);
 		size_t totalShadersPresent = TotalCompiledShaders(compiledShaderPathRef);
-		
+
 		m_CMLoggerRef.LogFatalNLIf(totalShadersPresent == 0, L"DXShaderLibrary [GetAllShaderData] | No shaders were found.");
 
 		m_CMLoggerRef.LogFatalNLVariadicIf(
@@ -232,7 +237,7 @@ namespace CMRenderer::CMDirectX
 				L"DXShaderLibrary [GetAllShaderData] | Failed to find a matching shader set type for the shader : ",
 				fileName
 			);
-			
+
 			m_CMLoggerRef.LogInfoNLAppend(
 				L"DXShaderLibrary [GetAllShaderData] | Found valid shader : ",
 				fileName
@@ -247,12 +252,12 @@ namespace CMRenderer::CMDirectX
 				L"DXShaderLibrary [GetAllShaderData] | Shader set type : ",
 				DXShaderData::ShaderSetTypeToWStrView(setType)
 			);
-			
+
 			outDataRef.emplace_back(setType, shaderType, pBlob, fileName);
 		}
 
 		m_CMLoggerRef.LogInfoNLAppend(
-			L"DXShaderLibrary [GetAllShaderData] | Total shaders collected : ", 
+			L"DXShaderLibrary [GetAllShaderData] | Total shaders collected : ",
 			outDataRef.size()
 		);
 
@@ -285,6 +290,8 @@ namespace CMRenderer::CMDirectX
 			return DXShaderSetType::CMRECT;
 		else if (fileName == S_CMCUBE_VS_NAME || fileName == S_CMCUBE_PS_NAME)
 			return DXShaderSetType::CMCUBE;
+		else if (fileName == S_CMCIRCLE_VS_NAME || fileName == S_CMCIRCLE_PS_NAME)
+			return DXShaderSetType::CMCIRCLE;
 
 		return DXShaderSetType::INVALID;
 	}
