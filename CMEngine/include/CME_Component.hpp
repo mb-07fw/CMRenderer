@@ -44,11 +44,12 @@ namespace CMEngine
 		CMCommon::CMRigidTransform RigidTransform;
 	};
 
+	template <typename VertexTy = float>
 	struct CMMeshComponent : public CMComponent
 	{
-		CMMeshComponent(
+		inline CMMeshComponent(
 			CMCommon::CMTransform transform,
-			const std::vector<float>& verticesRef,
+			const std::vector<VertexTy>& verticesRef,
 			const std::vector<uint16_t>& indicesRef,
 			CMRenderer::CMDirectX::DXShaderSetType setType
 		) noexcept;
@@ -56,11 +57,25 @@ namespace CMEngine
 		CMMeshComponent() = default;
 		~CMMeshComponent() = default;
 
-		std::vector<float> Vertices;
+		std::vector<VertexTy> Vertices;
 		std::vector<uint16_t> Indices;
 
 		CMCommon::CMTransform Transform = {};
 
 		CMRenderer::CMDirectX::DXShaderSetType SetType = CMRenderer::CMDirectX::DXShaderSetType::INVALID;
 	};
+
+	template <typename VertexTy>
+	inline CMMeshComponent<VertexTy>::CMMeshComponent(
+		CMCommon::CMTransform transform,
+		const std::vector<VertexTy>& verticesRef,
+		const std::vector<uint16_t>& indicesRef,
+		CMRenderer::CMDirectX::DXShaderSetType setType
+	) noexcept
+		: Transform(transform),
+		  Vertices(verticesRef),
+		  Indices(indicesRef),
+		  SetType(setType)
+	{
+	}
 }

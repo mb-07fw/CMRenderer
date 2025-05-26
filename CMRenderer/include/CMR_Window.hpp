@@ -11,6 +11,14 @@
 
 namespace CMRenderer
 {
+	enum class CMWindowStateType : uint8_t
+	{
+		INVALID,
+		MAXIMIZED,
+		MINIMIZED,
+		WINDOWED
+	};
+
 	class CMWindow
 	{
 	public:
@@ -40,9 +48,9 @@ namespace CMRenderer
 		inline [[nodiscard]] bool IsShutdown() const noexcept { return m_Shutdown; }
 		inline [[nodiscard]] bool IsRunning() const noexcept { return m_Running; }
 		
-		inline [[nodiscard]] bool IsMaximized() const noexcept { return m_Maximized; }
-		inline [[nodiscard]] bool IsMinimized() const noexcept { return m_Minimized; }
-		inline [[nodiscard]] bool IsWindowed() const noexcept { return m_Windowed; }
+		inline [[nodiscard]] bool IsMaximized() const noexcept { return m_CurrentState == CMWindowStateType::MAXIMIZED; }
+		inline [[nodiscard]] bool IsMinimized() const noexcept { return m_CurrentState == CMWindowStateType::MINIMIZED; }
+		inline [[nodiscard]] bool IsWindowed() const noexcept { return m_CurrentState == CMWindowStateType::WINDOWED; }
 
 		inline [[nodiscard]] bool IsFocused() const noexcept { return m_Focused; }
 
@@ -74,12 +82,11 @@ namespace CMRenderer
 		HINSTANCE m_hInstance = nullptr;
 		HWND m_WindowHandle = nullptr;
 		CMKeyboard m_Keyboard;
-		bool m_Initialized = false;
-		bool m_Shutdown = false;
+		CMWindowStateType m_CurrentState = CMWindowStateType::INVALID;
+		CMWindowStateType m_PreviousState = CMWindowStateType::INVALID;
 		bool m_Running = false;
 		bool m_Focused = false;
-		bool m_Maximized = false;
-		bool m_Minimized = false;
-		bool m_Windowed = false;
+		bool m_Initialized = false;
+		bool m_Shutdown = false;
 	};
 }

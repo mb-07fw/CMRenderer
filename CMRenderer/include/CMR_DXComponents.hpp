@@ -23,7 +23,7 @@ namespace CMRenderer::CMDirectX::Components
 		void Create() noexcept;
 		void Release() noexcept;
 
-		ID3D11Device* operator->() noexcept;
+		ID3D11Device1* operator->() noexcept;
 
 		inline [[nodiscard]] ID3D11Device1* DeviceRaw() noexcept { return mP_Device.Get(); }
 		inline [[nodiscard]] ID3D11DeviceContext1* ContextRaw() noexcept { return mP_Context.Get(); }

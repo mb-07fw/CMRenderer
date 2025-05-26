@@ -1,6 +1,5 @@
 ﻿#include "CMR_PCH.hpp"
 #include "CMR_DXContext.hpp"
-#include "CMR_DXResources.hpp"
 #include "CMC_WindowsUtility.hpp"
 #include "CMC_Macros.hpp"
 
@@ -146,7 +145,8 @@ namespace CMRenderer::CMDirectX
 		  m_Device(cmLoggerRef),
 		  m_Factory(cmLoggerRef), 
 		  m_SwapChain(cmLoggerRef),
-		  m_Writer(cmLoggerRef) CM_IF_NDEBUG_REPLACE(COMMA)
+		  m_Writer(cmLoggerRef),
+		  m_CBFrameData(CMShaderConstants::S_FRAME_DATA_REGISTER_SLOT, D3D11_USAGE_DYNAMIC, D3D11_CPU_ACCESS_WRITE) CM_IF_NDEBUG_REPLACE(COMMA)
 		  CM_IF_NDEBUG_REPLACE(m_InfoQueue(cmLoggerRef))
 	{
 		CM_IF_DEBUG(
@@ -217,6 +217,23 @@ namespace CMRenderer::CMDirectX
 		m_CMLoggerRef.LogFatalNL(hResult != S_OK, L"DXContext [Init] | Failed to create rasterizer state.");
 
 		m_Device.ContextRaw()->RSSetState(mP_RasterizerState.Get());*/
+
+		CMFrameData frameData = {
+			static_cast<float>(m_State.CurrentClientArea().right),
+			static_cast<float>(m_State.CurrentClientArea().bottom),
+			{ 0.0f, 0.0f }
+		};
+
+		m_CBFrameData.SetData(std::span(&frameData, 1u));
+
+		m_CMLoggerRef.LogFatalNLIf(
+			FAILED(m_CBFrameData.Create(m_Device)),
+			L"DXContext [Init] | Failed to create CMFrameData constant buffer."
+		);
+
+		m_CBFrameData.BindPS(m_Device);
+
+		m_Factory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER);
 
 		CreateRTV();
 		SetViewport();
@@ -320,52 +337,6 @@ namespace CMRenderer::CMDirectX
 				WindowsUtility::TranslateDWORDError(hResult)
 			);
 		}
-	}
-
-	void DXContext::DrawIndexed(const std::span<float> vertices, const std::span<uint16_t> indices, UINT vertexStride, UINT vertexOffset) noexcept
-	{
-		m_CMLoggerRef.LogFatalNLIf(vertices.data() == nullptr, L"DXContext [DrawIndexed] | Vertices data is nullptr.");
-		m_CMLoggerRef.LogFatalNLIf(indices.data() == nullptr, L"DXContext [DrawIndexed] | Indices data is nullptr.");
-
-		m_CMLoggerRef.LogFatalNLIf(vertices.size() == 0, L"DXContext [DrawIndexed] | Vertices size is 0.");
-		m_CMLoggerRef.LogFatalNLIf(indices.size() == 0, L"DXContext [DrawIndexed] | Indices size is 0.");
-
-		BindRTV();
-
-		DXVertexBuffer<float> vertexBuffer(vertices, vertexStride, vertexOffset);
-		DXIndexBuffer<uint16_t> indexBuffer(indices, DXGI_FORMAT_R16_UINT, 0);
-
-		DirectX::XMMATRIX modelMatrix = {};
-		if (m_State.IsModelMatrixSet())
-			modelMatrix = m_State.CurrentModelMatrix();
-		else
-			modelMatrix = DirectX::XMMatrixTranslation(0.0f, 0.0f, 0.0f);
-
-		if (m_State.CameraUpdated() || m_State.WindowResized())
-			m_State.UpdateCamera();
-
-		DirectX::XMMATRIX mvpMatrix = DirectX::XMMatrixTranspose(modelMatrix * m_State.Camera().ViewProjectionMatrix());
-		DXConstantBuffer<DirectX::XMMATRIX> mvpBuffer(std::span<DirectX::XMMATRIX>(&mvpMatrix, 1u), 0);
-
-		m_CMLoggerRef.LogFatalNLIf(FAILED(vertexBuffer.Create(m_Device)), L"DXContext [DrawIndexed] | Failed to create vertex buffer.");
-		m_CMLoggerRef.LogFatalNLIf(FAILED(indexBuffer.Create(m_Device)), L"DXContext [DrawIndexed] | Failed to create index buffer.");
-		m_CMLoggerRef.LogFatalNLIf(FAILED(mvpBuffer.Create(m_Device)), L"DXContext [DrawIndexed] | Failed to create mvp constant buffer.");
-
-		vertexBuffer.Bind(m_Device);
-		indexBuffer.Bind(m_Device);
-		mvpBuffer.Bind(m_Device);
-
-		UINT indexCount = static_cast<UINT>(indices.size());
-
-		m_Device.ContextRaw()->DrawIndexed(indexCount, 0, 0);
-
-		CM_IF_DEBUG(
-			if (!m_InfoQueue.IsQueueEmpty())
-			{
-				m_InfoQueue.LogMessages();
-				m_CMLoggerRef.LogFatalNL(L"DXContext [DrawIndexed] | Debug messages generated after drawing.");
-			}
-		);
 	}
 
 #pragma region ImGui Wrappers
@@ -500,6 +471,26 @@ namespace CMRenderer::CMDirectX
 		);
 
 		ImGui::EndChild();
+	}
+
+	void DXContext::ReportLiveObjects() noexcept
+	{
+		CM_IF_DEBUG(
+			HRESULT hResult = mP_DebugInterface->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+
+			m_CMLoggerRef.LogFatalNLIf(FAILED(hResult), L"DXContext [DrawIndexed] | Failed to report live objects.");
+		)
+	}
+
+	[[nodiscard]] bool DXContext::IsFullscreen() noexcept
+	{
+		BOOL isFullscreen = 0;
+
+		HRESULT hResult = m_SwapChain->GetFullscreenState(&isFullscreen, nullptr);
+
+		m_CMLoggerRef.LogFatalNLIf(FAILED(hResult), L"DXContext [IsFullscreen] | Failed to get fullscreen state.");
+
+		return static_cast<bool>(isFullscreen);
 	}
 #pragma endregion
 
@@ -1171,7 +1162,7 @@ namespace CMRenderer::CMDirectX
 
 	void DXContext::BindRTV() noexcept
 	{
-		m_Device.ContextRaw()->OMSetRenderTargets(1, mP_RTV.GetAddressOf(), mP_DSV.Get());
+		m_Device.ContextRaw()->OMSetRenderTargets(1u, mP_RTV.GetAddressOf(), mP_DSV.Get());
 	}
 
 	void DXContext::SetViewport() noexcept
@@ -1194,6 +1185,7 @@ namespace CMRenderer::CMDirectX
 	void DXContext::ResetState() noexcept
 	{
 		m_Device.ContextRaw()->ClearState();
+		m_Device.ContextRaw()->Flush();
 
 		mP_RTV.Reset();
 		mP_DSV.Reset();
@@ -1206,21 +1198,17 @@ namespace CMRenderer::CMDirectX
 		if (!m_Initialized)
 			return;
 
+		ResetState();
+
+		SetViewport();
+		SetTopology();
+
 		DXGI_SWAP_CHAIN_DESC swapChainDesc;
 		HRESULT hResult = m_SwapChain->GetDesc(&swapChainDesc);
 
 		m_CMLoggerRef.LogFatalNLIf(FAILED(hResult), L"DXContext [OnWindowResize] | Failed to retrieve swap chain description.");
 
-		/*ImGuiIO& io = ImGui::GetIO();
-		io.DisplaySize = ImVec2(
-			static_cast<float>(swapChainDesc.BufferDesc.Width),
-			static_cast<float>(swapChainDesc.BufferDesc.Height)
-		);*/
-
-		ResetState();
-
-		SetViewport();
-		SetTopology();
+		RECT clientArea = m_State.CurrentClientArea();
 
 		/**
 		 * (According to DirectX Graphics Infrastructure (DXGI): Best Practices)
@@ -1238,8 +1226,8 @@ namespace CMRenderer::CMDirectX
 		 */
 		hResult = m_SwapChain->ResizeBuffers(
 			swapChainDesc.BufferCount,
-			static_cast<UINT>(m_State.CurrentClientArea().right),
-			static_cast<UINT>(m_State.CurrentClientArea().bottom),
+			static_cast<UINT>(clientArea.right),
+			static_cast<UINT>(clientArea.bottom),
 			swapChainDesc.BufferDesc.Format,
 			swapChainDesc.Flags
 		);
@@ -1248,6 +1236,24 @@ namespace CMRenderer::CMDirectX
 
 		CreateRTV();
 		BindRTV();
+
+		/* Update the frame data constant buffer. */
+		CMFrameData frameData = {
+			static_cast<float>(clientArea.right),
+			static_cast<float>(clientArea.bottom),
+			{ 0.0f, 0.0f }
+		};
+
+		m_CMLoggerRef.LogFatalNLIf(!m_CBFrameData.IsCreated(), L"DXContext [OnWindowResize] | CMFrameData constant buffer wasn't created previously.");
+
+		D3D11_MAPPED_SUBRESOURCE mappedResource;
+		hResult = m_Device.ContextRaw()->Map(m_CBFrameData.Buffer(), 0u, D3D11_MAP_WRITE_DISCARD, 0u, &mappedResource);
+
+		m_CMLoggerRef.LogFatalNLIf(FAILED(hResult), L"DXContext [OnWindowResize] | Failed to update FrameData constant buffer.");
+
+		memcpy(mappedResource.pData, &frameData, sizeof(CMFrameData));
+		
+		m_Device.ContextRaw()->Unmap(m_CBFrameData.Buffer(), 0u);
 
 		RebindCurrentShaderSet();
 	}

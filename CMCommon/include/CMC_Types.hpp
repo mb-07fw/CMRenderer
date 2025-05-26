@@ -52,6 +52,42 @@ namespace CMCommon
 		float z = 0.0f;
 	};
 
+	struct CMTransform
+	{
+		inline constexpr CMTransform(
+			CMFloat3 scaling = CMFloat3(1.0f, 1.0f, 1.0f),
+			CMFloat3 rotation = CMFloat3(),
+			CMFloat3 translation = CMFloat3()
+		) noexcept;
+
+		~CMTransform() = default;
+
+		inline constexpr [[nodiscard]] bool operator==(const CMTransform& otherRef) const noexcept;
+		inline constexpr [[nodiscard]] bool IsEqual(const CMTransform& otherRef) const noexcept;
+		[[nodiscard]] bool IsNearEqual(const CMTransform& otherRef, float epsilon = G_CMFLOAT_NEAR_EQUAL_EPSILON) const noexcept;
+
+		CMFloat3 Scaling;
+		CMFloat3 Rotation;
+		CMFloat3 Translation;
+	};
+
+	struct CMRigidTransform
+	{
+		inline constexpr CMRigidTransform(
+			CMFloat3 rotation = CMFloat3(),
+			CMFloat3 translation = CMFloat3()
+		) noexcept;
+
+		~CMRigidTransform() = default;
+
+		inline constexpr [[nodiscard]] bool operator==(const CMRigidTransform& otherRef) const noexcept;
+		inline constexpr [[nodiscard]] bool IsEqual(const CMRigidTransform& otherRef) const noexcept;
+		[[nodiscard]] bool IsNearEqual(const CMRigidTransform& otherRef, float epsilon = G_CMFLOAT_NEAR_EQUAL_EPSILON) const noexcept;
+
+		CMFloat3 Rotation;
+		CMFloat3 Translation;
+	};
+
 	inline constexpr CMFloat2::CMFloat2(float x, float y) noexcept
 		: x(x), y(y)
 	{
@@ -95,25 +131,6 @@ namespace CMCommon
 			z == other.z;
 	}
 
-	struct CMTransform
-	{
-		inline constexpr CMTransform(
-			CMFloat3 scaling = CMFloat3(1.0f, 1.0f, 1.0f),
-			CMFloat3 rotation = CMFloat3(), 
-			CMFloat3 translation = CMFloat3()
-		) noexcept;
-
-		~CMTransform() = default;
-
-		inline constexpr [[nodiscard]] bool operator==(const CMTransform& otherRef) const noexcept;
-		inline constexpr [[nodiscard]] bool IsEqual(const CMTransform& otherRef) const noexcept;
-		[[nodiscard]] bool IsNearEqual(const CMTransform& otherRef, float epsilon = G_CMFLOAT_NEAR_EQUAL_EPSILON) const noexcept;
-
-		CMFloat3 Scaling;
-		CMFloat3 Rotation;
-		CMFloat3 Translation;
-	};
-
 	inline constexpr CMTransform::CMTransform(CMFloat3 scaling, CMFloat3 rotation, CMFloat3 translation) noexcept
 		: Scaling(scaling),
 		  Rotation(rotation),
@@ -132,23 +149,6 @@ namespace CMCommon
 			Rotation == other.Rotation &&
 			Translation == other.Translation;
 	}
-
-	struct CMRigidTransform
-	{
-		inline constexpr CMRigidTransform(
-			CMFloat3 rotation = CMFloat3(),
-			CMFloat3 translation = CMFloat3()
-		) noexcept;
-
-		~CMRigidTransform() = default;
-
-		inline constexpr [[nodiscard]] bool operator==(const CMRigidTransform& otherRef) const noexcept;
-		inline constexpr [[nodiscard]] bool IsEqual(const CMRigidTransform& otherRef) const noexcept;
-		[[nodiscard]] bool IsNearEqual(const CMRigidTransform& otherRef, float epsilon = G_CMFLOAT_NEAR_EQUAL_EPSILON) const noexcept;
-
-		CMFloat3 Rotation;
-		CMFloat3 Translation;
-	};
 
 	inline constexpr CMRigidTransform::CMRigidTransform(CMFloat3 rotation, CMFloat3 translation) noexcept
 		: Rotation(rotation),

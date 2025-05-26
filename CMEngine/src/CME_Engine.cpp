@@ -3,7 +3,6 @@
 #include "CMC_Paths.hpp"
 #include "CMC_Utility.hpp"
 #include "CMC_Macros.hpp"
-#include "CMC_Shapes.hpp"
 
 /*
  *  TODO in order :
@@ -31,7 +30,7 @@ namespace CMEngine
 
 	void CMEngine::Run() noexcept
 	{
-		CMCommon::CMRect rect = { { 0.0f, 0.0f } };
+		constexpr float TARGET_FRAME_TIME = 1000.0f / 60.0f;
 
 		float deltaTime = 0.0f;
 		while (m_Renderer.Window().IsRunning())
@@ -46,32 +45,40 @@ namespace CMEngine
 
 				m_SceneManager.UpdateActiveScene(deltaTime);
 
-				ShowWindowControl();
+				ShowEngineControl(deltaTime);
 
 				m_Renderer.Present();
 			}
 
 			auto endTime = std::chrono::high_resolution_clock::now();
 
-			deltaTime = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count());
+			std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+
+			deltaTime = static_cast<float>(duration.count());
+
+			std::this_thread::sleep_for(std::chrono::duration<float, std::milli>(TARGET_FRAME_TIME - deltaTime));
 		}
 	}
 
-	void CMEngine::ShowWindowControl() noexcept
+	void CMEngine::ShowEngineControl(float deltaTime) noexcept
 	{
 		CMRenderer::CMDirectX::DXContext& renderContextRef = m_Renderer.RenderContext();
 
 		m_EngineLogger.LogFatalNLIf(
 			!renderContextRef.IsInitialized(),
-			L"CMEngine [ShowWindowControl] | Context isn't initialized."
+			L"CMEngine [ShowEngineControl] | Context isn't initialized."
 		);
 
-		renderContextRef.ImGuiBegin("Window Control");
+		renderContextRef.ImGuiBegin("Engine");
 
-		if (renderContextRef.ImGuiButton("Maximize") && !m_Renderer.Window().IsMaximized())
+		ImGui::Text("Millis per frame : %.2f", deltaTime);
+
+		//ImGui::Text("Exclusive fullscreen : %d", renderContextRef.IsFullscreen());
+
+		/*if (renderContextRef.ImGuiButton("Maximize") && !m_Renderer.Window().IsMaximized())
 			m_Renderer.Window().Maximize();
 		else if (renderContextRef.ImGuiButton("Minimize"))
-			m_Renderer.Window().Minimize();
+			m_Renderer.Window().Minimize();*/
 
 		renderContextRef.ImGuiEnd();
 	}

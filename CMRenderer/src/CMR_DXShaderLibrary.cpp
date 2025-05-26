@@ -128,19 +128,19 @@ namespace CMRenderer::CMDirectX
 
 			switch (setType)
 			{
-			case DXShaderSetType::CMRECT:
+			case DXShaderSetType::QUAD:
 				if (pVertexData != nullptr && pPixelData != nullptr)
-					m_ShaderSets.emplace_back(std::make_shared<DXShaderSetCMRect>(*pVertexData, *pPixelData));
+					m_ShaderSets.emplace_back(std::make_shared<DXShaderSetQuad>(*pVertexData, *pPixelData));
 
 				break;
-			case DXShaderSetType::CMCUBE:
+			case DXShaderSetType::QUAD_DEPTH:
 				if (pVertexData != nullptr && pPixelData != nullptr)
-					m_ShaderSets.emplace_back(std::make_shared<DXShaderSetCMCube>(*pVertexData, *pPixelData));
+					m_ShaderSets.emplace_back(std::make_shared<DXShaderSetQuadDepth>(*pVertexData, *pPixelData));
 
 				break;
-			case DXShaderSetType::CMCIRCLE:
+			case DXShaderSetType::CIRCLE:
 				if (pVertexData != nullptr && pPixelData != nullptr)
-					m_ShaderSets.emplace_back(std::make_shared<DXShaderSetCMCircle>(*pVertexData, *pPixelData));
+					m_ShaderSets.emplace_back(std::make_shared<DXShaderSetCircle>(*pVertexData, *pPixelData));
 
 				break;
 			default:
@@ -286,12 +286,12 @@ namespace CMRenderer::CMDirectX
 
 	[[nodiscard]] DXShaderSetType DXShaderLibrary::CorrespondingSetType(const std::wstring& fileName) const noexcept
 	{
-		if (fileName == S_CMRECT_VS_NAME || fileName == S_CMRECT_PS_NAME)
-			return DXShaderSetType::CMRECT;
-		else if (fileName == S_CMCUBE_VS_NAME || fileName == S_CMCUBE_PS_NAME)
-			return DXShaderSetType::CMCUBE;
+		if (fileName == S_CMQUAD_VS_NAME || fileName == S_CMQUAD_PS_NAME)
+			return DXShaderSetType::QUAD;
+		else if (fileName == S_CMQUAD_DEPTH_VS_NAME || fileName == S_CMQUAD_DEPTH_PS_NAME)
+			return DXShaderSetType::QUAD_DEPTH;
 		else if (fileName == S_CMCIRCLE_VS_NAME || fileName == S_CMCIRCLE_PS_NAME)
-			return DXShaderSetType::CMCIRCLE;
+			return DXShaderSetType::CIRCLE;
 
 		return DXShaderSetType::INVALID;
 	}

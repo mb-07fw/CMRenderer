@@ -46,7 +46,8 @@ namespace CMCommon
 		inline [[nodiscard]] ComponentTy* GetComponent(CMECSEntity entity) noexcept;
 	private:
 		/* Iterates through all entities in m_ReservedEntities and compares the @entity's ID to each reserved entity's ID.
-		 * Returns true if a matching entity ID was found, false otherwise. */
+		 * Returns true if a matching entity ID was found, false otherwise.
+		 * TODO : Replace linear searching with a bitset or hash set for faster searching. */
 		[[nodiscard]] bool IsEntityCreated(CMECSEntity entity) const noexcept;
 
 		/* Destroys all components owned by the entity. Returns if the entity is invalid, or no component's were tied to the entity. */
@@ -57,8 +58,6 @@ namespace CMCommon
 		std::vector<CMECSEntity> m_DestroyedEntities;
 		std::unordered_map<CMECSTypeID, std::unique_ptr<ICMSparseSet>> m_MappedComponentSets;
 	};
-
-
 
 	template <typename ComponentTy, typename... Args>
 	bool CMECS::EmplaceComponent(CMECSEntity entity, Args&&... args) noexcept

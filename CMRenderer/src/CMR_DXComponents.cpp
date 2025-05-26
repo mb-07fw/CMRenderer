@@ -52,7 +52,7 @@ namespace CMRenderer::CMDirectX::Components
 		m_Released = true;
 	}
 
-	ID3D11Device* DXDevice::operator->() noexcept
+	ID3D11Device1* DXDevice::operator->() noexcept
 	{
 		return DeviceRaw();
 	}
@@ -227,6 +227,15 @@ namespace CMRenderer::CMDirectX::Components
 	{
 		m_CMLoggerRef.LogFatalNLIf(!m_Created, L"DXSwapChain [Release] | Attempted to release DXSwapChain before it has been created.");
 		m_CMLoggerRef.LogFatalNLIf(m_Released, L"DXSwapChain [Release] | Attempted to release DXSwapChain after it has already been released.");
+
+		DXGI_SWAP_CHAIN_DESC desc;
+		HRESULT hResult = mP_SwapChain->GetDesc(&desc);
+
+		m_CMLoggerRef.LogFatalNLIf(FAILED(hResult), L"DXSwapChain [Release] | Failed to retrieve swap chain descriptor.");
+
+		/* You must switch a swap chain out of exclusive fullscreen mode before releasing it ... */
+		if (!desc.Windowed)
+			mP_SwapChain->SetFullscreenState(false, nullptr);
 
 		mP_SwapChain.Reset();
 

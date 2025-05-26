@@ -72,17 +72,4 @@ namespace CMEngine
 	{
 		return RigidTransform.IsNearEqual(rigidTransformRef, epsilon);
 	}
-
-	CMMeshComponent::CMMeshComponent(
-		CMCommon::CMTransform transform,
-		const std::vector<float>& verticesRef,
-		const std::vector<uint16_t>& indicesRef,
-		CMRenderer::CMDirectX::DXShaderSetType setType
-	) noexcept
-		: Transform(transform),
-		  Vertices(verticesRef),
-		  Indices(indicesRef),
-		  SetType(setType)
-	{
-	}
 }

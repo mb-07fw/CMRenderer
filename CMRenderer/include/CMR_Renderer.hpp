@@ -25,7 +25,6 @@
 #include "CMR_RendererSettings.hpp"
 #include "CMR_Window.hpp"
 #include "CMR_DXContext.hpp"
-//#include "CMR_ShapeQueue.hpp"
 
 namespace CMRenderer
 {

@@ -118,7 +118,7 @@ namespace CMRenderer
 	{
 		m_CMLoggerRef.LogFatalNLIf(!m_Initialized, L"CMWindow [Maximize] | Attempted to maximize the window before initializing it.");
 
-		if (m_CMLoggerRef.LogWarningNLIf(m_Maximized, L"CMWindow [Minimize] | Attempted to maximized the window while it is already in maximized state."))
+		if (m_CMLoggerRef.LogWarningNLIf(m_CurrentState == CMWindowStateType::MAXIMIZED, L"CMWindow [Minimize] | Attempted to maximized the window while it is already in maximized state."))
 			return;
 
 		SetWindowLongPtrW(m_WindowHandle, GWL_STYLE, WS_POPUP);
@@ -128,30 +128,28 @@ namespace CMRenderer
 
 		m_CMLoggerRef.LogInfoNL(L"CMWindow [Maximize] | Maximized window.");
 
-		m_Maximized = true;
-		m_Minimized = false;
-		m_Windowed = false;
+		m_PreviousState = m_CurrentState;
+		m_CurrentState = CMWindowStateType::MAXIMIZED;
 	}
 
 	void CMWindow::Minimize() noexcept
 	{
 		if (m_CMLoggerRef.LogWarningNLIf(!m_Initialized, L"CMWindow [Minimize] | Attempted to minimize the window before initializing it.") ||
-			m_CMLoggerRef.LogWarningNLIf(m_Minimized, L"CMWindow [Minimize] | Attempted to minimize the window while it is already in minimized state."))
+			m_CMLoggerRef.LogWarningNLIf(m_CurrentState == CMWindowStateType::MINIMIZED, L"CMWindow [Minimize] | Attempted to minimize the window while it is already in minimized state."))
 			return;
 
 		//  If nonzero, the return value is nonzero. Otherwise, the window was previously hidden.
 		ShowWindow(m_WindowHandle, SW_SHOWMINIMIZED);
 		m_CMLoggerRef.LogInfoNL(L"CMWindow [Minimize] | Minimized window.");
 
-		m_Maximized = false;
-		m_Minimized = true;
-		m_Windowed = false;
+		m_PreviousState = m_CurrentState;
+		m_CurrentState = CMWindowStateType::MINIMIZED;
 	}
 
 	void CMWindow::Restore() noexcept
 	{
 		if (m_CMLoggerRef.LogWarningNLIf(!m_Initialized, L"CMWindow [Restore] | Attempted to restore the window before initializing it.") ||
-			m_CMLoggerRef.LogWarningNLIf(m_Windowed, L"CMWindow [Restore] | Attempted to restore the window when it is already in windowed state."))
+			m_CMLoggerRef.LogWarningNLIf(m_CurrentState == CMWindowStateType::WINDOWED, L"CMWindow [Restore] | Attempted to restore the window when it is already in windowed state."))
 			return;
 
 		LONG_PTR currentStyle = GetWindowLongPtrW(m_WindowHandle, GWL_STYLE);
@@ -179,13 +177,12 @@ namespace CMRenderer
 				m_CMLoggerRef.LogInfoNL(L"CMWindow [Restore] | Set windowed pos.");
 		}
 
-		//  If nonzero, the return value is nonzero. Otherwise, the window was previously hidden.
 		ShowWindow(m_WindowHandle, SW_RESTORE);
+
 		m_CMLoggerRef.LogInfoNL(L"CMWindow [Restore] | Restored window.");
 
-		m_Maximized = false;
-		m_Minimized = false;
-		m_Windowed = true;
+		m_PreviousState = m_CurrentState;
+		m_CurrentState = CMWindowStateType::WINDOWED;
 	}
 
 	[[nodiscard]] CMWindowResolution CMWindow::CurrentResolution() const noexcept
@@ -271,10 +268,12 @@ namespace CMRenderer
 		BOOL previouslyVisible = ShowWindow(m_WindowHandle, showCmd);
 
 		BOOL result = GetClientRect(m_WindowHandle, &clientAreaRef);
+
 		m_CMLoggerRef.LogFatalNLIf(!result, L"CMWindow [Create] | Failed to update window size.");
 
-		m_Maximized = m_WindowSettingsRef.Current.UseFullscreen;
-		m_Windowed = !m_Maximized;
+		m_CurrentState = m_WindowSettingsRef.Current.UseFullscreen ? CMWindowStateType::MAXIMIZED :
+			CMWindowStateType::WINDOWED;
+
 		m_Running = true;
 		
 		return true;
@@ -441,12 +440,6 @@ namespace CMRenderer
 		switch (msgCode)
 		{
 		case WM_KEYDOWN:
-			/*m_CMLoggerRef.LogInfoNLVariadic(
-				L"CMWindow [WndProc] | VK pressed : ",
-				(UINT)wParam, 
-				" | \'", m_Keyboard.TranslateVK((BYTE)wParam), "\' (",
-				Utility::BoolToWStr(WindowsUtility::IsAlphabeticalVK((USHORT)wParam)), ')'
-			);*/
 
 			m_Keyboard.SetPressedVK(static_cast<BYTE>(wParam));
 			return DefWindowProcW(hWnd, msgCode, wParam, lParam);
@@ -476,8 +469,8 @@ namespace CMRenderer
 			return S_OK;
 		case WM_SYSKEYDOWN:
 			// If alt + enter is pressed. ((GetKeyState(VK_MENU) & 0x8000) != 0 alt is held down)
-			if (wParam == VK_RETURN && (GetKeyState(VK_MENU) & 0x8000) != 0)
-				return S_OK;
+			/*if (wParam == VK_RETURN && (GetKeyState(VK_MENU) & 0x8000) != 0)
+				return S_OK;*/
 
 			return DefWindowProcW(hWnd, msgCode, wParam, lParam);
 		case WM_SYSCOMMAND:

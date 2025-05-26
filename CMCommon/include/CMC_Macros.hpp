@@ -18,7 +18,7 @@
 #define CM_IF_NDEBUG_REPLACE(x)		x
 #define CM_ASSERT(x)				if (!(x)) \
 									{ \
-										std::cerr << "CMAssert failed. (" << #x << ") | Line : " << __LINE__ << " | File : " << __FILE__ << '\n'; \
+										std::cerr << "CM_ASSERT failed. (" << #x << ") | Line : " << __LINE__ << " | File : " << __FILE__ << '\n'; \
 										CM_BREAK_DEBUGGER(); \
 										exit(-1); \
 									}

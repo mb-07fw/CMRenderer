@@ -17,15 +17,15 @@ namespace CMRenderer::CMDirectX
 	enum class DXShaderSetType : uint8_t
 	{
 		INVALID,
-		CMRECT,
-		CMCUBE,
-		CMCIRCLE
+		QUAD,
+		QUAD_DEPTH,
+		CIRCLE
 	};
 
 	inline constexpr std::array<DXShaderSetType, 3u> G_IMPLEMENTED_SET_TYPES = {
-		DXShaderSetType::CMRECT,
-		DXShaderSetType::CMCUBE,
-		DXShaderSetType::CMCIRCLE,
+		DXShaderSetType::QUAD,
+		DXShaderSetType::QUAD_DEPTH,
+		DXShaderSetType::CIRCLE,
 	};
 
 	enum class DXShaderType : uint8_t
@@ -67,8 +67,9 @@ namespace CMRenderer::CMDirectX
 		switch (setType)
 		{
 		case DXShaderSetType::INVALID:		return std::wstring_view(L"INVALID");
-		case DXShaderSetType::CMRECT:		return std::wstring_view(L"CMRECT");
-		case DXShaderSetType::CMCUBE:		return std::wstring_view(L"CMCUBE");
+		case DXShaderSetType::QUAD:			return std::wstring_view(L"QUAD");
+		case DXShaderSetType::QUAD_DEPTH:	return std::wstring_view(L"QUAD_DEPTH");
+		case DXShaderSetType::CIRCLE:		return std::wstring_view(L"CIRCLE");
 		default:							return std::wstring_view(L"NONE");
 		}
 	}

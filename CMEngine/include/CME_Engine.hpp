@@ -15,7 +15,7 @@ namespace CMEngine
 	public:
 		void Run() noexcept;
 	private:
-		void ShowWindowControl() noexcept;
+		void ShowEngineControl(float deltaTime) noexcept;
 	private:
 		static constexpr std::wstring_view S_LIFETIME_LOG_FILE_NAME = L"./logs/CMEngineLifetime.log";
 		CMCommon::CMLoggerWide m_EngineLogger;

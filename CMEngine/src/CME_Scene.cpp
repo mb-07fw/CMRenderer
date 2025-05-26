@@ -3,6 +3,8 @@
 
 namespace CMEngine
 {
+	using Vertex3 = CMCommon::CMFloat3;
+
 	ICMScene::ICMScene(
 		CMCommon::CMLoggerWide& engineLoggerRef,
 		CMCommon::CMECS& ECSRef,
@@ -47,75 +49,67 @@ namespace CMEngine
 
 		m_MeshEntity = m_ECSRef.CreateEntity();
 
-		/* Quad vertices...
-		std::vector<float> vertices = {
-			-1.0f,  1.0f,
-			 1.0f,  1.0f,
-			 1.0f, -1.0f,
-			-1.0f, -1.0f
-		};
+		// Cube vertices (duplicated)...
+		//std::vector<float> vertices = {
+		//	// Front face
+		//	-1.0f,  1.0f, -1.0f,
+		//	 1.0f,  1.0f, -1.0f,
+		//	 1.0f, -1.0f, -1.0f,
+		//	-1.0f, -1.0f, -1.0f,
 
-		* Cube vertices (duplicated)...
-		std::vector<float> vertices = {
-			// Front face
-			-1.0f,  1.0f, -1.0f,
-			 1.0f,  1.0f, -1.0f,
-			 1.0f, -1.0f, -1.0f,
-			-1.0f, -1.0f, -1.0f,
+		//	// Back face
+		//	-1.0f,  1.0f,  1.0f,
+		//	 1.0f,  1.0f,  1.0f,
+		//	 1.0f, -1.0f,  1.0f,
+		//	-1.0f, -1.0f,  1.0f,
 
-			// Back face
-			-1.0f,  1.0f,  1.0f,
-			 1.0f,  1.0f,  1.0f,
-			 1.0f, -1.0f,  1.0f,
-			-1.0f, -1.0f,  1.0f,
+		//	// Left face
+		//	-1.0f,  1.0f, -1.0f,
+		//	-1.0f,  1.0f,  1.0f,
+		//	-1.0f, -1.0f,  1.0f,
+		//	-1.0f, -1.0f, -1.0f,
 
-			// Left face
-			-1.0f,  1.0f, -1.0f,
-			-1.0f,  1.0f,  1.0f,
-			-1.0f, -1.0f,  1.0f,
-			-1.0f, -1.0f, -1.0f,
+		//	// Right face
+		//	 1.0f,  1.0f, -1.0f,
+		//	 1.0f,  1.0f,  1.0f,
+		//	 1.0f, -1.0f,  1.0f,
+		//	 1.0f, -1.0f, -1.0f,
 
-			// Right face
-			 1.0f,  1.0f, -1.0f,
-			 1.0f,  1.0f,  1.0f,
-			 1.0f, -1.0f,  1.0f,
-			 1.0f, -1.0f, -1.0f,
+		//	// Top face
+		//	-1.0f,  1.0f,  1.0f,
+		//	 1.0f,  1.0f,  1.0f,
+		//	 1.0f,  1.0f, -1.0f,
+		//	-1.0f,  1.0f, -1.0f,
 
-			// Top face
-			-1.0f,  1.0f,  1.0f,
-			 1.0f,  1.0f,  1.0f,
-			 1.0f,  1.0f, -1.0f,
-			-1.0f,  1.0f, -1.0f,
+		//	// Bottom face
+		//	-1.0f, -1.0f,  1.0f,
+		//	 1.0f, -1.0f,  1.0f,
+		//	 1.0f, -1.0f, -1.0f,
+		//	-1.0f, -1.0f, -1.0f
+		//};
 
-			// Bottom face
-			-1.0f, -1.0f,  1.0f,
-			 1.0f, -1.0f,  1.0f,
-			 1.0f, -1.0f, -1.0f,
-			-1.0f, -1.0f, -1.0f
-		};
+		//// Cube indices (duplicated)...
+		//std::vector<uint16_t> indices = {
+		//	0, 1, 2,
+		//	0, 2, 3,
 
-		* Cube indices (duplicated)...
-		std::vector<uint16_t> indices = {
-			0, 1, 2,
-			0, 2, 3,
+		//	6, 5, 4,
+		//	7, 6, 4,
 
-			6, 5, 4,
-			7, 6, 4,
+		//	10, 9, 8,
+		//	11, 10, 8,
 
-			10, 9, 8,
-			11, 10, 8,
+		//	12, 13, 14,
+		//	12, 14, 15,
 
-			12, 13, 14,
-			12, 14, 15,
+		//	16, 17, 18,
+		//	16, 18, 19,
 
-			16, 17, 18,
-			16, 18, 19,
+		//	22, 21, 20,
+		//	23, 22, 20
+		//};
 
-			22, 21, 20,
-			23, 22, 20
-		};*/
-
-		std::vector<float> vertices = {
+		/*std::vector<float> vertices = {
 			-1.0f, 0.0f, -1.0f,
 			 1.0f, 0.0f, -1.0f,
 			 1.0f, 0.0f,  1.0f,
@@ -125,21 +119,33 @@ namespace CMEngine
 		std::vector<uint16_t> indices = {
 			2, 1, 0,
 			3, 2, 0
+		};*/
+
+		std::vector<Vertex3> vertices = {{
+			{ -0.5f,  0.5f, -0.5f },
+			{ 0.5f,  0.5f, -0.5f },
+			{ 0.5f, -0.5f, -0.5f },
+			{ -0.5f, -0.5f, -0.5f }
+		}};
+
+		std::vector<uint16_t> indices = {
+			0, 1, 2,
+			0, 2, 3,
 		};
 
 		m_EngineLoggerRef.LogFatalNLIf(
-			!m_ECSRef.EmplaceComponent<CMMeshComponent>(
+			!m_ECSRef.EmplaceComponent<CMMeshComponent<Vertex3>>(
 				m_MeshEntity, 
 				CMCommon::CMTransform(
-					CMCommon::CMFloat3(10.0f, 1.0f, 10.0f),
+					CMCommon::CMFloat3(3.0f, 3.0f, 1.0f),
 					CMCommon::CMFloat3(),
-					CMCommon::CMFloat3(0.0f, -2.5f, 0.0f)
+					CMCommon::CMFloat3(0.0f, 0.0f, 0.0f)
 				),
 				vertices,
 				indices,
-				CMRenderer::CMDirectX::DXShaderSetType::CMCUBE
+				CMRenderer::CMDirectX::DXShaderSetType::CIRCLE
 			),
-			L"CMTestScene [OnStart] | Failed to emplace transform on camera entity."
+			L"CMTestScene [OnStart] | Failed to emplace mesh component on mesh entity."
 		);
 
 		CMCommon::CMRigidTransform rigidTransform;
@@ -158,7 +164,7 @@ namespace CMEngine
 	{
 		m_EngineLoggerRef.LogFatalNLIf(!m_RendererRef.IsInitialized(), L"CMTestScene [OnUpdate] | Renderer isn't initialized.");
 
-		CMMeshComponent* pMeshComponent = m_ECSRef.GetComponent<CMMeshComponent>(m_MeshEntity);
+		CMMeshComponent<Vertex3>* pMeshComponent = m_ECSRef.GetComponent<CMMeshComponent<Vertex3>>(m_MeshEntity);
 
 		m_EngineLoggerRef.LogFatalNLIf(pMeshComponent == nullptr, L"CMTestScene [OnUpdate] | Failed to retrieve mesh component.");
 
@@ -206,7 +212,10 @@ namespace CMEngine
 			m_PreviousCameraTransform = pCameraTransformComponent->RigidTransform;
 		}
 
-		renderContextRef.DrawIndexed(pMeshComponent->Vertices, pMeshComponent->Indices, sizeof(float) * 3);
+		std::array<float, 1> instances = { 0.5f };
+
+		//renderContextRef.DrawIndexed<Vertex3>(pMeshComponent->Vertices, pMeshComponent->Indices);
+		renderContextRef.DrawIndexedInstanced<Vertex3, float>(pMeshComponent->Vertices, pMeshComponent->Indices, instances);
 
 		ShowMeshWindow(pMeshComponent->Transform);
 		ShowCameraWindow(pCameraTransformComponent->RigidTransform);

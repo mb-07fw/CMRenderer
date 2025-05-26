@@ -40,10 +40,10 @@ namespace CMRenderer::CMDirectX
 	private:
 		static constexpr size_t S_EXPECTED_NUM_SHADERS = 6;
 		static constexpr size_t S_EXPECTED_NUM_SHADER_SETS = 3;
-		static constexpr std::wstring_view S_CMRECT_VS_NAME = L"CMRect_VS.cso";
-		static constexpr std::wstring_view S_CMRECT_PS_NAME = L"CMRect_PS.cso";
-		static constexpr std::wstring_view S_CMCUBE_VS_NAME = L"CMCube_VS.cso";
-		static constexpr std::wstring_view S_CMCUBE_PS_NAME = L"CMCube_PS.cso";
+		static constexpr std::wstring_view S_CMQUAD_VS_NAME = L"CMQuad_VS.cso";
+		static constexpr std::wstring_view S_CMQUAD_PS_NAME = L"CMQuad_PS.cso";
+		static constexpr std::wstring_view S_CMQUAD_DEPTH_VS_NAME = L"CMQuadDepth_VS.cso";
+		static constexpr std::wstring_view S_CMQUAD_DEPTH_PS_NAME = L"CMQuadDepth_PS.cso";
 		static constexpr std::wstring_view S_CMCIRCLE_VS_NAME = L"CMCircle_VS.cso";
 		static constexpr std::wstring_view S_CMCIRCLE_PS_NAME = L"CMCircle_PS.cso";
 		CMCommon::CMLoggerWide& m_CMLoggerRef;

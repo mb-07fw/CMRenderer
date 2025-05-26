@@ -107,10 +107,10 @@
     <None Include="cpp.hint" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="resources\shaders\CMRect_VS.hlsl" />
-    <FxCompile Include="resources\shaders\CMRect_PS.hlsl" />
-    <FxCompile Include="resources\shaders\CMCube_VS.hlsl" />
-    <FxCompile Include="resources\shaders\CMCube_PS.hlsl" />
+    <FxCompile Include="resources\shaders\CMQuad_VS.hlsl" />
+    <FxCompile Include="resources\shaders\CMQuad_PS.hlsl" />
+    <FxCompile Include="resources\shaders\CMQuadDepth_VS.hlsl" />
+    <FxCompile Include="resources\shaders\CMQuadDepth_PS.hlsl" />
     <FxCompile Include="resources\shaders\CMCircle_VS.hlsl" />
     <FxCompile Include="resources\shaders\CMCircle_PS.hlsl" />
   </ItemGroup>
