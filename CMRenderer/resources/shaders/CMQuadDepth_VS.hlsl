@@ -9,7 +9,7 @@ struct VSOutput
     float4 Pos : SV_Position;
 };
 
-VSOutput main( float3 pos3 : VertexPos3D )
+VSOutput main( float3 pos3 : Pos3D )
 {
     VSOutput output;
     

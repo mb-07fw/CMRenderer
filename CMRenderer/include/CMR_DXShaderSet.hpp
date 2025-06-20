@@ -39,7 +39,10 @@ namespace CMRenderer::CMDirectX
 		std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDescs;
 		DerivedTy::GetInputElementDescs(inputElementDescs);
 
-		cmLoggerRef.LogFatalNLIf(inputElementDescs.size() == 0, L"IDXShaderSet [CreateInputLayout] | Input element descriptor vector size is 0.");
+		cmLoggerRef.LogFatalNLIf(
+			inputElementDescs.empty(),
+			L"IDXShaderSet [CreateInputLayout] | Input element descriptor vector size is 0."
+		);
 
 		HRESULT hResult = deviceRef->CreateInputLayout(
 			inputElementDescs.data(),
@@ -49,7 +52,10 @@ namespace CMRenderer::CMDirectX
 			pInputLayout.GetAddressOf()
 		);
 
-		cmLoggerRef.LogFatalNLIf(FAILED(hResult), L"IDXShaderSet [CreateInputLayout] | Failed to create input layout.");
+		cmLoggerRef.LogFatalNLIf(
+			FAILED(hResult),
+			L"IDXShaderSet [CreateInputLayout] | Failed to create input layout."
+		);
 	}
 
 	struct DXShaderSetQuad : public IDXShaderSet

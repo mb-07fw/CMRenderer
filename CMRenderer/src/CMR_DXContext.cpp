@@ -479,7 +479,7 @@ namespace CMRenderer::CMDirectX
 			HRESULT hResult = mP_DebugInterface->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
 
 			m_CMLoggerRef.LogFatalNLIf(FAILED(hResult), L"DXContext [DrawIndexed] | Failed to report live objects.");
-		)
+		);
 	}
 
 	[[nodiscard]] bool DXContext::IsFullscreen() noexcept

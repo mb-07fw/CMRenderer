@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CMC_ECS.hpp"
+#include "CME_AssetManager.hpp"
 #include "CME_Scene.hpp"
 
 namespace CMEngine
@@ -9,18 +10,20 @@ namespace CMEngine
 	{
 	public:
 		CMSceneManager(
-			CMCommon::CMLoggerWide& engineLifetimeLoggerRef,
-			CMCommon::CMECS& cmECSRef,
-			CMRenderer::CMRenderer& rendererRef
+			CMCommon::CMLoggerWide& logger,
+			CMCommon::CMECS& ecs,
+			Asset::CMAssetManager& assetManager,
+			CMRenderer::CMRenderer& renderer
 		) noexcept;
 		~CMSceneManager() = default;
 	public:
 		void UpdateActiveScene(float deltaTime) noexcept;
 		void TransitionScene(CMStockSceneType type) noexcept;
 	private:
-		CMCommon::CMLoggerWide& m_EngineLoggerRef;
-		CMCommon::CMECS& m_ECSRef;
-		CMRenderer::CMRenderer& m_RendererRef; // Note to self : Stop being lazy and make this a command queue.
+		CMCommon::CMLoggerWide& m_Logger;
+		CMCommon::CMECS& m_ECS;
+		Asset::CMAssetManager& m_AssetManager;
+		CMRenderer::CMRenderer& m_Renderer; // Note to self : Stop being lazy and make this a command queue.
 		CMTestScene m_TestScene;
 		//std::vector<ICMScene*> m_Scenes; // Change this to shared_ptr's or arena allocated scenes.
 		ICMScene* mP_ActiveScene = nullptr;

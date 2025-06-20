@@ -6,14 +6,16 @@ namespace CMEngine
 	using Vertex3 = CMCommon::CMFloat3;
 
 	ICMScene::ICMScene(
-		CMCommon::CMLoggerWide& engineLoggerRef,
-		CMCommon::CMECS& ECSRef,
-		CMRenderer::CMRenderer& rendererRef,
+		CMCommon::CMLoggerWide& logger,
+		CMCommon::CMECS& ecs,
+		Asset::CMAssetManager& assetManager,
+		CMRenderer::CMRenderer& renderer,
 		std::function<void(float)> onUpdateFunc
 	) noexcept
-		: m_EngineLoggerRef(engineLoggerRef),
-		  m_ECSRef(ECSRef),
-		  m_RendererRef(rendererRef),
+		: m_Logger(logger),
+		  m_ECS(ecs),
+		  m_AssetManager(assetManager),
+		  m_Renderer(renderer),
 		  m_OnUpdateFunc(onUpdateFunc)
 	{
 	}
@@ -24,20 +26,35 @@ namespace CMEngine
 	}
 
 	CMTestScene::CMTestScene(
-		CMCommon::CMLoggerWide& engineLoggerRef,
-		CMCommon::CMECS& ECSRef,
-		CMRenderer::CMRenderer& rendererRef
+		CMCommon::CMLoggerWide& logger,
+		CMCommon::CMECS& ecs,
+		Asset::CMAssetManager& assetManager,
+		CMRenderer::CMRenderer& renderer
 	) noexcept
-		: ICMStockScene(engineLoggerRef, ECSRef, rendererRef, [this](float deltaTime) { OnUpdate(deltaTime); })
+		: ICMStockScene(logger, ecs, assetManager, renderer, [this](float deltaTime) { OnUpdate(deltaTime); })
 	{
 	}
 
 	void CMTestScene::OnStart() noexcept
 	{
-		m_CameraEntity = m_ECSRef.CreateEntity();
+		constexpr std::wstring_view FuncTag = L"CMTestScene [OnStart] | ";
 
-		m_EngineLoggerRef.LogFatalNLIf(
-			!m_ECSRef.EmplaceComponent<CMRigidTransformComponent>(
+		Asset::CMAMResultHandle resultLoad = m_AssetManager.LoadMesh("QuadMesh");
+
+		uint16_t result = resultLoad.Result.ToInt16();
+		Asset::CMAssetHandle handle = resultLoad.Other;
+
+		m_Logger.LogFatalNLFormattedIf(
+			!resultLoad.Result,
+			FuncTag,
+			L"CMTestScene [OnStart] | Failed to load quad mesh : `{}`.",
+			result
+		);
+
+		m_CameraEntity = m_ECS.CreateEntity();
+
+		m_Logger.LogFatalNLIf(
+			!m_ECS.EmplaceComponent<CMRigidTransformComponent>(
 				m_CameraEntity,
 				CMCommon::CMRigidTransform(
 					CMCommon::CMFloat3(),
@@ -47,130 +64,54 @@ namespace CMEngine
 			L"CMTestScene [OnStart] | Failed to emplace transform on camera entity."
 		);
 
-		m_MeshEntity = m_ECSRef.CreateEntity();
+		m_MeshEntity = m_ECS.CreateEntity();
 
-		// Cube vertices (duplicated)...
-		//std::vector<float> vertices = {
-		//	// Front face
-		//	-1.0f,  1.0f, -1.0f,
-		//	 1.0f,  1.0f, -1.0f,
-		//	 1.0f, -1.0f, -1.0f,
-		//	-1.0f, -1.0f, -1.0f,
-
-		//	// Back face
-		//	-1.0f,  1.0f,  1.0f,
-		//	 1.0f,  1.0f,  1.0f,
-		//	 1.0f, -1.0f,  1.0f,
-		//	-1.0f, -1.0f,  1.0f,
-
-		//	// Left face
-		//	-1.0f,  1.0f, -1.0f,
-		//	-1.0f,  1.0f,  1.0f,
-		//	-1.0f, -1.0f,  1.0f,
-		//	-1.0f, -1.0f, -1.0f,
-
-		//	// Right face
-		//	 1.0f,  1.0f, -1.0f,
-		//	 1.0f,  1.0f,  1.0f,
-		//	 1.0f, -1.0f,  1.0f,
-		//	 1.0f, -1.0f, -1.0f,
-
-		//	// Top face
-		//	-1.0f,  1.0f,  1.0f,
-		//	 1.0f,  1.0f,  1.0f,
-		//	 1.0f,  1.0f, -1.0f,
-		//	-1.0f,  1.0f, -1.0f,
-
-		//	// Bottom face
-		//	-1.0f, -1.0f,  1.0f,
-		//	 1.0f, -1.0f,  1.0f,
-		//	 1.0f, -1.0f, -1.0f,
-		//	-1.0f, -1.0f, -1.0f
-		//};
-
-		//// Cube indices (duplicated)...
-		//std::vector<uint16_t> indices = {
-		//	0, 1, 2,
-		//	0, 2, 3,
-
-		//	6, 5, 4,
-		//	7, 6, 4,
-
-		//	10, 9, 8,
-		//	11, 10, 8,
-
-		//	12, 13, 14,
-		//	12, 14, 15,
-
-		//	16, 17, 18,
-		//	16, 18, 19,
-
-		//	22, 21, 20,
-		//	23, 22, 20
-		//};
-
-		/*std::vector<float> vertices = {
-			-1.0f, 0.0f, -1.0f,
-			 1.0f, 0.0f, -1.0f,
-			 1.0f, 0.0f,  1.0f,
-			-1.0f, 0.0f,  1.0f
-		};
-
-		std::vector<uint16_t> indices = {
-			2, 1, 0,
-			3, 2, 0
-		};*/
-
-		std::vector<Vertex3> vertices = {{
-			{ -0.5f,  0.5f, -0.5f },
-			{ 0.5f,  0.5f, -0.5f },
-			{ 0.5f, -0.5f, -0.5f },
-			{ -0.5f, -0.5f, -0.5f }
-		}};
-
-		std::vector<uint16_t> indices = {
-			0, 1, 2,
-			0, 2, 3,
-		};
-
-		m_EngineLoggerRef.LogFatalNLIf(
-			!m_ECSRef.EmplaceComponent<CMMeshComponent<Vertex3>>(
+		m_Logger.LogFatalNLIf(
+			!m_ECS.EmplaceComponent<CMMeshComponent>(
 				m_MeshEntity, 
 				CMCommon::CMTransform(
 					CMCommon::CMFloat3(3.0f, 3.0f, 1.0f),
 					CMCommon::CMFloat3(),
 					CMCommon::CMFloat3(0.0f, 0.0f, 0.0f)
 				),
-				vertices,
-				indices,
+				handle,
 				CMRenderer::CMDirectX::DXShaderSetType::CIRCLE
 			),
 			L"CMTestScene [OnStart] | Failed to emplace mesh component on mesh entity."
 		);
 
 		CMCommon::CMRigidTransform rigidTransform;
-		m_RendererRef.RenderContext().SetCamera(CMRenderer::CMCameraData(rigidTransform, 45.0f, 0.5f, 100.0f));
+		m_Renderer.RenderContext().SetCamera(CMRenderer::CMCameraData(rigidTransform, 45.0f, 0.5f, 100.0f));
 	}
 
 	void CMTestScene::OnEnd() noexcept
 	{
-		m_EngineLoggerRef.LogFatalNLIf(
-			!(m_ECSRef.DestroyEntity(m_CameraEntity) || m_ECSRef.DestroyEntity(m_MeshEntity)),
+		m_Logger.LogFatalNLIf(
+			!(m_ECS.DestroyEntity(m_CameraEntity) || m_ECS.DestroyEntity(m_MeshEntity)),
 			L"CMTestScene [OnEnd] | Failed to destroy entities."
 		);
 	}
 
 	void CMTestScene::OnUpdate(float deltaTime) noexcept
 	{
-		m_EngineLoggerRef.LogFatalNLIf(!m_RendererRef.IsInitialized(), L"CMTestScene [OnUpdate] | Renderer isn't initialized.");
+		m_Logger.LogFatalNLIf(
+			!m_Renderer.IsInitialized(),
+			L"CMTestScene [OnUpdate] | Renderer isn't initialized."
+		);
 
-		CMMeshComponent<Vertex3>* pMeshComponent = m_ECSRef.GetComponent<CMMeshComponent<Vertex3>>(m_MeshEntity);
+		CMMeshComponent* pMeshComponent = m_ECS.GetComponent<CMMeshComponent>(m_MeshEntity);
 
-		m_EngineLoggerRef.LogFatalNLIf(pMeshComponent == nullptr, L"CMTestScene [OnUpdate] | Failed to retrieve mesh component.");
+		m_Logger.LogFatalNLIf(
+			pMeshComponent == nullptr,
+			L"CMTestScene [OnUpdate] | Failed to retrieve mesh component."
+		);
 
-		CMRigidTransformComponent* pCameraTransformComponent = m_ECSRef.GetComponent<CMRigidTransformComponent>(m_CameraEntity);
+		CMRigidTransformComponent* pCameraTransformComponent = m_ECS.GetComponent<CMRigidTransformComponent>(m_CameraEntity);
 
-		m_EngineLoggerRef.LogFatalNLIf(pCameraTransformComponent == nullptr, L"CMTestScene [OnUpdate] | Failed to retrieve camera transform component.");
+		m_Logger.LogFatalNLIf(
+			pCameraTransformComponent == nullptr,
+			L"CMTestScene [OnUpdate] | Failed to retrieve camera transform component."
+		);
 
 		// Here so Intelisense doesn't yell at me for de-referencing a null pointer, even though fatal logs terminate the program.
 		if (pMeshComponent == nullptr || pCameraTransformComponent == nullptr)
@@ -179,7 +120,7 @@ namespace CMEngine
 		// Update model matrix if transform changed.
 		if (!pMeshComponent->Transform.IsNearEqual(m_PreviousMeshTransform))
 		{
-			m_RendererRef.RenderContext().SetModelMatrix(
+			m_Renderer.RenderContext().SetModelMatrix(
 				DirectX::XMMatrixScaling(
 					pMeshComponent->Transform.Scaling.x,
 					pMeshComponent->Transform.Scaling.y,
@@ -200,10 +141,10 @@ namespace CMEngine
 			m_PreviousMeshTransform = pMeshComponent->Transform;
 		}
 
-		if (m_RendererRef.RenderContext().CurrentShaderSet() != pMeshComponent->SetType)
-			m_RendererRef.RenderContext().SetShaderSet(pMeshComponent->SetType);
+		if (m_Renderer.RenderContext().CurrentShaderSet() != pMeshComponent->SetType)
+			m_Renderer.RenderContext().SetShaderSet(pMeshComponent->SetType);
 
-		CMRenderer::CMDirectX::DXContext& renderContextRef = m_RendererRef.RenderContext();
+		CMRenderer::CMDirectX::DXContext& renderContextRef = m_Renderer.RenderContext();
 
 		// Update camera if transform changed.
 		if (!pCameraTransformComponent->IsNearEqual(m_PreviousCameraTransform))
@@ -212,10 +153,24 @@ namespace CMEngine
 			m_PreviousCameraTransform = pCameraTransformComponent->RigidTransform;
 		}
 
-		std::array<float, 1> instances = { 0.5f };
+		Asset::CMAMResultPair<const Asset::CMMesh*> meshResult = m_AssetManager.GetMesh(pMeshComponent->Handle);
+		const Asset::CMMesh* pMesh = meshResult.Other;
+
+		m_Logger.LogFatalNLIf(pMesh == nullptr, L"CMTestScene [OnUpdate] | Failed to retrieve mesh asset.");
+
+		std::array<float, 1> instanceRadii = { 0.5f };
 
 		//renderContextRef.DrawIndexed<Vertex3>(pMeshComponent->Vertices, pMeshComponent->Indices);
-		renderContextRef.DrawIndexedInstanced<Vertex3, float>(pMeshComponent->Vertices, pMeshComponent->Indices, instances);
+		renderContextRef.DrawIndexedInstanced<const std::byte, const std::byte, float>(
+			pMesh->Data.VertexData,
+			pMesh->Data.IndexData,
+			instanceRadii,
+			pMesh->Data.Descriptor.VertexCount,
+			pMesh->Data.Descriptor.IndexCount,
+			static_cast<UINT>(instanceRadii.size()),
+			pMesh->Data.Descriptor.VertexByteStride,
+			pMesh->Data.Descriptor.IndexByteStride
+		);
 
 		ShowMeshWindow(pMeshComponent->Transform);
 		ShowCameraWindow(pCameraTransformComponent->RigidTransform);
@@ -233,7 +188,7 @@ namespace CMEngine
 
 	void CMTestScene::ShowMeshWindow(CMCommon::CMTransform& meshTransform) noexcept
 	{
-		CMRenderer::CMDirectX::DXContext& renderContextRef = m_RendererRef.RenderContext();
+		CMRenderer::CMDirectX::DXContext& renderContextRef = m_Renderer.RenderContext();
 
 		// Full width, fixed height (scrollable if content overflows)
 		ImVec2 childSize(0.0f, 150.0f);
@@ -279,7 +234,7 @@ namespace CMEngine
 
 	void CMTestScene::ShowCameraWindow(CMCommon::CMRigidTransform& cameraTransform) noexcept
 	{
-		CMRenderer::CMDirectX::DXContext& renderContextRef = m_RendererRef.RenderContext();
+		CMRenderer::CMDirectX::DXContext& renderContextRef = m_Renderer.RenderContext();
 
 		// Full width, fixed height (scrollable if content overflows)
 		ImVec2 childSize(0.0f, 150.0f);

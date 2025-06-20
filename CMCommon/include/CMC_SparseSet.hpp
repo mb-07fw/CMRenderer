@@ -6,8 +6,8 @@
 
 #include <chrono>
 
-#include "CMC_ECSTypeID.hpp"
 #include "CMC_ECSEntity.hpp"
+#include "CMC_TypeID.hpp"
 
 namespace CMCommon
 {
@@ -15,7 +15,7 @@ namespace CMCommon
 	{
 	public:
 		inline ICMSparseSet(
-			CMECSTypeID typeID,
+			CMTypeID typeID,
 			std::function<bool(CMECSEntity)> containsFunc,
 			std::function<void(CMECSEntity)> removeFunc
 		) noexcept;
@@ -25,15 +25,15 @@ namespace CMCommon
 		inline [[nodiscard]] bool ContainsEntity(CMECSEntity entity) const noexcept;
 		inline void RemoveEntity(CMECSEntity entity) noexcept;
 
-		inline [[nodiscard]] CMECSTypeID TypeID() const noexcept { return m_TypeID; }
+		inline [[nodiscard]] CMTypeID TypeID() const noexcept { return m_TypeID; }
 	protected:
-		CMECSTypeID m_TypeID = {};
+		CMTypeID m_TypeID = {};
 		std::function<bool(CMECSEntity)> m_ContainsFunc;
 		std::function<void(CMECSEntity)> m_RemoveFunc;
 	};
 
 	inline ICMSparseSet::ICMSparseSet(
-		CMECSTypeID typeID,
+		CMTypeID typeID,
 		std::function<bool(CMECSEntity)> containsFunc,
 		std::function<void(CMECSEntity)> removeFunc
 	) noexcept
@@ -53,7 +53,7 @@ namespace CMCommon
 		return m_RemoveFunc(entity);
 	}
 
-	template <typename ComponentTy>
+	template <typename ComponentTy, typename IDTy = size_t>
 	class CMSparseSet : public ICMSparseSet
 	{
 	public:
@@ -70,8 +70,8 @@ namespace CMCommon
 	private:
 		inline void InsertEntity(CMECSEntity entity) noexcept;
 	private:
-		std::vector<size_t> m_SparseArray;
-		std::vector<size_t> m_DenseArray;
+		std::vector<IDTy> m_SparseArray;
+		std::vector<IDTy> m_DenseArray;
 		std::vector<ComponentTy> m_Components;
 
 		/* m_SparseArray: Maps EntityID → Index in m_DenseArray.
@@ -82,18 +82,18 @@ namespace CMCommon
 		 */
 	};
 
-	template <typename ComponentTy>
-	inline CMSparseSet<ComponentTy>::CMSparseSet() noexcept
+	template <typename ComponentTy, typename IDTy>
+	inline CMSparseSet<ComponentTy, IDTy>::CMSparseSet() noexcept
 		: ICMSparseSet(
-			CMECSTypeWrangler::GetTypeID<ComponentTy>(),
-			std::bind(&CMSparseSet<ComponentTy>::ContainsEntity, this, std::placeholders::_1),
-			std::bind(&CMSparseSet<ComponentTy>::RemoveEntity, this, std::placeholders::_1)
+			CMTypeWrangler::GetTypeID<ComponentTy>(),
+			[this](CMECSEntity entity) { return ContainsEntity(entity); },
+			[this](CMECSEntity entity) { RemoveEntity(entity); }
 		  )
 	{
 	}
 
-	template <typename ComponentTy>
-	inline [[nodiscard]] bool CMSparseSet<ComponentTy>::ContainsEntity(CMECSEntity entity) const noexcept
+	template <typename ComponentTy, typename IDTy>
+	inline [[nodiscard]] bool CMSparseSet<ComponentTy, IDTy>::ContainsEntity(CMECSEntity entity) const noexcept
 	{
 		uint32_t entityIndex = entity.ToIndex();
 
@@ -103,11 +103,11 @@ namespace CMCommon
 		size_t denseIndex = m_SparseArray[entityIndex];
 
 		return denseIndex < m_Components.size() &&		// Dense index at id is in bounds of m_Components.
-			m_DenseArray[denseIndex] == entityIndex;	// Entity id stored in m_DenseArray matches the entity id.
+			m_DenseArray[denseIndex] == entityIndex;	// Entity id stored in m_DenseArray matches the entity's id
 	}
 
-	template <typename ComponentTy>
-	inline void CMSparseSet<ComponentTy>::RemoveEntity(CMECSEntity entity) noexcept
+	template <typename ComponentTy, typename IDTy>
+	inline void CMSparseSet<ComponentTy, IDTy>::RemoveEntity(CMECSEntity entity) noexcept
 	{
 		if (!ContainsEntity(entity))
 			return;
@@ -128,9 +128,9 @@ namespace CMCommon
 		m_SparseArray[entityIndex] = 0;
 	}
 
-	template <typename ComponentTy>
+	template <typename ComponentTy, typename IDTy>
 	template <typename... Args>
-	inline void CMSparseSet<ComponentTy>::EmplaceComponent(CMECSEntity entity, Args&&... args) noexcept
+	inline void CMSparseSet<ComponentTy, IDTy>::EmplaceComponent(CMECSEntity entity, Args&&... args) noexcept
 	{
 		if (ContainsEntity(entity))
 			return;
@@ -143,8 +143,8 @@ namespace CMCommon
 		m_Components.emplace_back(std::forward<Args>(args)...);
 	}
 
-	template <typename ComponentTy>
-	inline [[nodiscard]] ComponentTy* CMSparseSet<ComponentTy>::GetComponent(CMECSEntity entity) noexcept
+	template <typename ComponentTy, typename IDTy>
+	inline [[nodiscard]] ComponentTy* CMSparseSet<ComponentTy, IDTy>::GetComponent(CMECSEntity entity) noexcept
 	{
 		if (!ContainsEntity(entity))
 			return nullptr;
@@ -152,8 +152,8 @@ namespace CMCommon
 		return &m_Components[m_SparseArray[entity.ToIndex()]];
 	}
 
-	template <typename ComponentTy>
-	inline void CMSparseSet<ComponentTy>::InsertEntity(CMECSEntity entity) noexcept
+	template <typename ComponentTy, typename IDTy>
+	inline void CMSparseSet<ComponentTy, IDTy>::InsertEntity(CMECSEntity entity) noexcept
 	{
 		uint32_t entityIndex = entity.ToIndex();
 

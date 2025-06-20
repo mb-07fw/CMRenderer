@@ -1,10 +1,11 @@
 #pragma once
 
 #include <iostream>
-#include <string_view>
 #include <fstream>
+#include <string_view>
 #include <type_traits>
 #include <filesystem>
+#include <format>
 
 #include "CMC_Macros.hpp"
 
@@ -93,7 +94,12 @@ namespace CMCommon
 		inline void LogWarningNLVariadic(ViewTy data, Args&&... args) noexcept;
 
 		inline void LogFatal(ViewTy data, int exitCode = -1) noexcept;
+		inline void LogFatalTagged(ViewTy tag, ViewTy data, int exitCode = -1) noexcept;
 		inline void LogFatalNL(ViewTy data, int exitCode = -1) noexcept;
+		inline void LogFatalNLTagged(ViewTy tag, ViewTy data, int exitCode = -1) noexcept;
+
+		template <typename... Args>
+		inline void LogFatalNLFormatted(ViewTy tag, ViewTy fmt, Args&&... args) noexcept;
 
 		template <typename AppendTy>
 		inline void LogFatalNLAppend(ViewTy data, AppendTy append, int exitCode = -1) noexcept;
@@ -118,6 +124,9 @@ namespace CMCommon
 		template <typename... Args>
 		inline void LogFatalNLVariadicIf(bool condition, ViewTy data, Args&&... args) noexcept;
 
+		template <typename... Args>
+		inline void LogFatalNLFormattedIf(bool condition, ViewTy originTag, ViewTy fmt, Args&&... args) noexcept;
+
 		inline void OpenFile(ViewTy fileName) noexcept;
 		inline void OpenFileInDirectory(ViewTy fileName, const std::filesystem::path& directory) noexcept;
 		inline void CloseFile() noexcept;
@@ -125,17 +134,20 @@ namespace CMCommon
 		inline [[nodiscard]] bool IsStreamOpen() const noexcept { return m_LogStream.is_open(); }
 		inline [[nodiscard]] const DataTy& TargetFileName() const noexcept { return m_TargetFileName; }
 	private:
-		inline void LogFlag(ViewTy data, const ViewTy pFlag) noexcept;
-		inline void LogFlagNL(ViewTy data, const ViewTy pFlag) noexcept;
+		inline void LogFlag(ViewTy data, ViewTy flag) noexcept;
+		inline void LogFlagTagged(ViewTy data, ViewTy flag, ViewTy tag) noexcept;
+
+		inline void LogFlagNL(ViewTy data, ViewTy flag) noexcept;
+		inline void LogFlagTaggedNL(ViewTy data, ViewTy flag, ViewTy tag) noexcept;
 
 		template <typename AppendTy>
-		inline void LogFlagNLAppend(ViewTy data, AppendTy append, const ViewTy pFlag) noexcept;
+		inline void LogFlagNLAppend(ViewTy data, AppendTy append, ViewTy flag) noexcept;
 
 		template <typename... Args>
-		inline void LogFlagNLVariadic(ViewTy data, const ViewTy pFlag, Args&&... args) noexcept;
+		inline void LogFlagNLVariadic(ViewTy data, ViewTy flag, Args&&... args) noexcept;
 	private:
 		static constexpr bool S_IS_WIDE_LOGGER = std::is_same_v<ViewTy, std::wstring_view>;
-		static constexpr ViewTy m_LogTag = [] {
+		static constexpr ViewTy S_LOG_TAG = [] {
 			if constexpr (S_IS_WIDE_LOGGER)
 				return ViewTy(L"CMLoggerWide ");
 			else
@@ -199,6 +211,34 @@ namespace CMCommon
 		else
 		{
 			LogFlag(data, "FATAL");
+
+			LogFlagNLAppend(
+				"CMLogger [LogFatal] | Logger is terminating the program with the exit code : ",
+				exitCode,
+				"FATAL"
+			);
+		}
+
+		CM_BREAK_DEBUGGER();
+		exit(exitCode);
+	}
+
+	template <CMLoggerType EnumLoggerType, typename DataTy, typename ViewTy, typename StreamTy>
+		requires LoggerDataType<DataTy>&& LoggerViewType<ViewTy>&& ValidStream<StreamTy>
+	inline void CMLogger<EnumLoggerType, DataTy, ViewTy, StreamTy>::LogFatalTagged(ViewTy tag, ViewTy data, int exitCode) noexcept
+	{
+		if constexpr (S_IS_WIDE_LOGGER)
+		{
+			LogFlagTagged(data, L"FATAL", tag);
+			LogFlagNLAppend(
+				L"CMLogger [LogFatal] | Logger is terminating the program with the exit code : ",
+				exitCode,
+				L"FATAL"
+			);
+		}
+		else
+		{
+			LogFlagTagged(data, "FATAL", tag);
 
 			LogFlagNLAppend(
 				"CMLogger [LogFatal] | Logger is terminating the program with the exit code : ",
@@ -289,6 +329,20 @@ namespace CMCommon
 		if (condition)
 			LogFatalNLVariadic(-1, data, std::forward<Args>(args)...);
 	}
+
+	template <CMLoggerType EnumLoggerType, typename DataTy, typename ViewTy, typename StreamTy>
+		requires LoggerDataType<DataTy>&& LoggerViewType<ViewTy>&& ValidStream<StreamTy>
+	template <typename... Args>
+	inline void CMLogger<EnumLoggerType, DataTy, ViewTy, StreamTy>::LogFatalNLFormattedIf(
+		bool condition,
+		ViewTy originTag,
+		ViewTy fmt,
+		Args&&... args
+	) noexcept
+	{
+		if (condition)
+			LogFatalNLFormatted(originTag, fmt, std::forward<Args>(args)...);
+	}
 #pragma endregion
 
 #pragma region NL
@@ -339,6 +393,45 @@ namespace CMCommon
 
 		CM_BREAK_DEBUGGER();
 		exit(exitCode);
+	}
+
+	template <CMLoggerType EnumLoggerType, typename DataTy, typename ViewTy, typename StreamTy>
+		requires LoggerDataType<DataTy>&& LoggerViewType<ViewTy>&& ValidStream<StreamTy>
+	inline void CMLogger<EnumLoggerType, DataTy, ViewTy, StreamTy>::LogFatalNLTagged(ViewTy tag, ViewTy data, int exitCode) noexcept
+	{
+		if constexpr (S_IS_WIDE_LOGGER)
+		{
+			LogFlagTaggedNL(data, L"FATAL", tag);
+
+			LogFlagNLAppend(
+				L"CMLogger [LogFatalNL] | Logger is terminating the program with the exit code : ",
+				exitCode,
+				L"FATAL"
+			);
+		}
+		else
+		{
+			LogFlagTaggedNL(data, "FATAL", tag);
+
+			LogFlagNLAppend(
+				"CMLogger [LogFatalNL] | Logger is terminating the program with the exit code : ",
+				exitCode,
+				"FATAL"
+			);
+		}
+
+		CM_BREAK_DEBUGGER();
+		exit(exitCode);
+	}
+
+	template <CMLoggerType EnumLoggerType, typename DataTy, typename ViewTy, typename StreamTy>
+		requires LoggerDataType<DataTy>&& LoggerViewType<ViewTy>&& ValidStream<StreamTy>
+	template <typename... Args>
+	inline void CMLogger<EnumLoggerType, DataTy, ViewTy, StreamTy>::LogFatalNLFormatted(ViewTy tag, ViewTy fmt, Args&&... args) noexcept
+	{
+		DataTy formatted = std::vformat(fmt, std::make_wformat_args(std::forward<Args>(args)...));
+
+		LogFatalNLTagged(tag, formatted);
 	}
 #pragma endregion
 
@@ -513,30 +606,75 @@ namespace CMCommon
 #pragma region LogFlag
 	template <CMLoggerType EnumLoggerType, typename DataTy, typename ViewTy, typename StreamTy>
 		requires LoggerDataType<DataTy>&& LoggerViewType<ViewTy>&& ValidStream<StreamTy>
-	inline void CMLogger<EnumLoggerType, DataTy, ViewTy, StreamTy>::LogFlag(ViewTy data, const ViewTy pFlag) noexcept
+	inline void CMLogger<EnumLoggerType, DataTy, ViewTy, StreamTy>::LogFlag(ViewTy data, ViewTy flag) noexcept
 	{
 		if (!m_LogStream.is_open())
 			return;
 
 		if constexpr (S_IS_WIDE_LOGGER)
 		{
-			CM_IF_DEBUG(std::wcout << m_LogTag << L'(' << pFlag << L") " << data);
+			CM_IF_DEBUG(std::wcout << S_LOG_TAG << L'(' << flag << L") " << data);
 
-			m_LogStream << m_LogTag << L'(' << pFlag << L") " << data;
+			m_LogStream << S_LOG_TAG << L'(' << flag << L") " << data;
 		}
 		else
 		{
-			CM_IF_DEBUG(std::cout << m_LogTag << '(' << pFlag << ") " << data);
+			CM_IF_DEBUG(std::cout << S_LOG_TAG << '(' << flag << ") " << data);
 
-			m_LogStream << m_LogTag << '(' << pFlag << ") " << data;
+			m_LogStream << S_LOG_TAG << '(' << flag << ") " << data;
 		}
 	}
 
 	template <CMLoggerType EnumLoggerType, typename DataTy, typename ViewTy, typename StreamTy>
 		requires LoggerDataType<DataTy>&& LoggerViewType<ViewTy>&& ValidStream<StreamTy>
-	inline void CMLogger<EnumLoggerType, DataTy, ViewTy, StreamTy>::LogFlagNL(ViewTy data, const ViewTy pFlag) noexcept
+	inline void CMLogger<EnumLoggerType, DataTy, ViewTy, StreamTy>::LogFlagTagged(ViewTy data, ViewTy flag, ViewTy tag) noexcept
 	{
-		LogFlag(data, pFlag);
+		if (!m_LogStream.is_open())
+			return;
+
+		if constexpr (S_IS_WIDE_LOGGER)
+		{
+			CM_IF_DEBUG(std::wcout << S_LOG_TAG << L'(' << flag << L") " << tag << data);
+
+			m_LogStream << S_LOG_TAG << L'(' << flag << L") " << tag << data;
+		}
+		else
+		{
+			CM_IF_DEBUG(std::cout << S_LOG_TAG << '(' << flag << ") " << tag << data);
+
+			m_LogStream << S_LOG_TAG << '(' << flag << ") " << tag << data;
+		}
+	}
+
+	template <CMLoggerType EnumLoggerType, typename DataTy, typename ViewTy, typename StreamTy>
+		requires LoggerDataType<DataTy>&& LoggerViewType<ViewTy>&& ValidStream<StreamTy>
+	inline void CMLogger<EnumLoggerType, DataTy, ViewTy, StreamTy>::LogFlagNL(ViewTy data, ViewTy flag) noexcept
+	{
+		if (!m_LogStream.is_open())
+			return;
+
+		LogFlag(data, flag);
+
+		if constexpr (S_IS_WIDE_LOGGER)
+		{
+			CM_IF_DEBUG(std::wcout << L'\n');
+			m_LogStream << L'\n';
+		}
+		else
+		{
+			CM_IF_DEBUG(std::cout << '\n');
+			m_LogStream << '\n';
+		}
+	}
+
+	template <CMLoggerType EnumLoggerType, typename DataTy, typename ViewTy, typename StreamTy>
+		requires LoggerDataType<DataTy>&& LoggerViewType<ViewTy>&& ValidStream<StreamTy>
+	inline void CMLogger<EnumLoggerType, DataTy, ViewTy, StreamTy>::LogFlagTaggedNL(ViewTy data, ViewTy flag, ViewTy tag) noexcept
+	{
+		if (!m_LogStream.is_open())
+			return;
+
+		LogFlagTagged(data, flag, tag);
 
 		if constexpr (S_IS_WIDE_LOGGER)
 		{
@@ -553,29 +691,29 @@ namespace CMCommon
 	template <CMLoggerType EnumLoggerType, typename DataTy, typename ViewTy, typename StreamTy>
 		requires LoggerDataType<DataTy>&& LoggerViewType<ViewTy>&& ValidStream<StreamTy>
 	template <typename AppendTy>
-	inline void CMLogger<EnumLoggerType, DataTy, ViewTy, StreamTy>::LogFlagNLAppend(ViewTy data, AppendTy append, const ViewTy pFlag) noexcept
+	inline void CMLogger<EnumLoggerType, DataTy, ViewTy, StreamTy>::LogFlagNLAppend(ViewTy data, AppendTy append, ViewTy flag) noexcept
 	{
 		if (!m_LogStream.is_open())
 			return;
 
 		if constexpr (S_IS_WIDE_LOGGER)
 		{
-			CM_IF_DEBUG(std::wcout << m_LogTag << L'(' << pFlag << L") " << data << append << L'\n');
+			CM_IF_DEBUG(std::wcout << S_LOG_TAG << L'(' << flag << L") " << data << append << L'\n');
 
-			m_LogStream << m_LogTag << L'(' << pFlag << L") " << data << append << L'\n';
+			m_LogStream << S_LOG_TAG << L'(' << flag << L") " << data << append << L'\n';
 		}
 		else
 		{
-			CM_IF_DEBUG(std::cout << m_LogTag << '(' << pFlag << ") " << data << append << L'\n');
+			CM_IF_DEBUG(std::cout << S_LOG_TAG << '(' << flag << ") " << data << append << L'\n');
 
-			m_LogStream << m_LogTag << '(' << pFlag << ") " << data << append << '\n';
+			m_LogStream << S_LOG_TAG << '(' << flag << ") " << data << append << '\n';
 		}
 	}
 
 	template <CMLoggerType EnumLoggerType, typename DataTy, typename ViewTy, typename StreamTy>
 		requires LoggerDataType<DataTy>&& LoggerViewType<ViewTy>&& ValidStream<StreamTy>
 	template <typename... Args>
-	inline void CMLogger<EnumLoggerType, DataTy, ViewTy, StreamTy>::LogFlagNLVariadic(ViewTy data, const ViewTy pFlag, Args&&... args) noexcept
+	inline void CMLogger<EnumLoggerType, DataTy, ViewTy, StreamTy>::LogFlagNLVariadic(ViewTy data, ViewTy flag, Args&&... args) noexcept
 	{
 		if (!m_LogStream.is_open())
 			return;
@@ -583,24 +721,24 @@ namespace CMCommon
 		if constexpr (S_IS_WIDE_LOGGER)
 		{
 			CM_IF_DEBUG(
-				std::wcout << m_LogTag << L'(' << pFlag << L") " << data;
+				std::wcout << S_LOG_TAG << L'(' << flag << L") " << data;
 			(std::wcout << ... << args);
 			std::wcout << L'\n';
 				);
 
-			m_LogStream << m_LogTag << L'(' << pFlag << L") " << data;
+			m_LogStream << S_LOG_TAG << L'(' << flag << L") " << data;
 			(m_LogStream << ... << args);
 			m_LogStream << L'\n';
 		}
 		else
 		{
 			CM_IF_DEBUG(
-				std::cout << m_LogTag << '(' << pFlag << ") " << data;
+				std::cout << S_LOG_TAG << '(' << flag << ") " << data;
 			(std::cout << ... << args);
 			std::cout << '\n';
 				);
 
-			m_LogStream << m_LogTag << L'(' << pFlag << L") " << data;
+			m_LogStream << S_LOG_TAG << L'(' << flag << L") " << data;
 			(m_LogStream << ... << args);
 			m_LogStream << L'\n';
 		}

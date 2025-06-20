@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 #define CM_NO_OP (void)0
 
 #if defined(CM_DEBUG) && (_MSC_VER)

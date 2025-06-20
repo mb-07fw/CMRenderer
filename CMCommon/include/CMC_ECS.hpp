@@ -56,7 +56,7 @@ namespace CMCommon
 		static constexpr size_t S_DEFAULT_POOL_SIZE = 20;
 		std::vector<CMECSEntity> m_ReservedEntities;
 		std::vector<CMECSEntity> m_DestroyedEntities;
-		std::unordered_map<CMECSTypeID, std::unique_ptr<ICMSparseSet>> m_MappedComponentSets;
+		std::unordered_map<CMTypeID, std::unique_ptr<ICMSparseSet>> m_MappedComponentSets;
 	};
 
 	template <typename ComponentTy, typename... Args>
@@ -65,12 +65,12 @@ namespace CMCommon
 		if (!IsEntityCreated(entity))
 			return false;
 
-		CMECSTypeID componentTypeID = CMECSTypeWrangler::GetTypeID<ComponentTy>();
+		CMTypeID componentTypeID = CMTypeWrangler::GetTypeID<ComponentTy>();
 
 		auto it = m_MappedComponentSets.find(componentTypeID);
 
 		if (it == m_MappedComponentSets.end())
-			m_MappedComponentSets[componentTypeID] = std::make_unique<CMSparseSet<ComponentTy>>();
+			m_MappedComponentSets[componentTypeID] = std::make_unique<CMSparseSet<ComponentTy, CMECSEntityID>>();
 
 		std::unique_ptr<ICMSparseSet>& ptrRef = m_MappedComponentSets[componentTypeID];
 
@@ -94,7 +94,7 @@ namespace CMCommon
 		if (!IsEntityCreated(entity))
 			return false;
 
-		CMECSTypeID componentTypeID = CMECSTypeWrangler::GetTypeID<ComponentTy>();
+		CMTypeID componentTypeID = CMTypeWrangler::GetTypeID<ComponentTy>();
 
 		auto it = m_MappedComponentSets.find(componentTypeID);
 
@@ -114,7 +114,7 @@ namespace CMCommon
 		if (!IsEntityCreated(entity))
 			return nullptr;
 
-		CMECSTypeID componentTypeID = CMECSTypeWrangler::GetTypeID<ComponentTy>();
+		CMTypeID componentTypeID = CMTypeWrangler::GetTypeID<ComponentTy>();
 
 		auto it = m_MappedComponentSets.find(componentTypeID);
 

@@ -4,21 +4,23 @@
 namespace CMEngine
 {
 	CMSceneManager::CMSceneManager(
-		CMCommon::CMLoggerWide& engineLifetimeLoggerRef,
-		CMCommon::CMECS& cmECSRef,
-		CMRenderer::CMRenderer& rendererRef
+		CMCommon::CMLoggerWide& logger,
+		CMCommon::CMECS& ecs,
+		Asset::CMAssetManager& assetManager,
+		CMRenderer::CMRenderer& renderer
 	) noexcept
-		: m_EngineLoggerRef(engineLifetimeLoggerRef),
-		  m_ECSRef(cmECSRef),
-		  m_RendererRef(rendererRef),
-		  m_TestScene(m_EngineLoggerRef, m_ECSRef, m_RendererRef)
+		: m_Logger(logger),
+		  m_ECS(ecs),
+		  m_AssetManager(assetManager),
+		  m_Renderer(renderer),
+		  m_TestScene(m_Logger, m_ECS, m_AssetManager, m_Renderer)
 	{
 		//m_Scenes.emplace_back(&m_TestScene);
 	}
 
 	void CMSceneManager::UpdateActiveScene(float deltaTime) noexcept
 	{
-		m_EngineLoggerRef.LogFatalNLIf(
+		m_Logger.LogFatalNLIf(
 			mP_ActiveScene == nullptr,
 			L"CMSceneManager [UpdateActiveScene] | Active scene is nullptr."
 		);

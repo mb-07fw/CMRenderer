@@ -46,13 +46,29 @@ namespace CMRenderer::CMDirectX
 
 		HRESULT hResult = S_OK;
 
-		hResult = deviceRef->CreateVertexShader(VertexData.pBytecode->GetBufferPointer(), VertexData.pBytecode->GetBufferSize(), nullptr, &pVertexShader);
+		hResult = deviceRef->CreateVertexShader(
+			VertexData.pBytecode->GetBufferPointer(),
+			VertexData.pBytecode->GetBufferSize(),
+			nullptr,
+			&pVertexShader
+		);
 
-		cmLoggerRef.LogFatalNLIf(hResult != S_OK, L"IDXShaderSet [CreateMandatoryShaders] | Failed to create vertex shader.");
+		cmLoggerRef.LogFatalNLIf(
+			hResult != S_OK,
+			L"IDXShaderSet [CreateMandatoryShaders] | Failed to create vertex shader."
+		);
 
-		hResult = deviceRef->CreatePixelShader(PixelData.pBytecode->GetBufferPointer(), PixelData.pBytecode->GetBufferSize(), nullptr, &pPixelShader);
+		hResult = deviceRef->CreatePixelShader(
+			PixelData.pBytecode->GetBufferPointer(),
+			PixelData.pBytecode->GetBufferSize(),
+			nullptr,
+			&pPixelShader
+		);
 
-		cmLoggerRef.LogFatalNLIf(hResult != S_OK, L"IDXShaderSet [CreateMandatoryShaders] | Failed to create pixel shader.");
+		cmLoggerRef.LogFatalNLIf(
+			hResult != S_OK, 
+			L"IDXShaderSet [CreateMandatoryShaders] | Failed to create pixel shader."
+		);
 
 		CreatedMandatoryShaders = true;
 	}
@@ -79,7 +95,7 @@ namespace CMRenderer::CMDirectX
 		outInputElementDescs.reserve(S_TOTAL_INPUT_LAYOUT_DESC_ELEMENTS);
 
 		D3D11_INPUT_ELEMENT_DESC descs[] = {
-			{ "VertexPos2D", 0u, DXGI_FORMAT_R32G32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u }
+			{ "Pos2D", 0u, DXGI_FORMAT_R32G32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u }
 		};
 
 		outInputElementDescs.assign(std::begin(descs), std::end(descs));
@@ -107,7 +123,7 @@ namespace CMRenderer::CMDirectX
 		outInputElementDescs.reserve(S_TOTAL_INPUT_LAYOUT_DESC_ELEMENTS);
 
 		D3D11_INPUT_ELEMENT_DESC descs[] = {
-			{ "VertexPos3D", 0u, DXGI_FORMAT_R32G32B32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u }
+			{ "Pos3D", 0u, DXGI_FORMAT_R32G32B32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u }
 		};
 
 		outInputElementDescs.assign(std::begin(descs), std::end(descs));
@@ -135,7 +151,7 @@ namespace CMRenderer::CMDirectX
 		outInputElementDescs.reserve(S_TOTAL_INPUT_LAYOUT_DESC_ELEMENTS);
 
 		D3D11_INPUT_ELEMENT_DESC descs[] = {
-			{ "VertexPos3D", 0u, DXGI_FORMAT_R32G32B32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u },
+			{ "Pos3D", 0u, DXGI_FORMAT_R32G32B32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u },
 			{ "InstanceRadius", 0u, DXGI_FORMAT_R32_FLOAT, 1u, 0u, D3D11_INPUT_PER_INSTANCE_DATA, 1u },
 		};
 

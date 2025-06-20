@@ -3,8 +3,20 @@
 #include <cstdint>
 #include <cmath>
 
+#include <limits>
+
+/* Windows.h's "min" and "max" macros override std::numeric_limits<>::max(). */
+#undef min
+#undef max
+
 namespace CMCommon
 {
+	namespace Constants
+	{
+		inline constexpr uint32_t U32_MAX_VALUE = std::numeric_limits<uint32_t>::max();
+		inline constexpr float FLOAT_MAX_VALUE = std::numeric_limits<float>::max();
+	}
+
 	struct NormColor {
 		float rgba[4];
 	};
@@ -152,7 +164,7 @@ namespace CMCommon
 
 	inline constexpr CMRigidTransform::CMRigidTransform(CMFloat3 rotation, CMFloat3 translation) noexcept
 		: Rotation(rotation),
-		Translation(translation)
+		  Translation(translation)
 	{
 	}
 

@@ -22,7 +22,10 @@ namespace CMRenderer::CMDirectX
 
 	void DXShaderLibrary::Init(Components::DXDevice& deviceRef) noexcept
 	{
-		m_CMLoggerRef.LogFatalNLIf(m_Initialized, L"DXShaderLibrary [Init] | Initialization has been attempted after initialization already occured.");
+		m_CMLoggerRef.LogFatalNLIf(
+			m_Initialized,
+			L"DXShaderLibrary [Init] | Initialization has been attempted after initialization already occured."
+		);
 
 		CreateShaderSets(deviceRef);
 
@@ -33,8 +36,15 @@ namespace CMRenderer::CMDirectX
 
 	void DXShaderLibrary::Shutdown() noexcept
 	{
-		m_CMLoggerRef.LogFatalNLIf(!m_Initialized, L"DXShaderLibrary [Shutdown] | Shutdown has been attempted before initialization has occured.");
-		m_CMLoggerRef.LogFatalNLIf(m_Shutdown, L"DXShaderLibrary [Shutdown] | Shutdown has been attempted after shutdown has already occured.");
+		m_CMLoggerRef.LogFatalNLIf(
+			!m_Initialized,
+			L"DXShaderLibrary [Shutdown] | Shutdown has been attempted before initialization has occured."
+		);
+
+		m_CMLoggerRef.LogFatalNLIf(
+			m_Shutdown,
+			L"DXShaderLibrary [Shutdown] | Shutdown has been attempted after shutdown has already occured."
+		);
 
 		m_CompiledShaderDirectory.clear();
 		m_ShaderSets.clear();
@@ -46,14 +56,17 @@ namespace CMRenderer::CMDirectX
 
 	[[nodiscard]] std::weak_ptr<IDXShaderSet> DXShaderLibrary::GetSetOfType(DXShaderSetType setType) noexcept
 	{
-		m_CMLoggerRef.LogFatalNLIf(!m_Initialized, L"DXShaderLibrary [GetSetOfType] | Attempted to retrieve a shader set before initialization.");
+		m_CMLoggerRef.LogFatalNLIf(
+			!m_Initialized,
+			L"DXShaderLibrary [GetSetOfType] | Attempted to retrieve a shader set before initialization."
+		);
 
 		m_CMLoggerRef.LogFatalNLIf(
 			setType == DXShaderSetType::INVALID,
 			L"DXShaderLibrary [GetSetOfType] | Attempted to a retrieve a shader set from an invalid setType."
 		);
 
-		m_CMLoggerRef.LogFatalNLIf(m_ShaderSets.size() == 0, L"DXShaderLibrary [GetSetOfType] | No shader sets are present.");
+		m_CMLoggerRef.LogFatalNLIf(m_ShaderSets.empty(), L"DXShaderLibrary [GetSetOfType] | No shader sets are present.");
 
 		for (std::shared_ptr<IDXShaderSet>& pShaderSet : m_ShaderSets)
 			if (pShaderSet->Type == setType)
@@ -82,14 +95,20 @@ namespace CMRenderer::CMDirectX
 			for (const DXShaderData& data : shaderData)
 			{
 				if (data.CorrespondingShaderSet == DXShaderSetType::INVALID)
-					m_CMLoggerRef.LogFatalNLAppend(L"DXShaderLibrary [LoadShaders] | Collected shader data has an invalid DXShaderSetType : ", data.Filename);
+					m_CMLoggerRef.LogFatalNLAppend(
+						L"DXShaderLibrary [LoadShaders] | Collected shader data has an invalid DXShaderSetType : ", 
+						data.Filename
+					);
 				else if (data.CorrespondingShaderSet != setType)
 					continue;
 
 				switch (data.Type)
 				{
 				case DXShaderType::INVALID:
-					m_CMLoggerRef.LogFatalNLAppend(L"DXShaderLibrary [LoadShaders] | Collected shader data has an invalid DXShaderType : ", data.Filename);
+					m_CMLoggerRef.LogFatalNLAppend(
+						L"DXShaderLibrary [LoadShaders] | Collected shader data has an invalid DXShaderType : ", 
+						data.Filename
+					);
 					return;
 				case DXShaderType::VERTEX:
 					m_CMLoggerRef.LogFatalNLAppendIf(

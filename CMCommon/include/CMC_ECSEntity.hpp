@@ -4,8 +4,8 @@
 
 namespace CMCommon
 {
-	constexpr uint32_t CMECS_INDEX_BITS = 24;
-	constexpr uint32_t CMECS_VERSION_BITS = 8;
+	constexpr uint32_t G_CM_ECS_INDEX_BITS = 24;
+	constexpr uint32_t G_CM_ECS_VERSION_BITS = 8;
 
 	/* Shift 1 left by 24 bits :
 	 *
@@ -23,7 +23,7 @@ namespace CMCommon
 	 *				to :
 	 *		00000000 11111111 11111111 11111111
 	 */
-	constexpr uint32_t CMECS_INDEX_MASK = (1u << CMECS_INDEX_BITS) - 1;
+	constexpr uint32_t G_CM_ECS_INDEX_MASK = (1u << G_CM_ECS_INDEX_BITS) - 1;
 
 	/* Shift 1 left by 8 bits :
 	 *
@@ -41,8 +41,15 @@ namespace CMCommon
 	 *				to :
 	 *		00000000 00000000 00000000 11111111
 	 */
-	constexpr uint32_t CMECS_VERSION_MASK = (1u << CMECS_VERSION_BITS) - 1;
+	constexpr uint32_t G_CM_ECS_VERSION_MASK = (1u << G_CM_ECS_VERSION_BITS) - 1;
 
+
+	/* 31         24 23                        0
+	 *	+----------+---------------------------+
+	 *	| VERSION  | INDEX					   |
+	 *	+----------+---------------------------+
+	 *	8 bits         24 bits
+	 */
 	using CMECSEntityID = uint32_t;
 
 	struct CMECSEntity
@@ -52,9 +59,7 @@ namespace CMCommon
 		CMECSEntity() = default;
 		CMECSEntity(uint32_t version, uint32_t index) noexcept;
 
-		uint8_t ToVersion() const noexcept;
-		// Note to self -- If trying to print the version, use ToVersion32, or the version will be printed as an unsigned char, which is a uint8_t.
-		uint32_t ToVersion32() const noexcept;
+		uint32_t ToVersion() const noexcept;
 		uint32_t ToIndex() const noexcept;
 	private:
 		bool operator==(CMECSEntity other) const noexcept;

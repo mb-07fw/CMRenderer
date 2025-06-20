@@ -20,7 +20,8 @@ namespace CMRenderer::CMDirectX
 		INVALID,
 		VERTEX,
 		INDEX,
-		CONSTANT
+		CONSTANT,
+		STRUCTURED
 	};
 
 #pragma region Buffers

@@ -72,4 +72,15 @@ namespace CMEngine
 	{
 		return RigidTransform.IsNearEqual(rigidTransformRef, epsilon);
 	}
+
+	CMMeshComponent::CMMeshComponent(
+		CMCommon::CMTransform transform,
+		Asset::CMAssetHandle handle,
+		CMRenderer::CMDirectX::DXShaderSetType setType
+	) noexcept
+		: Transform(transform),
+		  Handle(handle),
+		  SetType(setType)
+	{
+	}
 }

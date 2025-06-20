@@ -1,7 +1,8 @@
 #pragma once
 
-#include "CMC_Types.hpp"
+#include "CME_AssetHandle.hpp"
 #include "CMR_DXShaderData.hpp"
+#include "CMC_Types.hpp"
 
 #include <vector>
 #include <cstdint>
@@ -44,38 +45,19 @@ namespace CMEngine
 		CMCommon::CMRigidTransform RigidTransform;
 	};
 
-	template <typename VertexTy = float>
 	struct CMMeshComponent : public CMComponent
 	{
-		inline CMMeshComponent(
+		CMMeshComponent(
 			CMCommon::CMTransform transform,
-			const std::vector<VertexTy>& verticesRef,
-			const std::vector<uint16_t>& indicesRef,
+			Asset::CMAssetHandle handle,
 			CMRenderer::CMDirectX::DXShaderSetType setType
 		) noexcept;
 
 		CMMeshComponent() = default;
 		~CMMeshComponent() = default;
 
-		std::vector<VertexTy> Vertices;
-		std::vector<uint16_t> Indices;
-
 		CMCommon::CMTransform Transform = {};
-
+		Asset::CMAssetHandle Handle = Asset::CMAssetHandle::Invalid();
 		CMRenderer::CMDirectX::DXShaderSetType SetType = CMRenderer::CMDirectX::DXShaderSetType::INVALID;
 	};
-
-	template <typename VertexTy>
-	inline CMMeshComponent<VertexTy>::CMMeshComponent(
-		CMCommon::CMTransform transform,
-		const std::vector<VertexTy>& verticesRef,
-		const std::vector<uint16_t>& indicesRef,
-		CMRenderer::CMDirectX::DXShaderSetType setType
-	) noexcept
-		: Transform(transform),
-		  Vertices(verticesRef),
-		  Indices(indicesRef),
-		  SetType(setType)
-	{
-	}
 }

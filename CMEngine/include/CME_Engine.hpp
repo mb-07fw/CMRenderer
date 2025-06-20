@@ -1,9 +1,12 @@
 #pragma once
 
-#include "CMR_Renderer.hpp"
 #include "CMC_ECS.hpp"
-#include "CME_SceneManager.hpp"
 #include "CMC_Logger.hpp"
+#include "CMR_Renderer.hpp"
+#include "CME_SceneManager.hpp"
+#include "CME_AssetManager.hpp"
+
+#include <memory>
 
 namespace CMEngine
 {
@@ -21,6 +24,7 @@ namespace CMEngine
 		CMCommon::CMLoggerWide m_EngineLogger;
 		CMCommon::CMECS m_ECS;
 		CMRenderer::CMRenderer m_Renderer;
+		Asset::CMAssetManager m_AssetManager;
 		CMSceneManager m_SceneManager;
 	};
 }

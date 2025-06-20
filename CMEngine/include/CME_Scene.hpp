@@ -1,9 +1,10 @@
 #pragma once
 
-#include "CMR_RendererSettings.hpp"
-#include "CMC_ECS.hpp"
-#include "CMR_Renderer.hpp" // TODO : Make a renderer command queue.
+#include "CME_AssetManager.hpp"
 #include "CME_Component.hpp"
+#include "CMR_RendererSettings.hpp"
+#include "CMR_Renderer.hpp" // TODO : Make a renderer command queue.
+#include "CMC_ECS.hpp"
 
 #include <functional>
 
@@ -18,11 +19,13 @@ namespace CMEngine
 	{
 	public:
 		ICMScene(
-			CMCommon::CMLoggerWide& engineLoggerRef,
-			CMCommon::CMECS& ECSRef,
-			CMRenderer::CMRenderer& rendererRef,
+			CMCommon::CMLoggerWide& logger,
+			CMCommon::CMECS& ecs,
+			Asset::CMAssetManager& assetManager,
+			CMRenderer::CMRenderer& renderer,
 			std::function<void(float)> onUpdateFunc
 		) noexcept;
+
 		virtual ~ICMScene() = default;
 	public:
 		virtual void OnStart() noexcept = 0;
@@ -30,9 +33,10 @@ namespace CMEngine
 
 		void OnUpdate(float deltaTime) noexcept;
 	protected:
-		CMCommon::CMLoggerWide& m_EngineLoggerRef;
-		CMCommon::CMECS& m_ECSRef;
-		CMRenderer::CMRenderer& m_RendererRef;
+		CMCommon::CMLoggerWide& m_Logger;
+		CMCommon::CMECS& m_ECS;
+		Asset::CMAssetManager& m_AssetManager;
+		CMRenderer::CMRenderer& m_Renderer;
 	private:
 		std::function<void(float)> m_OnUpdateFunc;
 	};
@@ -48,10 +52,12 @@ namespace CMEngine
 	{
 	public:
 		CMTestScene(
-			CMCommon::CMLoggerWide& engineLoggerRef,
-			CMCommon::CMECS& ECSRef,
-			CMRenderer::CMRenderer& rendererRef
+			CMCommon::CMLoggerWide& logger,
+			CMCommon::CMECS& ecs,
+			Asset::CMAssetManager& assetManager,
+			CMRenderer::CMRenderer& renderer
 		) noexcept;
+
 		~CMTestScene() = default;
 	public:
 		virtual void OnStart() noexcept override;

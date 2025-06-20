@@ -119,19 +119,25 @@ namespace CMRenderer::CMDirectX
 		template <typename VertexTy>
 			requires std::is_trivially_copyable_v<VertexTy>
 		inline void DrawIndexed(
-			const std::span<VertexTy> vertices,
-			const std::span<uint16_t> indices,
+			std::span<VertexTy> vertices,
+			std::span<uint16_t> indices,
 			UINT vertexStride = sizeof(VertexTy),
 			UINT vertexOffset = 0u
 		) noexcept;
 
-		template <typename VertexTy, typename InstanceTy>
-			requires std::is_trivially_copyable_v<VertexTy> && std::is_trivially_copyable_v<InstanceTy>
+		template <typename VertexTy, typename IndexTy, typename InstanceTy>
+			requires std::is_trivially_copyable_v<VertexTy> &&
+				std::is_trivially_copyable_v<IndexTy> &&
+				std::is_trivially_copyable_v<InstanceTy>
 		inline void DrawIndexedInstanced(
-			const std::span<VertexTy> vertices,
-			const std::span<uint16_t> indices,
-			const std::span<InstanceTy> instances,
+			std::span<VertexTy> vertices,
+			std::span<IndexTy> indices,
+			std::span<InstanceTy> instances,
+			UINT totalVertices,
+			UINT totalIndices,
+			UINT totalInstances,
 			UINT vertexStride = sizeof(VertexTy),
+			UINT indexStride = sizeof(IndexTy),
 			UINT instanceStride = sizeof(InstanceTy),
 			UINT vertexOffset = 0u,
 			UINT instanceOffset = 0u,
@@ -227,8 +233,8 @@ namespace CMRenderer::CMDirectX
 	template <typename VertexTy>
 		requires std::is_trivially_copyable_v<VertexTy>
 	inline void DXContext::DrawIndexed(
-		const std::span<VertexTy> vertices,
-		const std::span<uint16_t> indices,
+		std::span<VertexTy> vertices,
+		std::span<uint16_t> indices,
 		UINT vertexStride,
 		UINT vertexOffset
 	) noexcept
@@ -286,13 +292,19 @@ namespace CMRenderer::CMDirectX
 		);
 	}
 
-	template <typename VertexTy, typename InstanceTy>
-		requires std::is_trivially_copyable_v<VertexTy> && std::is_trivially_copyable_v<InstanceTy>
+	template <typename VertexTy, typename IndexTy, typename InstanceTy>
+		requires std::is_trivially_copyable_v<VertexTy> &&
+			std::is_trivially_copyable_v<IndexTy> &&
+			std::is_trivially_copyable_v<InstanceTy>
 	inline void DXContext::DrawIndexedInstanced(
-		const std::span<VertexTy> vertices,
-		const std::span<uint16_t> indices,
-		const std::span<InstanceTy> instances,
+		std::span<VertexTy> vertices,
+		std::span<IndexTy> indices,
+		std::span<InstanceTy> instances,
+		UINT totalVertices,
+		UINT totalIndices,
+		UINT totalInstances,
 		UINT vertexStride,
+		UINT indexStride,
 		UINT instanceStride,
 		UINT vertexOffset,
 		UINT instanceOffset,
@@ -312,38 +324,47 @@ namespace CMRenderer::CMDirectX
 		m_CMLoggerRef.LogFatalNLIf(indices.data() == nullptr, L"DXContext [DrawIndexedInstanced] | Index data is nullptr.");
 		m_CMLoggerRef.LogFatalNLIf(instances.data() == nullptr, L"DXContext [DrawIndexedInstanced] | Instance data is nullptr.");
 
-		m_CMLoggerRef.LogFatalNLIf(vertices.size() == 0ull, L"DXContext [DrawIndexedInstanced] | Vertex data size is 0.");
-		m_CMLoggerRef.LogFatalNLIf(indices.size() == 0ull, L"DXContext [DrawIndexedInstanced] | Index data size is 0.");
-		m_CMLoggerRef.LogFatalNLIf(instances.size() == 0ull, L"DXContext [DrawIndexedInstanced] | Instance data size is 0.");
+		m_CMLoggerRef.LogFatalNLIf(vertices.size() == 0, L"DXContext [DrawIndexedInstanced] | Vertex data size is 0.");
+		m_CMLoggerRef.LogFatalNLIf(indices.size() == 0, L"DXContext [DrawIndexedInstanced] | Index data size is 0.");
+		m_CMLoggerRef.LogFatalNLIf(instances.size() == 0, L"DXContext [DrawIndexedInstanced] | Instance data size is 0.");
 
-		m_CMLoggerRef.LogFatalNLIf(vertexStride == 0u, L"DXContext [DrawIndexedInstanced] | Vertex stride is 0.");
-		m_CMLoggerRef.LogFatalNLIf(instanceStride == 0u, L"DXContext [DrawIndexedInstanced] | Instance stride is 0.");
+		m_CMLoggerRef.LogFatalNLIf(totalVertices == 0, L"DXContext [DrawIndexedInstanced] | Total vertices is 0.");
+		m_CMLoggerRef.LogFatalNLIf(totalIndices == 0, L"DXContext [DrawIndexedInstanced] | Total indices is 0.");
+		m_CMLoggerRef.LogFatalNLIf(totalInstances == 0, L"DXContext [DrawIndexedInstanced] | Total indices is 0.");
 
-		m_CMLoggerRef.LogFatalNLVariadicIf(verticesRegister == instancesRegister, L"DXContext [DrawIndexedInstanced] | Vertices buffer and instances buffer registers clash : ", instancesRegister);
+		m_CMLoggerRef.LogFatalNLIf(vertexStride == 0, L"DXContext [DrawIndexedInstanced] | Vertex stride is 0.");
+		m_CMLoggerRef.LogFatalNLIf(indexStride == 0, L"DXContext [DrawIndexedInstanced] | Index stride is 0.");
+		m_CMLoggerRef.LogFatalNLIf(instanceStride == 0, L"DXContext [DrawIndexedInstanced] | Instance stride is 0.");
 
 		m_CMLoggerRef.LogFatalNLVariadicIf(
-			static_cast<size_t>(startIndexLocation) > indices.size(),
+			verticesRegister == instancesRegister,
+			L"DXContext [DrawIndexedInstanced] | Vertices buffer and instances buffer registers clash : ", 
+			instancesRegister
+		);
+
+		m_CMLoggerRef.LogFatalNLVariadicIf(
+			static_cast<size_t>(startIndexLocation) > totalIndices,
 			L"DXContext [DrawIndexedInstanced] | Start index location is invalid. [0 - ",
-			(indices.size() - 1ull), "] : ", startIndexLocation
+			(totalIndices - 1), "] : ", startIndexLocation
 		);
 
 		m_CMLoggerRef.LogFatalNLVariadicIf(
-			static_cast<size_t>(baseVertexLocation) > vertices.size(),
+			static_cast<size_t>(baseVertexLocation) > totalVertices,
 			L"DXContext [DrawIndexedInstanced] | Base vertex location is invalid. [0 - ",
-			(vertices.size() - 1ull), "] : ", baseVertexLocation
+			(totalVertices - 1), "] : ", baseVertexLocation
 		);
 
 		m_CMLoggerRef.LogFatalNLVariadicIf(
-			static_cast<size_t>(startInstanceLocation) > instances.size(),
+			static_cast<size_t>(startInstanceLocation) > totalInstances,
 			L"DXContext [DrawIndexedInstanced] | Start instance location is invalid. [0 - ",
-			(instances.size() - 1ull), "] : ", startInstanceLocation
+			(totalInstances - 1), "] : ", startInstanceLocation
 		);
 
 		if (indicesPerInstance == 0u)
-			indicesPerInstance = static_cast<UINT>(indices.size());
+			indicesPerInstance = totalIndices;
 
 		if (instanceCount == 0u)
-			instanceCount = static_cast<UINT>(instances.size());
+			instanceCount = totalInstances;
 
 		BindRTV();
 

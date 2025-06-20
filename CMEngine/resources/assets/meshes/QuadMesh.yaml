@@ -1,0 +1,16 @@
+CMSerializedMesh:
+  Descriptor:
+    MeshName: TestQuadMesh
+    VertexCount: 4
+    IndexCount: 6
+    VertexByteStride: 12
+    IndexByteStride: 2
+    VertexByteStrideHint: float32x3
+    IndexByteStrideHint: uint16
+    VertexAttributes:
+      - Name: Pos3
+        TypeHint: float32x3
+        ByteOffset: 0
+  Data:
+    Vertices: AAAAvwAAAD8AAAC/AAAAPwAAAD8AAAC/AAAAPwAAAL8AAAC/AAAAvwAAAL8AAAC/
+    Indices: AAABAAIAAAACAAMA/f39/QAAAAAAAAAA1tNhmAAJAIzA/hEYigEAAHBv+hOKAQAA

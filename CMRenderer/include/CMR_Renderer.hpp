@@ -12,8 +12,6 @@
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "runtimeobject.lib") // Windows::Foundation::Initialize, RoInitialize, RoUninitialize
 
-#pragma comment(lib, "CMDep_DearImGui.lib")
-
 // Here to prevent the winnt.h #error "No Target Architecture"... idk why it's happening anyway tho...
 #include <Windows.h> 
 

@@ -396,7 +396,7 @@ namespace CMRenderer
 
 		m_CMLoggerRef.LogInfoNLAppend(
 			L"CMWindow [LogCurrentSettings] | Use fullscreen : ", 
-			Utility::BoolToWStrView(m_WindowSettingsRef.Current.UseFullscreen)
+			CMCommon::Utility::BoolToWStringView(m_WindowSettingsRef.Current.UseFullscreen)
 		);
 	}
 #pragma endregion

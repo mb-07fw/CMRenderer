@@ -5,7 +5,7 @@ cbuffer CameraTransform
 
 struct VSInput
 {
-    float3 pos : VertexPos3D;
+    float3 pos : Pos3D;
     float radius : InstanceRadius;
 };
 

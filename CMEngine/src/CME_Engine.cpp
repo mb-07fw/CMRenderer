@@ -15,17 +15,26 @@ namespace CMEngine
 {
 	CMEngine::CMEngine() noexcept
 		: m_Renderer(CMRenderer::CMWindowData(L"Title", false, 0, 0)),
-		  m_SceneManager(m_EngineLogger, m_ECS,  m_Renderer)
+		  m_AssetManager(m_EngineLogger),
+		  m_SceneManager(m_EngineLogger, m_ECS,  m_AssetManager, m_Renderer)
 	{
   		m_EngineLogger.OpenFileInDirectory(S_LIFETIME_LOG_FILE_NAME, L"./logs/");
 
 		if (!m_EngineLogger.IsStreamOpen())
 			CM_BREAK_DEBUGGER();
 
+
+		m_AssetManager.Init();
 		m_Renderer.Init();
 		m_SceneManager.TransitionScene(CMStockSceneType::TEST_SCENE);
 
 		m_EngineLogger.LogInfoNL(L"CMEngine [()] | Constructed.");
+	}
+
+	CMEngine::~CMEngine() noexcept
+	{
+		m_Renderer.Shutdown();
+		m_AssetManager.Shutdown();
 	}
 
 	void CMEngine::Run() noexcept
@@ -81,10 +90,5 @@ namespace CMEngine
 			m_Renderer.Window().Minimize();*/
 
 		renderContextRef.ImGuiEnd();
-	}
-
-	CMEngine::~CMEngine() noexcept
-	{
-		m_Renderer.Shutdown();
 	}
 }
