@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs />
+  <ContentFiles>
+    <ContentFile>
+      <FullPath>C:\other\dev\projects\cpp\Direct3D\CMRenderer\build\CMRenderer\Distribution\Out\CMCircle_PS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\other\dev\projects\cpp\Direct3D\CMRenderer\build\CMRenderer\Distribution\Out\CMCircle_VS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\other\dev\projects\cpp\Direct3D\CMRenderer\build\CMRenderer\Distribution\Out\CMQuadDepth_PS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\other\dev\projects\cpp\Direct3D\CMRenderer\build\CMRenderer\Distribution\Out\CMQuadDepth_VS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\other\dev\projects\cpp\Direct3D\CMRenderer\build\CMRenderer\Distribution\Out\CMQuad_PS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\other\dev\projects\cpp\Direct3D\CMRenderer\build\CMRenderer\Distribution\Out\CMQuad_VS.cso</FullPath>
+    </ContentFile>
+  </ContentFiles>
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>

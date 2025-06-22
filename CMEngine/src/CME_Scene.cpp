@@ -161,15 +161,19 @@ namespace CMEngine
 		std::array<float, 1> instanceRadii = { 0.5f };
 
 		//renderContextRef.DrawIndexed<Vertex3>(pMeshComponent->Vertices, pMeshComponent->Indices);
+		CMRenderer::CMDirectX::DXDrawDescriptor descriptor;
+
+		descriptor.TotalVertices = pMesh->Data.Descriptor.VertexCount;
+		descriptor.TotalIndices = pMesh->Data.Descriptor.IndexCount;
+		descriptor.TotalInstances = static_cast<UINT>(instanceRadii.size()),
+		descriptor.VertexByteStride = pMesh->Data.Descriptor.VertexByteStride;
+		descriptor.IndexByteStride = pMesh->Data.Descriptor.IndexByteStride;
+
 		renderContextRef.DrawIndexedInstanced<const std::byte, const std::byte, float>(
 			pMesh->Data.VertexData,
 			pMesh->Data.IndexData,
 			instanceRadii,
-			pMesh->Data.Descriptor.VertexCount,
-			pMesh->Data.Descriptor.IndexCount,
-			static_cast<UINT>(instanceRadii.size()),
-			pMesh->Data.Descriptor.VertexByteStride,
-			pMesh->Data.Descriptor.IndexByteStride
+			descriptor
 		);
 
 		ShowMeshWindow(pMeshComponent->Transform);

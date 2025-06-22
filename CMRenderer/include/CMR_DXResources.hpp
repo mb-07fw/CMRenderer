@@ -126,6 +126,7 @@ namespace CMRenderer::CMDirectX
 		~DXVertexBuffer() = default;
 	public:
 		inline static constexpr [[nodiscard]] bool IsValidRegister(UINT slot) noexcept;
+		inline static constexpr [[nodiscard]] UINT MaxRegisterSlot() noexcept { return D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT - 1; }
 
 		void Bind(Components::DXDevice& deviceRef, UINT offset = 0u) noexcept;
 		void SetStride(UINT vertexStride) noexcept;

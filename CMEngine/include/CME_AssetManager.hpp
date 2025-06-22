@@ -84,7 +84,7 @@ namespace CMEngine::Asset
 
 		/* @meshName should be the file name WITHOUT the file's extension.
 		 * Mesh is loaded relatively from CMEngine/resources/assets/meshes/ 
-		 * May return an invalid mesh if a file with @meshName doesn't exist.
+		 * May return an invalid mesh handle if a file with @meshName doesn't exist.
 		 */
 		[[nodiscard]] CMAMResultHandle LoadMesh(std::string_view meshName) noexcept;
 
