@@ -62,7 +62,7 @@ namespace CMCommon::Utility
 		{
 			char at = outTo[i];
 
-			outTo[i] = std::tolower(static_cast<unsigned char>(at));
+			outTo[i] = static_cast<char>(std::tolower(static_cast<unsigned char>(at)));
 		}
 	}
 
@@ -73,7 +73,7 @@ namespace CMCommon::Utility
 		{
 			char at = outStr[i];
 
-			outStr[i] = std::tolower(static_cast<unsigned char>(at));
+			outStr[i] = static_cast<char>(std::tolower(static_cast<unsigned char>(at)));
 		}
 	}
 }

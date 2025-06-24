@@ -85,11 +85,14 @@ std::vector<unsigned char> DecodeBase64(const std::string &input) {
 
     value = (value << 6) | d;
     if (cnt % 4 == 3) {
-      *out++ = value >> 16;
+      // mb-07fw: Added static_cast<unsigned char> to prevent warning C4244.
+      *out++ = static_cast<unsigned char>(value >> 16);
       if (i > 0 && input[i - 1] != '=')
-        *out++ = value >> 8;
+        // mb-07fw: Added static_cast<unsigned char> to prevent warning C4244.
+        *out++ = static_cast<unsigned char>(value >> 8);
       if (input[i] != '=')
-        *out++ = value;
+        // mb-07fw: Added static_cast<unsigned char> to prevent warning C4244.
+        *out++ = static_cast<unsigned char>(value);
     }
     ++cnt;
   }

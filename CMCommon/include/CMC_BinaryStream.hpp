@@ -671,9 +671,9 @@ namespace CMCommon
 	{
 		if constexpr (RestrictRead)
 			return false;
-
-		return m_CurrentStreamType == CMBinaryStreamType::READ ||
-			m_CurrentStreamType == CMBinaryStreamType::READ_WRITE;
+		else
+			return m_CurrentStreamType == CMBinaryStreamType::READ ||
+				m_CurrentStreamType == CMBinaryStreamType::READ_WRITE;
 	}
 
 	template <bool RestrictRead, bool RestrictWrite>
@@ -682,9 +682,9 @@ namespace CMCommon
 	{
 		if constexpr (RestrictWrite)
 			return false;
-
-		return m_CurrentStreamType == CMBinaryStreamType::WRITE ||
-			m_CurrentStreamType == CMBinaryStreamType::READ_WRITE;
+		else
+			return m_CurrentStreamType == CMBinaryStreamType::WRITE ||
+				m_CurrentStreamType == CMBinaryStreamType::READ_WRITE;
 	}
 
 	template <bool RestrictRead, bool RestrictWrite>

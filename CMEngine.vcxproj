@@ -1,0 +1,252 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Dist|x64">
+      <Configuration>Dist</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{0B0A2721-F7D6-812C-20F0-6FD40C1CB7BA}</ProjectGuid>
+    <IgnoreWarnCompileDuplicatedFilename>true</IgnoreWarnCompileDuplicatedFilename>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>CMEngine</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(ProjectDir)build\Debug\out\CMEngine\</OutDir>
+    <IntDir>$(ProjectDir)build\Debug\int\CMEngine\</IntDir>
+    <TargetName>CMEngine</TargetName>
+    <TargetExt>.exe</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(ProjectDir)build\Release\out\CMEngine\</OutDir>
+    <IntDir>$(ProjectDir)build\Release\int\CMEngine\</IntDir>
+    <TargetName>CMEngine</TargetName>
+    <TargetExt>.exe</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(ProjectDir)build\Dist\out\CMEngine\</OutDir>
+    <IntDir>$(ProjectDir)build\Dist\int\CMEngine\</IntDir>
+    <TargetName>CMEngine</TargetName>
+    <TargetExt>.exe</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>YAML_CPP_STATIC_DEFINE;CM_CONFIG="Debug";CM_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>CMEngine\include;CMCommon\include;CMRenderer\include;vendor\CMDep_DearImGui;vendor\CMDep_yaml-cpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+      <AdditionalOptions>/sdl %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+    </ClCompile>
+    <FxCompile>
+      <ShaderModel>5.0</ShaderModel>
+      <AdditionalOptions>/WX %(AdditionalOptions)</AdditionalOptions>
+    </FxCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>CMCommon.lib;CMDep_DearImGui.lib;CMDep_yaml-cpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>build\Debug\vendor\out\CMDep_yaml-cpp;build\Debug\vendor\out\CMDep_DearImGui;build\Debug\out\CMRenderer;build\Debug\out\CMCommon;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>YAML_CPP_STATIC_DEFINE;CM_CONFIG="Release";CM_NDEBUG;CM_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>CMEngine\include;CMCommon\include;CMRenderer\include;vendor\CMDep_DearImGui;vendor\CMDep_yaml-cpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <StringPooling>true</StringPooling>
+      <AdditionalOptions>/sdl %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+    </ClCompile>
+    <FxCompile>
+      <ShaderModel>5.0</ShaderModel>
+      <AdditionalOptions>/WX %(AdditionalOptions)</AdditionalOptions>
+    </FxCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>CMCommon.lib;CMDep_DearImGui.lib;CMDep_yaml-cpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>build\Release\vendor\out\CMDep_yaml-cpp;build\Release\vendor\out\CMDep_DearImGui;build\Release\out\CMRenderer;build\Release\out\CMCommon;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>YAML_CPP_STATIC_DEFINE;CM_CONFIG="Dist";CM_NDEBUG;CM_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>CMEngine\include;CMCommon\include;CMRenderer\include;vendor\CMDep_DearImGui;vendor\CMDep_yaml-cpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <StringPooling>true</StringPooling>
+      <AdditionalOptions>/sdl %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+    </ClCompile>
+    <FxCompile>
+      <ShaderModel>5.0</ShaderModel>
+      <AdditionalOptions>/WX %(AdditionalOptions)</AdditionalOptions>
+    </FxCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>CMCommon.lib;CMDep_DearImGui.lib;CMDep_yaml-cpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>build\Dist\vendor\out\CMDep_yaml-cpp;build\Dist\vendor\out\CMDep_DearImGui;build\Dist\out\CMRenderer;build\Dist\out\CMCommon;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="CMEngine\include\Core\CME_Asset.hpp" />
+    <ClInclude Include="CMEngine\include\Core\CME_AssetHandle.hpp" />
+    <ClInclude Include="CMEngine\include\Core\CME_AssetManager.hpp" />
+    <ClInclude Include="CMEngine\include\Core\CME_Camera.hpp" />
+    <ClInclude Include="CMEngine\include\Core\CME_Component.hpp" />
+    <ClInclude Include="CMEngine\include\Core\CME_Engine.hpp" />
+    <ClInclude Include="CMEngine\include\Core\CME_Entity.hpp" />
+    <ClInclude Include="CMEngine\include\Core\CME_LayerStack.hpp" />
+    <ClInclude Include="CMEngine\include\Core\CME_MeshData.hpp" />
+    <ClInclude Include="CMEngine\include\Core\CME_MeshSerializer.hpp" />
+    <ClInclude Include="CMEngine\include\Core\CME_PCH.hpp" />
+    <ClInclude Include="CMEngine\include\Core\CME_Paths.hpp" />
+    <ClInclude Include="CMEngine\include\Core\CME_Scene.hpp" />
+    <ClInclude Include="CMEngine\include\Core\CME_SceneManager.hpp" />
+    <ClInclude Include="CMEngine\include\Core\CME_TypeHint.hpp" />
+    <ClInclude Include="CMEngine\include\Core\CME_WindowSettings.hpp" />
+    <ClInclude Include="CMEngine\include\DirectX\CME_DXCamera.hpp" />
+    <ClInclude Include="CMEngine\include\DirectX\CME_DXComponents.hpp" />
+    <ClInclude Include="CMEngine\include\DirectX\CME_DXContext.hpp" />
+    <ClInclude Include="CMEngine\include\DirectX\CME_DXResources.hpp" />
+    <ClInclude Include="CMEngine\include\DirectX\CME_DXShaderData.hpp" />
+    <ClInclude Include="CMEngine\include\DirectX\CME_DXShaderLibrary.hpp" />
+    <ClInclude Include="CMEngine\include\DirectX\CME_DXShaderSet.hpp" />
+    <ClInclude Include="CMEngine\include\DirectX\CME_DXUtility.hpp" />
+    <ClInclude Include="CMEngine\include\Windows\CME_WNDefines.hpp" />
+    <ClInclude Include="CMEngine\include\Windows\CME_WNKeyboard.hpp" />
+    <ClInclude Include="CMEngine\include\Windows\CME_WNUtility.hpp" />
+    <ClInclude Include="CMEngine\include\Windows\CME_WNWindow.hpp" />
+    <ClInclude Include="CMEngine\src\Core\CME_LayerStack.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CMEngine\src\Core\CME_Asset.cpp" />
+    <ClCompile Include="CMEngine\src\Core\CME_AssetHandle.cpp" />
+    <ClCompile Include="CMEngine\src\Core\CME_AssetManager.cpp" />
+    <ClCompile Include="CMEngine\src\Core\CME_Camera.cpp" />
+    <ClCompile Include="CMEngine\src\Core\CME_Component.cpp" />
+    <ClCompile Include="CMEngine\src\Core\CME_Engine.cpp" />
+    <ClCompile Include="CMEngine\src\Core\CME_Main.cpp" />
+    <ClCompile Include="CMEngine\src\Core\CME_MeshSerializer.cpp" />
+    <ClCompile Include="CMEngine\src\Core\CME_PCH.cpp" />
+    <ClCompile Include="CMEngine\src\Core\CME_Scene.cpp" />
+    <ClCompile Include="CMEngine\src\Core\CME_SceneManager.cpp" />
+    <ClCompile Include="CMEngine\src\DirectX\CME_DXCamera.cpp" />
+    <ClCompile Include="CMEngine\src\DirectX\CME_DXComponents.cpp" />
+    <ClCompile Include="CMEngine\src\DirectX\CME_DXContext.cpp" />
+    <ClCompile Include="CMEngine\src\DirectX\CME_DXResources.cpp" />
+    <ClCompile Include="CMEngine\src\DirectX\CME_DXShaderData.cpp" />
+    <ClCompile Include="CMEngine\src\DirectX\CME_DXShaderLibrary.cpp" />
+    <ClCompile Include="CMEngine\src\DirectX\CME_DXShaderSet.cpp" />
+    <ClCompile Include="CMEngine\src\Windows\CME_WNKeyboard.cpp" />
+    <ClCompile Include="CMEngine\src\Windows\CME_WNUtility.cpp" />
+    <ClCompile Include="CMEngine\src\Windows\CME_WNWindow.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="CMEngine\resources\shaders\CMCircle_PS.hlsl">
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="CMEngine\resources\shaders\CMCircle_VS.hlsl">
+      <ShaderType>Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="CMEngine\resources\shaders\CMQuadDepth_PS.hlsl">
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="CMEngine\resources\shaders\CMQuadDepth_VS.hlsl">
+      <ShaderType>Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="CMEngine\resources\shaders\CMQuad_PS.hlsl">
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="CMEngine\resources\shaders\CMQuad_VS.hlsl">
+      <ShaderType>Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="vendor\submodules\DirectXTK\Src\Shaders\DGSLLambert.hlsl">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="vendor\submodules\DirectXTK\Src\Shaders\DGSLPhong.hlsl">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="vendor\submodules\DirectXTK\Src\Shaders\DGSLUnlit.hlsl">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="CMCommon.vcxproj">
+      <Project>{BE2C921C-AAF9-EC27-D312-DBCFBF3E22B6}</Project>
+    </ProjectReference>
+    <ProjectReference Include="CMDep_DearImGui.vcxproj">
+      <Project>{04E40FC6-706F-7D8A-7980-007FE58AD98A}</Project>
+    </ProjectReference>
+    <ProjectReference Include="CMDep_yaml-cpp.vcxproj">
+      <Project>{7050BEE6-5C1E-B2EC-45B2-2213311F8E51}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

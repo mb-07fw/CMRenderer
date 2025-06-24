@@ -179,10 +179,12 @@ class EmitterState {
         else
           return EmitterNodeType::BlockMap;
       }
+      
+      // mb-07fw: Commented out to prevent warning C4702.
 
       // can't get here
-      assert(false);
-      return EmitterNodeType::NoType;
+      // assert(false);
+      // return EmitterNodeType::NoType;
     }
   };
 

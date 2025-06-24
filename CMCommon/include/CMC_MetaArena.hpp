@@ -2,77 +2,154 @@
 
 #include <vector>
 #include <type_traits>
+#include <cstdint>
 #include <cstddef>
+
+#include "CMC_Logger.hpp"
 
 namespace CMCommon
 {
-	template <typename MetaTy>
-	struct CMAllocData {
-		CMAllocData(size_t allocByteSize, size_t allocByteOffset, MetaTy extraMetaData) noexcept;
-		~CMAllocData() = default;
-
-		size_t AllocByteSize = 0;
-		size_t AllocByteOffset = 0;
-		MetaTy ExtraData;
+	enum class CMAllocType : int8_t
+	{
+		INVALID = -127,
+		FAILED_ALREADY_ALLOCATED,
+		FAILED_NOT_ALLOCATED,
+		FAILED_ALLOC_INSANE_SIZE,
+		FAILED_BAD_ALLOC,
+		FAILED_BYTE_SIZE_OVERFLOWING_ARENA,
+		FAILED = 0,
+		SUCCEEDED = 1
 	};
 
-	template <typename MetaTy>
-	CMAllocData<MetaTy>::CMAllocData(size_t allocByteSize, size_t allocByteOffset, MetaTy extraMetaData) noexcept
-		: AllocByteSize(allocByteSize), AllocByteOffset(allocByteOffset), ExtraData(extraMetaData)
+	inline constexpr [[nodiscard]] int8_t AllocTypeToInt8(CMAllocType type) noexcept
 	{
+		return static_cast<int8_t>(type);
 	}
 
-	template <typename MetaTy>
+	inline constexpr [[nodiscard]] bool AllocSucceeded(CMAllocType type) noexcept
+	{
+		return AllocTypeToInt8(type) > AllocTypeToInt8(CMAllocType::FAILED);
+	}
+
+	inline constexpr [[nodiscard]] bool AllocFailed(CMAllocType type) noexcept
+	{
+		return AllocTypeToInt8(type) < AllocTypeToInt8(CMAllocType::SUCCEEDED);
+	}
+
+	struct CMAllocMetaData
+	{
+		inline constexpr CMAllocMetaData(size_t bytes, size_t byteOffset) noexcept
+			: Bytes(bytes),
+			  ByteOffset(byteOffset)
+		{
+		}
+
+		~CMAllocMetaData() = default;
+
+		size_t Bytes = 0;
+		size_t ByteOffset = 0;
+	};
+
+	template <typename Ty>
+	struct CMAllocHandle
+	{
+		inline constexpr CMAllocHandle(size_t metaDataIndex, CMAllocType result, Ty* pData) noexcept
+			: MetaDataIndex(MetaDataIndex),
+			  Result(result),
+			  pData(pData)
+		{
+		}
+
+		~CMAllocHandle() = default;
+
+		size_t MetaDataIndex = 0;
+		CMAllocType Result = CMAllocType::INVALID; /* Note to self; CMAllocType::INVALID
+													* implies an un-initialized alloc handle.
+													*/
+		Ty* pData = nullptr;
+	};
+
 	class CMMetaArena
 	{
 	public:
-		// Allocates arena with number of bytes, and reserves space for the number of metadata containers to hold.
-		// (Reserves space in vector for 20 meta data containers by default)
-		CMMetaArena(size_t bytes, size_t numMetaData = 20) noexcept;
+		CMMetaArena(CMCommon::CMLoggerWide& logger) noexcept;
 		~CMMetaArena() noexcept;
 	public:
-		template <typename AllocTy, typename... Args>
-		AllocTy* ConstructNext(MetaTy metaData, Args&&... args) noexcept;
+		/* Allocates the initial block of memory for the arena.
+		 * 
+		 * Returns CMAllocType::SUCCEEDED if allocation succeeds;
+		 *   any CMAllocType < 1 otherwise.
+		 * 
+		 * Use AllocSucceeded to check if returned CMAllocType is a 'succeeded' type.
+		 */
+		[[nodiscard]] CMAllocType Allocate(size_t bytes) noexcept;
+
+		/* De-allocates the arena's block of memory.
+		 * 
+		 * Returns CMAllocType::SUCCEEDED if de-allocation succeeds;
+		 *   any CMAllocType < 1 otherwise.
+		 *
+		 * Use AllocSucceeded to check if returned CMAllocType is a 'succeeded' type.
+		 *
+		 * NOTE: May cause UB for any objects not destroyed before de-allocation.
+		 */
+		CMAllocType Deallocate() noexcept;
+
+		template <typename Ty, typename... Args>
+			requires std::is_trivially_copyable_v<Ty>
+		inline [[nodiscard]] CMAllocHandle<Ty> ConstructNext(Args&&... args) noexcept;
 
 		inline [[nodiscard]] size_t TotalAllocations() const noexcept { return m_AllocData.size(); }
 	private:
+		static constexpr size_t S_ALLOC_BYTE_SIZE_SANITY_BOUNDARY = 10'000;
+		static constexpr size_t S_INVALID_META_DATA_INDEX = static_cast<size_t>(-1);
 		std::byte* mP_Data = nullptr;
-		size_t m_CurrentOffset = 0;
+		size_t m_CurrentByteOffset = 0;
 		size_t m_TotalBytes = 0;
-		std::vector<CMAllocData<MetaTy>> m_AllocData;
+		bool m_AllocatedBlock = false;
+		std::vector<CMAllocMetaData> m_AllocData;
+		CMCommon::CMLoggerWide& m_Logger;
 	};
 
-	template <typename MetaTy>
-	CMMetaArena<MetaTy>::CMMetaArena(size_t bytes, size_t numMetaData) noexcept
-		: m_TotalBytes(bytes)
+	template <typename Ty, typename... Args>
+		requires std::is_trivially_copyable_v<Ty>
+	inline [[nodiscard]] CMAllocHandle<Ty> CMMetaArena::ConstructNext(Args&&... args) noexcept
 	{
-		if (bytes != 0)
-			mP_Data = static_cast<std::byte*>(operator new(bytes));
+		constexpr std::wstring_view FuncTag = L"CMMetaArena [ConstructNext] | ";
 
-		m_AllocData.reserve(numMetaData);
-	}
+		if (!m_AllocatedBlock)
+		{
+			m_Logger.LogWarningNLTagged(FuncTag, L"Arena hasn't allocated a block of memory yet.");
+			return CMAllocType::FAILED_NOT_ALLOCATED;
+		}
 
-	template <typename MetaTy>
-	CMMetaArena<MetaTy>::~CMMetaArena() noexcept
-	{
-		operator delete(mP_Data);
-	}
+		size_t nextOffset = m_CurrentByteOffset + sizeof(Ty);
 
-	template <typename MetaTy>
-	template <typename AllocTy, typename... Args>
-	AllocTy* CMMetaArena<MetaTy>::ConstructNext(MetaTy metaData, Args&&... args) noexcept
-	{
-		constexpr size_t byteSize = sizeof(AllocTy);
+		if (nextOffset > m_TotalBytes)
+		{
+			m_Logger.LogWarningNLFormatted(
+				FuncTag,
+				L"Allocation of size `{}` would overflow current byte offset of `{}`.",
+				sizeof(Ty), m_CurrentByteOffset
+			);
 
-		if (m_CurrentOffset + byteSize > m_TotalBytes)
-			return nullptr;
+			return CMAllocHandle<Ty>(
+				S_INVALID_META_DATA_INDEX,
+				CMAllocType::FAILED_BYTE_SIZE_OVERFLOWING_ARENA,
+				nullptr
+			);
+		}
 
-		m_AllocData.emplace_back(byteSize, m_CurrentOffset, metaData);
+		std::byte* pNext = mP_Data + m_CurrentByteOffset;
 
-		AllocTy* pData = new(mP_Data + m_CurrentOffset) AllocTy(std::forward<Args>(args)...);
+		CMAllocHandle<Ty> handle;
 
-		m_CurrentOffset += byteSize;
+		handle.pData = new (pNext) Ty(std::forward<Args>(args)...);
 
-		return pData;
+		handle.MetaDataIndex = m_AllocData.size();
+		handle.Result = CMAllocType::SUCCEEDED;
+
+		m_AllocData.emplace_back(sizeof(Ty), nextOffset);
+		return handle;
 	}
 }

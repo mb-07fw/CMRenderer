@@ -107,9 +107,11 @@ EmitterNodeType::value EmitterState::NextGroupType(
     return EmitterNodeType::BlockMap;
   return EmitterNodeType::FlowMap;
 
+  // mb-07fw: Commented out to prevent warning C4702.
+
   // can't happen
-  assert(false);
-  return EmitterNodeType::NoType;
+  //assert(false);
+  //return EmitterNodeType::NoType;
 }
 
 void EmitterState::StartedDoc() {
