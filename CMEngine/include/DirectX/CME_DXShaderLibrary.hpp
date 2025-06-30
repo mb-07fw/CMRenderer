@@ -37,10 +37,12 @@ namespace CMEngine::DirectXAPI::DX11
 		[[nodiscard]] size_t TotalCompiledShaders(const std::filesystem::path& compiledShaderPath) const noexcept;
 		[[nodiscard]] DXShaderSetType CorrespondingSetType(const std::wstring& fileName) const noexcept;
 	private:
-		static constexpr size_t S_EXPECTED_NUM_SHADERS = 6;
-		static constexpr size_t S_EXPECTED_NUM_SHADER_SETS = 3;
+		static constexpr size_t S_EXPECTED_NUM_SHADERS = 8;
+		static constexpr size_t S_EXPECTED_NUM_SHADER_SETS = 4;
 		static constexpr std::wstring_view S_CMQUAD_VS_NAME = L"CMQuad_VS.cso";
 		static constexpr std::wstring_view S_CMQUAD_PS_NAME = L"CMQuad_PS.cso";
+		static constexpr std::wstring_view S_CMQUAD_OUTLINED_VS_NAME = L"CMQuadOutlined_VS.cso";
+		static constexpr std::wstring_view S_CMQUAD_OUTLINED_PS_NAME = L"CMQuadOutlined_PS.cso";
 		static constexpr std::wstring_view S_CMQUAD_DEPTH_VS_NAME = L"CMQuadDepth_VS.cso";
 		static constexpr std::wstring_view S_CMQUAD_DEPTH_PS_NAME = L"CMQuadDepth_PS.cso";
 		static constexpr std::wstring_view S_CMCIRCLE_VS_NAME = L"CMCircle_VS.cso";

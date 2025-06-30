@@ -43,7 +43,7 @@ namespace CMEngine::DirectXAPI::DX11
 		static constexpr uint8_t S_FRAME_DATA_REGISTER_SLOT = 1;
 	};
 
-	struct CircleInstance
+	struct CMCircleInstance
 	{
 		DirectX::XMMATRIX ModelMatrix = {};
 
@@ -85,17 +85,17 @@ namespace CMEngine::DirectXAPI::DX11
 		UINT IndicesPerInstance = S_INFER_FROM_CONTAINER;					// Number of indices read from the index buffer for each instance.						   
 	};
 
-	class DXContextState
+	class DXRendererState
 	{
 	public:
-		DXContextState(
+		DXRendererState(
 			CMCommon::CMLoggerWide& logger,
 			DXShaderLibrary& shaderLibrary,
 			DXDevice& device,
 			const CMWindowData& currentWindowData
 		) noexcept;
 
-		~DXContextState() = default;
+		~DXRendererState() = default;
 	public:
 		void SetCurrentShaderSet(DXShaderSetType shaderType) noexcept;
 		void SetCurrentModelMatrix(const DirectX::XMMATRIX& modelMatrix) noexcept;
@@ -104,7 +104,7 @@ namespace CMEngine::DirectXAPI::DX11
 
 		void RebindCurrentShaderSet() noexcept;
 
-		void UpdateResolution() noexcept;
+		void FlagResize() noexcept;
 		void UpdateCamera() noexcept;
 
 		[[nodiscard]] DXShaderSetType CurrentShaderSet() const noexcept;
@@ -135,12 +135,12 @@ namespace CMEngine::DirectXAPI::DX11
 		bool m_WindowResized = false;
 	};
 	
-	class DXContext
+	class DXRenderer
 	{
 		friend class CMEngine;
 	public:
-		DXContext(CMCommon::CMLoggerWide& logger, const CMWindowData& currentWindowData) noexcept;
-		~DXContext() noexcept;
+		DXRenderer(CMCommon::CMLoggerWide& logger, const CMWindowData& currentWindowData) noexcept;
+		~DXRenderer() noexcept;
 	public:
 		void Init(const HWND hWnd) noexcept;
 		void Shutdown() noexcept;
@@ -153,20 +153,20 @@ namespace CMEngine::DirectXAPI::DX11
 		void Clear(CMCommon::NormColor normColor) noexcept;
 		void Present() noexcept;
 
-		template <typename VertexTy>
-			requires AllTriviallyCopyable<VertexTy>
+		template <typename VertexTy, typename IndexTy>
+			requires AllTriviallyCopyable<VertexTy, IndexTy>
 		inline void DrawIndexed(
-			std::span<VertexTy> vertices,
-			std::span<uint16_t> indices,
+			std::span<const VertexTy> vertices,
+			std::span<const IndexTy> indices,
 			DXDrawDescriptor& descriptor // NOTE: Will be modified if any fields are inferred.
 		) noexcept;
 
 		template <typename VertexTy, typename IndexTy, typename InstanceTy>
 			requires AllTriviallyCopyable<VertexTy, IndexTy, InstanceTy>
 		inline void DrawIndexedInstanced(
-			std::span<VertexTy> vertices,
-			std::span<IndexTy> indices,
-			std::span<InstanceTy> instances,
+			std::span<const VertexTy> vertices,
+			std::span<const IndexTy> indices,
+			std::span<const InstanceTy> instances,
 			DXDrawDescriptor& descriptor // NOTE: Will be modified if any fields are inferred.
 		) noexcept;
 
@@ -175,7 +175,12 @@ namespace CMEngine::DirectXAPI::DX11
 
 		void ImGuiNewFrame() noexcept;
 
-		void ImGuiBegin(std::string_view windowTitle, bool* pIsOpen = nullptr, ImGuiWindowFlags windowFlags = ImGuiWindowFlags_None) noexcept;
+		void ImGuiBegin(
+			std::string_view windowTitle,
+			bool* pIsOpen = nullptr,
+			ImGuiWindowFlags windowFlags = ImGuiWindowFlags_None
+		) noexcept;
+
 		void ImGuiEnd() noexcept;
 
 		bool ImGuiBeginChild(
@@ -205,6 +210,8 @@ namespace CMEngine::DirectXAPI::DX11
 		void ImGuiEndChild() noexcept;
 
 		void ReportLiveObjects() noexcept;
+
+		[[nodiscard]] CMCommon::CMRect CurrentRenderArea() const noexcept;
 
 		inline [[nodiscard]] bool IsInitialized() const noexcept { return m_Initialized; }
 		inline [[nodiscard]] bool IsShutdown() const noexcept { return m_Shutdown; }
@@ -248,7 +255,7 @@ namespace CMEngine::DirectXAPI::DX11
 	private:
 		CMCommon::CMLoggerWide& m_Logger;
 		DXShaderLibrary m_ShaderLibrary;
-		DXContextState m_State;
+		DXRendererState m_State;
 		DXDevice m_Device;
 		DXFactory m_Factory;
 		DXSwapChain m_SwapChain;
@@ -266,23 +273,40 @@ namespace CMEngine::DirectXAPI::DX11
 		bool m_Shutdown = false;
 	};
 
-	template <typename VertexTy>
-		requires AllTriviallyCopyable<VertexTy>
-	inline void DXContext::DrawIndexed(
-		std::span<VertexTy> vertices,
-		std::span<uint16_t> indices,
-		DXDrawDescriptor& descriptor // NOTE: Will be modified if any fields are inferred.
+	template <typename VertexTy, typename IndexTy>
+		requires AllTriviallyCopyable<VertexTy, IndexTy>
+	inline void DXRenderer::DrawIndexed(
+		std::span<const VertexTy> vertices,
+		std::span<const IndexTy> indices,
+		DXDrawDescriptor& descriptor
 	) noexcept
 	{
-		constexpr std::wstring_view FuncTag = "DXContext [DrawIndexed] | ";
+		constexpr std::wstring_view FuncTag = L"DXRenderer [DrawIndexed] | ";
 
-		m_Logger.LogFatalNLIf(!m_Initialized, L"DXContext [DrawIndexed] | DXContext isn't initialized.");
+		m_Logger.LogFatalNLIf(
+			!m_Initialized,
+			L"DXRenderer [DrawIndexed] | DXRenderer isn't initialized."
+		);
 
-		m_Logger.LogFatalNLIf(vertices.data() == nullptr, L"DXContext [DrawIndexed] | Vertices data is nullptr.");
-		m_Logger.LogFatalNLIf(indices.data() == nullptr, L"DXContext [DrawIndexed] | Indices data is nullptr.");
+		m_Logger.LogFatalNLIf(
+			vertices.data() == nullptr,
+			L"DXRenderer [DrawIndexed] | Vertices data is nullptr."
+		);
 
-		m_Logger.LogFatalNLIf(vertices.size() == 0ull, L"DXContext [DrawIndexed] | Vertices size is 0.");
-		m_Logger.LogFatalNLIf(indices.size() == 0ull, L"DXContext [DrawIndexed] | Indices size is 0.");
+		m_Logger.LogFatalNLIf(
+			indices.data() == nullptr,
+			L"DXRenderer [DrawIndexed] | Indices data is nullptr."
+		);
+
+		m_Logger.LogFatalNLIf(
+			vertices.size() == 0, 
+			L"DXRenderer [DrawIndexed] | Vertices size is 0."
+		);
+
+		m_Logger.LogFatalNLIf(
+			indices.size() == 0,
+			L"DXRenderer [DrawIndexed] | Indices size is 0."
+		);
 
 		EnforceValidDrawDescriptorIndexed(vertices, indices, descriptor);
 
@@ -322,17 +346,26 @@ namespace CMEngine::DirectXAPI::DX11
 			std::span<DirectX::XMMATRIX>(&mvpMatrix, 1u)
 		);
 
-		m_Logger.LogFatalNLIf(FAILED(vertexBuffer.Create(m_Device)), L"DXContext [DrawIndexed] | Failed to create vertex buffer.");
-		m_Logger.LogFatalNLIf(FAILED(indexBuffer.Create(m_Device)), L"DXContext [DrawIndexed] | Failed to create index buffer.");
-		m_Logger.LogFatalNLIf(FAILED(mvpBuffer.Create(m_Device)), L"DXContext [DrawIndexed] | Failed to create mvp constant buffer.");
+		m_Logger.LogFatalNLIf(
+			FAILED(vertexBuffer.Create(m_Device)),
+			L"DXRenderer [DrawIndexed] | Failed to create vertex buffer."
+		);
+
+		m_Logger.LogFatalNLIf(
+			FAILED(indexBuffer.Create(m_Device)),
+			L"DXRenderer [DrawIndexed] | Failed to create index buffer."
+		);
+
+		m_Logger.LogFatalNLIf(
+			FAILED(mvpBuffer.Create(m_Device)),
+			L"DXRenderer [DrawIndexed] | Failed to create mvp constant buffer."
+		);
 
 		vertexBuffer.Bind(m_Device, descriptor.VertexByteOffset);
 		indexBuffer.Bind(m_Device, descriptor.IndexByteOffset);
 		mvpBuffer.BindVS(m_Device);
 
-		UINT indexCount = static_cast<UINT>(indices.size());
-
-		m_Device.ContextRaw()->DrawIndexed(indexCount, 0, 0);
+		m_Device.ContextRaw()->DrawIndexed(descriptor.TotalIndices, 0, 0);
 
 		vertexBuffer.Release();
 		indexBuffer.Release();
@@ -342,23 +375,23 @@ namespace CMEngine::DirectXAPI::DX11
 			if (!m_InfoQueue.IsQueueEmpty())
 			{
 				m_InfoQueue.LogMessages();
-				m_Logger.LogFatalNL(L"DXContext [DrawIndexed] | Debug messages generated after drawing.");
+				m_Logger.LogFatalNL(L"DXRenderer [DrawIndexed] | Debug messages generated after drawing.");
 			}
 		);
 	}
 
 	template <typename VertexTy, typename IndexTy, typename InstanceTy>
 		requires AllTriviallyCopyable<VertexTy, IndexTy, InstanceTy>
-	inline void DXContext::DrawIndexedInstanced(
-		std::span<VertexTy> vertices,
-		std::span<IndexTy> indices,
-		std::span<InstanceTy> instances,
+	inline void DXRenderer::DrawIndexedInstanced(
+		std::span<const VertexTy> vertices,
+		std::span<const IndexTy> indices,
+		std::span<const InstanceTy> instances,
 		DXDrawDescriptor& descriptor // NOTE: Will be modified if any fields are inferred.
 	) noexcept
 	{
-		constexpr std::wstring_view FuncTag = L"DXContext [DrawIndexedInstanced] | ";
+		constexpr std::wstring_view FuncTag = L"DXRenderer [DrawIndexedInstanced] | ";
 
-		m_Logger.LogFatalNLTaggedIf(!m_Initialized, FuncTag, L"DXContext isn't initialized.");
+		m_Logger.LogFatalNLTaggedIf(!m_Initialized, FuncTag, L"DXRenderer isn't initialized.");
 
 		m_Logger.LogFatalNLTaggedIf(vertices.data() == nullptr, FuncTag, L"Vertex data is nullptr.");
 		m_Logger.LogFatalNLTaggedIf(indices.data() == nullptr, FuncTag, L"Index data is nullptr.");
@@ -412,22 +445,22 @@ namespace CMEngine::DirectXAPI::DX11
 
 		m_Logger.LogFatalNLIf(
 			FAILED(verticesBuffer.Create(m_Device)), 
-			L"DXContext [DrawIndexedInstanced] | Failed to create vertices buffer."
+			L"DXRenderer [DrawIndexedInstanced] | Failed to create vertices buffer."
 		);
 
 		m_Logger.LogFatalNLIf(
 			FAILED(instancesBuffer.Create(m_Device)),
-			L"DXContext [DrawIndexedInstanced] | Failed to create instances buffer."
+			L"DXRenderer [DrawIndexedInstanced] | Failed to create instances buffer."
 		);
 
 		m_Logger.LogFatalNLIf(
 			FAILED(indicesBuffer.Create(m_Device)),
-			L"DXContext [DrawIndexedInstanced] | Failed to create indices buffer."
+			L"DXRenderer [DrawIndexedInstanced] | Failed to create indices buffer."
 		);
 
 		m_Logger.LogFatalNLIf(
 			FAILED(mvpBuffer.Create(m_Device)),
-			L"DXContext [DrawIndexedInstanced] | Failed to create mvp buffer."
+			L"DXRenderer [DrawIndexedInstanced] | Failed to create mvp buffer."
 		);
 
 		verticesBuffer.Bind(m_Device, descriptor.VertexByteOffset);
@@ -447,16 +480,16 @@ namespace CMEngine::DirectXAPI::DX11
 			if (!m_InfoQueue.IsQueueEmpty())
 			{
 				m_InfoQueue.LogMessages();
-				m_Logger.LogFatalNL(L"DXContext [DrawIndexedInstanced] | Debug messages generated after drawing.");
+				m_Logger.LogFatalNL(L"DXRenderer [DrawIndexedInstanced] | Debug messages generated after drawing.");
 			}
 		);
 	}
 
 	template <typename VertexTy>
 		requires AllTriviallyCopyable<VertexTy>
-	void DXContext::EnforceValidDrawDescriptor(std::span<VertexTy> vertices, DXDrawDescriptor& descriptor) noexcept
+	void DXRenderer::EnforceValidDrawDescriptor(std::span<VertexTy> vertices, DXDrawDescriptor& descriptor) noexcept
 	{
-		constexpr std::wstring_view FuncTag = L"DXContext [EnforceValidDrawDescriptor] | ";
+		constexpr std::wstring_view FuncTag = L"DXRenderer [EnforceValidDrawDescriptor] | ";
 
 		if (descriptor.TotalVertices == DXDrawDescriptor::S_INFER_FROM_CONTAINER)
 			descriptor.TotalVertices = static_cast<UINT>(vertices.size());
@@ -515,9 +548,9 @@ namespace CMEngine::DirectXAPI::DX11
 
 	template <typename VertexTy, typename IndexTy>
 		requires AllTriviallyCopyable<VertexTy, IndexTy>
-	void DXContext::EnforceValidDrawDescriptorIndexed(std::span<VertexTy> vertices, std::span<IndexTy> indices, DXDrawDescriptor& descriptor) noexcept
+	void DXRenderer::EnforceValidDrawDescriptorIndexed(std::span<VertexTy> vertices, std::span<IndexTy> indices, DXDrawDescriptor& descriptor) noexcept
 	{
-		constexpr std::wstring_view FuncTag = L"DXContext [EnforceValidDrawDescriptorIndexed] | ";
+		constexpr std::wstring_view FuncTag = L"DXRenderer [EnforceValidDrawDescriptorIndexed] | ";
 
 		EnforceValidDrawDescriptor(vertices, descriptor);
 
@@ -587,14 +620,14 @@ namespace CMEngine::DirectXAPI::DX11
 
 	template <typename VertexTy, typename IndexTy, typename InstanceTy>
 		requires AllTriviallyCopyable<VertexTy, IndexTy, InstanceTy>
-	void DXContext::EnforceValidDrawDescriptorIndexedInstanced(
+	void DXRenderer::EnforceValidDrawDescriptorIndexedInstanced(
 		std::span<VertexTy> vertices,
 		std::span<IndexTy> indices,
 		std::span<InstanceTy> instances,
 		DXDrawDescriptor& descriptor // NOTE: Will be modified if any fields are inferred.
 	) noexcept
 	{
-		constexpr std::wstring_view FuncTag = L"DXContext [EnforceValidDrawDescriptorIndexedInstanced] | ";
+		constexpr std::wstring_view FuncTag = L"DXRenderer [EnforceValidDrawDescriptorIndexedInstanced] | ";
 
 		EnforceValidDrawDescriptorIndexed(vertices, indices, descriptor);
 

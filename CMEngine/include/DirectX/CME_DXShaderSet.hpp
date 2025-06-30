@@ -69,6 +69,17 @@ namespace CMEngine::DirectXAPI::DX11
 		static constexpr size_t S_TOTAL_INPUT_LAYOUT_DESC_ELEMENTS = 1;
 	};
 
+	struct DXShaderSetQuadOutlined : public IDXShaderSet
+	{
+		DXShaderSetQuadOutlined(const DXShaderData& vertexData, const DXShaderData& pixelData) noexcept;
+		~DXShaderSetQuadOutlined() = default;
+
+		virtual void CreateShaderSet(DXDevice& device, CMCommon::CMLoggerWide& logger) noexcept override;
+		static void GetInputElementDescs(std::vector<D3D11_INPUT_ELEMENT_DESC>& outInputElementDescs) noexcept;
+
+		static constexpr size_t S_TOTAL_INPUT_LAYOUT_DESC_ELEMENTS = 1;
+	};
+
 	struct DXShaderSetQuadDepth : public IDXShaderSet
 	{
 		DXShaderSetQuadDepth(const DXShaderData& vertexData, const DXShaderData& pixelData) noexcept;

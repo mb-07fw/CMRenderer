@@ -4,6 +4,8 @@
 void Entry()
 {
 	CMEngine::CMEngine engine;
+
+	engine.Init();
 	engine.Run();
 }
 

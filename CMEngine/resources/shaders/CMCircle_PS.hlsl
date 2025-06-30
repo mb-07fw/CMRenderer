@@ -6,7 +6,7 @@ cbuffer FrameData
 
 struct PSInput
 {
-    float radius : InstanceRadius;
+    float radius : InstanceRadius; /* TOOO: Make radius in actual world units instead of being used as [0, 1]. */
     float2 uv : OutUV; /* Assumes that quad is [-0.5, 0.5] in NDC... */
 };
 

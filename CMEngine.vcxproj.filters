@@ -111,7 +111,7 @@
     <ClInclude Include="CMEngine\include\DirectX\CME_DXComponents.hpp">
       <Filter>CMEngine\Include Files\DirectX</Filter>
     </ClInclude>
-    <ClInclude Include="CMEngine\include\DirectX\CME_DXContext.hpp">
+    <ClInclude Include="CMEngine\include\DirectX\CME_DXRenderer.hpp">
       <Filter>CMEngine\Include Files\DirectX</Filter>
     </ClInclude>
     <ClInclude Include="CMEngine\include\DirectX\CME_DXResources.hpp">
@@ -142,7 +142,10 @@
       <Filter>CMEngine\Source Files\Core</Filter>
     </ClInclude>
     <ClInclude Include="CMEngine\include\Core\CME_LayerStack.hpp" />
-    <ClInclude Include="CMEngine\src\Core\CME_LayerStack.cpp" />
+    <ClInclude Include="CMEngine\include\Core\CME_Layer.hpp">
+      <Filter>CMEngine\include\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="CMEngine\include\Core\CME_EditorLayer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CMEngine\src\Core\CME_Asset.cpp">
@@ -184,7 +187,7 @@
     <ClCompile Include="CMEngine\src\DirectX\CME_DXComponents.cpp">
       <Filter>CMEngine\Source Files\DirectX</Filter>
     </ClCompile>
-    <ClCompile Include="CMEngine\src\DirectX\CME_DXContext.cpp">
+    <ClCompile Include="CMEngine\src\DirectX\CME_DXRenderer.cpp">
       <Filter>CMEngine\Source Files\DirectX</Filter>
     </ClCompile>
     <ClCompile Include="CMEngine\src\DirectX\CME_DXResources.cpp">
@@ -208,6 +211,9 @@
     <ClCompile Include="CMEngine\src\Windows\CME_WNWindow.cpp">
       <Filter>CMEngine\Source Files\Windows</Filter>
     </ClCompile>
+    <ClCompile Include="CMEngine\src\Core\CME_Layer.cpp" />
+    <ClCompile Include="CMEngine\src\Core\CME_EditorLayer.cpp" />
+    <ClCompile Include="CMEngine\src\Core\CME_LayerStack.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="CMEngine\resources\shaders\CMCircle_PS.hlsl">
@@ -237,5 +243,7 @@
     <FxCompile Include="vendor\submodules\DirectXTK\Src\Shaders\DGSLUnlit.hlsl">
       <Filter>vendor\submodules\DirectXTK\Src\Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="CMEngine\resources\shaders\CMQuadOutlined_VS.hlsl" />
+    <FxCompile Include="CMEngine\resources\shaders\CMQuadOutlined_PS.hlsl" />
   </ItemGroup>
 </Project>

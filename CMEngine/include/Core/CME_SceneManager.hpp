@@ -13,7 +13,7 @@ namespace CMEngine
 			CMCommon::CMLoggerWide& logger,
 			CMCommon::CMECS& ecs,
 			Asset::CMAssetManager& assetManager,
-			DirectXAPI::DX11::DXContext& context
+			DirectXAPI::DX11::DXRenderer& renderer
 		) noexcept;
 		~CMSceneManager() = default;
 	public:
@@ -23,7 +23,7 @@ namespace CMEngine
 		CMCommon::CMLoggerWide& m_Logger;
 		CMCommon::CMECS& m_ECS;
 		Asset::CMAssetManager& m_AssetManager;
-		DirectXAPI::DX11::DXContext& m_Context; // Note to self : Stop being lazy and make this a command queue.
+		DirectXAPI::DX11::DXRenderer& m_Renderer; // Note to self : Stop being lazy and make this a command queue.
 		CMTestScene m_TestScene;
 		//std::vector<ICMScene*> m_Scenes; // Change this to shared_ptr's or arena allocated scenes.
 		ICMScene* mP_ActiveScene = nullptr;

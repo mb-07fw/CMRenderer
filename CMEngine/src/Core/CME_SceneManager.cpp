@@ -7,13 +7,13 @@ namespace CMEngine
 		CMCommon::CMLoggerWide& logger,
 		CMCommon::CMECS& ecs,
 		Asset::CMAssetManager& assetManager,
-		DirectXAPI::DX11::DXContext& context
+		DirectXAPI::DX11::DXRenderer& renderer
 	) noexcept
 		: m_Logger(logger),
 		  m_ECS(ecs),
 		  m_AssetManager(assetManager),
-		  m_Context(context),
-		  m_TestScene(m_Logger, m_ECS, m_AssetManager, m_Context)
+		  m_Renderer(renderer),
+		  m_TestScene(m_Logger, m_ECS, m_AssetManager, m_Renderer)
 	{
 		//m_Scenes.emplace_back(&m_TestScene);
 	}

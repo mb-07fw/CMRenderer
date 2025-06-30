@@ -152,6 +152,11 @@ namespace CMEngine::DirectXAPI::DX11
 					m_ShaderSets.emplace_back(std::make_shared<DXShaderSetQuad>(*pVertexData, *pPixelData));
 
 				break;
+			case DXShaderSetType::QUAD_OUTLINED:
+				if (pVertexData != nullptr && pPixelData != nullptr)
+					m_ShaderSets.emplace_back(std::make_shared<DXShaderSetQuadOutlined>(*pVertexData, *pPixelData));
+
+				break;
 			case DXShaderSetType::QUAD_DEPTH:
 				if (pVertexData != nullptr && pPixelData != nullptr)
 					m_ShaderSets.emplace_back(std::make_shared<DXShaderSetQuadDepth>(*pVertexData, *pPixelData));
@@ -315,6 +320,8 @@ namespace CMEngine::DirectXAPI::DX11
 	{
 		if (fileName == S_CMQUAD_VS_NAME || fileName == S_CMQUAD_PS_NAME)
 			return DXShaderSetType::QUAD;
+		else if (fileName == S_CMQUAD_OUTLINED_VS_NAME || fileName == S_CMQUAD_OUTLINED_PS_NAME)
+			return DXShaderSetType::QUAD_OUTLINED;
 		else if (fileName == S_CMQUAD_DEPTH_VS_NAME || fileName == S_CMQUAD_DEPTH_PS_NAME)
 			return DXShaderSetType::QUAD_DEPTH;
 		else if (fileName == S_CMCIRCLE_VS_NAME || fileName == S_CMCIRCLE_PS_NAME)

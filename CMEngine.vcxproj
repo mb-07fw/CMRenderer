@@ -158,8 +158,10 @@
     <ClInclude Include="CMEngine\include\Core\CME_AssetManager.hpp" />
     <ClInclude Include="CMEngine\include\Core\CME_Camera.hpp" />
     <ClInclude Include="CMEngine\include\Core\CME_Component.hpp" />
+    <ClInclude Include="CMEngine\include\Core\CME_EditorLayer.hpp" />
     <ClInclude Include="CMEngine\include\Core\CME_Engine.hpp" />
     <ClInclude Include="CMEngine\include\Core\CME_Entity.hpp" />
+    <ClInclude Include="CMEngine\include\Core\CME_Layer.hpp" />
     <ClInclude Include="CMEngine\include\Core\CME_LayerStack.hpp" />
     <ClInclude Include="CMEngine\include\Core\CME_MeshData.hpp" />
     <ClInclude Include="CMEngine\include\Core\CME_MeshSerializer.hpp" />
@@ -171,7 +173,7 @@
     <ClInclude Include="CMEngine\include\Core\CME_WindowSettings.hpp" />
     <ClInclude Include="CMEngine\include\DirectX\CME_DXCamera.hpp" />
     <ClInclude Include="CMEngine\include\DirectX\CME_DXComponents.hpp" />
-    <ClInclude Include="CMEngine\include\DirectX\CME_DXContext.hpp" />
+    <ClInclude Include="CMEngine\include\DirectX\CME_DXRenderer.hpp" />
     <ClInclude Include="CMEngine\include\DirectX\CME_DXResources.hpp" />
     <ClInclude Include="CMEngine\include\DirectX\CME_DXShaderData.hpp" />
     <ClInclude Include="CMEngine\include\DirectX\CME_DXShaderLibrary.hpp" />
@@ -181,7 +183,7 @@
     <ClInclude Include="CMEngine\include\Windows\CME_WNKeyboard.hpp" />
     <ClInclude Include="CMEngine\include\Windows\CME_WNUtility.hpp" />
     <ClInclude Include="CMEngine\include\Windows\CME_WNWindow.hpp" />
-    <ClInclude Include="CMEngine\src\Core\CME_LayerStack.cpp" />
+    <ClCompile Include="CMEngine\src\Core\CME_LayerStack.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CMEngine\src\Core\CME_Asset.cpp" />
@@ -189,7 +191,9 @@
     <ClCompile Include="CMEngine\src\Core\CME_AssetManager.cpp" />
     <ClCompile Include="CMEngine\src\Core\CME_Camera.cpp" />
     <ClCompile Include="CMEngine\src\Core\CME_Component.cpp" />
+    <ClCompile Include="CMEngine\src\Core\CME_EditorLayer.cpp" />
     <ClCompile Include="CMEngine\src\Core\CME_Engine.cpp" />
+    <ClCompile Include="CMEngine\src\Core\CME_Layer.cpp" />
     <ClCompile Include="CMEngine\src\Core\CME_Main.cpp" />
     <ClCompile Include="CMEngine\src\Core\CME_MeshSerializer.cpp" />
     <ClCompile Include="CMEngine\src\Core\CME_PCH.cpp" />
@@ -197,7 +201,7 @@
     <ClCompile Include="CMEngine\src\Core\CME_SceneManager.cpp" />
     <ClCompile Include="CMEngine\src\DirectX\CME_DXCamera.cpp" />
     <ClCompile Include="CMEngine\src\DirectX\CME_DXComponents.cpp" />
-    <ClCompile Include="CMEngine\src\DirectX\CME_DXContext.cpp" />
+    <ClCompile Include="CMEngine\src\DirectX\CME_DXRenderer.cpp" />
     <ClCompile Include="CMEngine\src\DirectX\CME_DXResources.cpp" />
     <ClCompile Include="CMEngine\src\DirectX\CME_DXShaderData.cpp" />
     <ClCompile Include="CMEngine\src\DirectX\CME_DXShaderLibrary.cpp" />
@@ -218,6 +222,16 @@
     </FxCompile>
     <FxCompile Include="CMEngine\resources\shaders\CMQuadDepth_VS.hlsl">
       <ShaderType>Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="CMEngine\resources\shaders\CMQuadOutlined_PS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="CMEngine\resources\shaders\CMQuadOutlined_VS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">Vertex</ShaderType>
     </FxCompile>
     <FxCompile Include="CMEngine\resources\shaders\CMQuad_PS.hlsl">
       <ShaderType>Pixel</ShaderType>

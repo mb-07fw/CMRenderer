@@ -5,6 +5,8 @@
 #include "Core/CME_Camera.hpp"
 #include "DirectX/CME_DXUtility.hpp"
 
+#include <variant>
+
 namespace CMEngine::DirectXAPI::DX11
 {
 	#pragma warning(push)
@@ -13,19 +15,47 @@ namespace CMEngine::DirectXAPI::DX11
 	class DXCamera
 	{
 	public:
+		using VariantProj = std::variant<CMOrthographicParams, CMPerspectiveParams>;
+	public:
 		DXCamera(const CMCameraData& cameraData, float aspectRatio) noexcept;
 		DXCamera() = default;
 		~DXCamera() = default;
 	public:
+		void SetAll(const CMCameraData& cameraData, float aspectRatio) noexcept;
 		void SetTransform(const CMCommon::CMRigidTransform& rigidTransform) noexcept;
 		void SetAspectRatio(float aspectRatio) noexcept;
-		void SetAll(const CMCameraData& cameraData, float aspectRatio) noexcept;
 
-		void CalculateViewMatrix() noexcept;
-		void CalculateProjectionMatrix() noexcept;
+		/* Calculates the current projection matrix based on the type present in the projection variant.
+		 * CMOrthographicParams -> CalculateOrthographicProjectionMatrix.
+		 * CMPerspectiveParams -> CalculatePerspectiveProjectionMatrix. */
+		void CalculateProjectionMatrix(
+			const VariantProj& projection,
+			float aspectRatio,
+			float nearZ,
+			float farZ
+		) noexcept;
+
+		void CalculateViewMatrix(const CMCommon::CMRigidTransform& rigidTransform) noexcept;
+
+		void CalculateOrthographicProjectionMatrix(
+			const CMOrthographicParams& orthographic,
+			float aspectRatio,
+			float nearZ,
+			float farZ
+		) noexcept;
+
+		void CalculatePerspectiveProjectionMatrix(
+			const CMPerspectiveParams& perspective,
+			float aspectRatio,
+			float nearZ,
+			float farZ
+		) noexcept;
+
+		/* Multiplies the two current view and projection matrices together. */
 		void CalculateViewProjectionMatrix() noexcept;
 
-		inline [[nodiscard]] float VertFovDegrees() const noexcept { return m_VertFovDegrees; }
+		inline [[nodiscard]] const VariantProj& Projection() const noexcept { return m_Projection; }
+		inline [[nodiscard]] CMProjectionType LastProjectionType() const noexcept { return m_LastProjectionType; }
 		inline [[nodiscard]] float NearZ() const noexcept { return m_NearZ; }
 		inline [[nodiscard]] float FarZ() const noexcept { return m_FarZ; }
 		inline [[nodiscard]] float AspectRatio() const noexcept { return m_AspectRatio; }
@@ -34,14 +64,22 @@ namespace CMEngine::DirectXAPI::DX11
 		inline const DirectX::XMMATRIX& ProjectionMatrix() const noexcept { return m_ProjectionMatrix; }
 		inline const DirectX::XMMATRIX& ViewProjectionMatrix() const noexcept { return m_ViewProjectionMatrix; }
 	private:
-		float m_VertFovDegrees = 0.0f;
+		VariantProj m_Projection;
+		CMProjectionType m_LastProjectionType = CMProjectionType::INVALID;
+
 		float m_NearZ = 0.0f;
 		float m_FarZ = 0.0f;
 		float m_AspectRatio = 0.0f;
+
 		DirectX::XMFLOAT4 m_CameraPos = { 0.0f, 0.0f, 0.0f, 1.0f };
 		DirectX::XMFLOAT3 m_Rotation = { 0.0f, 0.0f, 0.0f };
-		const DirectX::XMVECTOR FORWARD_DIRECTION = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f); // Look down Z axis..
-		const DirectX::XMVECTOR UP_DIRECTION = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f); // Y+ is up...
+
+		// Look down Z axis..
+		const DirectX::XMVECTOR FORWARD_DIRECTION = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+
+		// Y+ is up..
+		const DirectX::XMVECTOR UP_DIRECTION = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+
 		DirectX::XMMATRIX m_ViewMatrix = DirectX::XMMatrixIdentity();
 		DirectX::XMMATRIX m_ProjectionMatrix = DirectX::XMMatrixIdentity();
 		DirectX::XMMATRIX m_ViewProjectionMatrix = DirectX::XMMatrixIdentity();

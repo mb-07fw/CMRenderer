@@ -13,9 +13,9 @@ namespace CMEngine::Asset
 	struct CMMeshConstants
 	{
 		static constexpr std::array<CMCommon::CMFloat2, 4> S_QUAD_FRONT_VERTICES = { {
-			{ -0.5f, 0.5f },
-			{ 0.5f,  0.5f },
-			{ 0.5f, -0.5f },
+			{ -0.5f,  0.5f },
+			{  0.5f,  0.5f },
+			{  0.5f, -0.5f },
 			{ -0.5f, -0.5f }
 		} };
 

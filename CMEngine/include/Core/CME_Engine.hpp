@@ -15,10 +15,12 @@
 #include "Core/CME_WindowSettings.hpp"
 #include "Core/CME_AssetManager.hpp"
 #include "Core/CME_SceneManager.hpp"
+#include "Core/CME_LayerStack.hpp"
 #include "Windows/CME_WNWindow.hpp"
-#include "DirectX/CME_DXContext.hpp"
+#include "DirectX/CME_DXRenderer.hpp"
 #include "CMC_Logger.hpp"
 #include "CMC_ECS.hpp"
+#include "CMC_MetaArena.hpp"
 
 namespace CMEngine
 {
@@ -28,6 +30,9 @@ namespace CMEngine
 		CMEngine() noexcept;
 		~CMEngine() noexcept;
 	public:
+		void Init() noexcept;
+		void Shutdown() noexcept;
+
 		void Run() noexcept;
 
 		void UpdateWindow() noexcept;
@@ -41,9 +46,13 @@ namespace CMEngine
 		CMCommon::CMLoggerWide m_EngineLogger;
 		CMWindowSettings m_WindowSettings;
 		WindowsAPI::CMWindow m_Window;
-		DirectXAPI::DX11::DXContext m_Context;
+		DirectXAPI::DX11::DXRenderer m_Renderer;
 		CMCommon::CMECS m_ECS;
 		Asset::CMAssetManager m_AssetManager;
 		CMSceneManager m_SceneManager;
+		CMLayerStack m_LayerStack;
+		CMCommon::CMMetaArena m_EngineHeap;
+		bool m_Initialized = false;
+		bool m_Shutdown = false;
 	};
 }

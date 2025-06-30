@@ -18,12 +18,14 @@ namespace CMEngine::DirectXAPI::DX11
 	{
 		INVALID,
 		QUAD,
+		QUAD_OUTLINED,
 		QUAD_DEPTH,
 		CIRCLE
 	};
 
-	inline constexpr std::array<DXShaderSetType, 3u> G_IMPLEMENTED_SET_TYPES = {
+	inline constexpr std::array<DXShaderSetType, 4u> G_IMPLEMENTED_SET_TYPES = {
 		DXShaderSetType::QUAD,
+		DXShaderSetType::QUAD_OUTLINED,
 		DXShaderSetType::QUAD_DEPTH,
 		DXShaderSetType::CIRCLE,
 	};
@@ -66,11 +68,12 @@ namespace CMEngine::DirectXAPI::DX11
 	{
 		switch (setType)
 		{
-		case DXShaderSetType::INVALID:		return std::wstring_view(L"INVALID");
-		case DXShaderSetType::QUAD:			return std::wstring_view(L"QUAD");
-		case DXShaderSetType::QUAD_DEPTH:	return std::wstring_view(L"QUAD_DEPTH");
-		case DXShaderSetType::CIRCLE:		return std::wstring_view(L"CIRCLE");
-		default:							return std::wstring_view(L"NONE");
+		case DXShaderSetType::INVALID:			return std::wstring_view(L"INVALID");
+		case DXShaderSetType::QUAD:				return std::wstring_view(L"QUAD");
+		case DXShaderSetType::QUAD_OUTLINED:	return std::wstring_view(L"QUAD_OUTLINED");
+		case DXShaderSetType::QUAD_DEPTH:		return std::wstring_view(L"QUAD_DEPTH");
+		case DXShaderSetType::CIRCLE:			return std::wstring_view(L"CIRCLE");
+		default:								return std::wstring_view(L"NONE");
 		}
 	}
 }

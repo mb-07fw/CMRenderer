@@ -9,13 +9,13 @@ namespace CMEngine
 		CMCommon::CMLoggerWide& logger,
 		CMCommon::CMECS& ecs,
 		Asset::CMAssetManager& assetManager,
-		DirectXAPI::DX11::DXContext& context,
+		DirectXAPI::DX11::DXRenderer& renderer,
 		std::function<void(float)> onUpdateFunc
 	) noexcept
 		: m_Logger(logger),
 		  m_ECS(ecs),
 		  m_AssetManager(assetManager),
-		  m_Context(context),
+		  m_Renderer(renderer),
 		  m_OnUpdateFunc(onUpdateFunc)
 	{
 	}
@@ -29,13 +29,13 @@ namespace CMEngine
 		CMCommon::CMLoggerWide& logger,
 		CMCommon::CMECS& ecs,
 		Asset::CMAssetManager& assetManager,
-		DirectXAPI::DX11::DXContext& context
+		DirectXAPI::DX11::DXRenderer& renderer
 	) noexcept
 		: ICMStockScene(
 			logger,
 			ecs,
 			assetManager,
-			context,
+			renderer,
 			[this](float deltaTime) {
 				OnUpdate(deltaTime);
 			}
@@ -89,7 +89,7 @@ namespace CMEngine
 		);
 
 		CMCommon::CMRigidTransform rigidTransform;
-		m_Context.SetCamera(CMCameraData(rigidTransform, 45.0f, 0.5f, 100.0f));
+		m_Renderer.SetCamera(CMCameraData(rigidTransform, 45.0f, 0.5f, 100.0f));
 	}
 
 	void CMTestScene::OnEnd() noexcept
@@ -103,7 +103,7 @@ namespace CMEngine
 	void CMTestScene::OnUpdate(float deltaTime) noexcept
 	{
 		m_Logger.LogFatalNLIf(
-			!m_Context.IsInitialized(),
+			!m_Renderer.IsInitialized(),
 			L"CMTestScene [OnUpdate] | DXContext isn't initialized."
 		);
 
@@ -128,7 +128,7 @@ namespace CMEngine
 		// Update model matrix if transform changed.
 		if (!pMeshComponent->Transform.IsNearEqual(m_PreviousMeshTransform))
 		{
-			m_Context.SetModelMatrix(
+			m_Renderer.SetModelMatrix(
 				DirectX::XMMatrixScaling(
 					pMeshComponent->Transform.Scaling.x,
 					pMeshComponent->Transform.Scaling.y,
@@ -149,13 +149,13 @@ namespace CMEngine
 			m_PreviousMeshTransform = pMeshComponent->Transform;
 		}
 
-		if (m_Context.CurrentShaderSet() != pMeshComponent->SetType)
-			m_Context.SetShaderSet(pMeshComponent->SetType);
+		if (m_Renderer.CurrentShaderSet() != pMeshComponent->SetType)
+			m_Renderer.SetShaderSet(pMeshComponent->SetType);
 
 		// Update camera if transform changed.
 		if (!pCameraTransformComponent->IsNearEqual(m_PreviousCameraTransform))
 		{
-			m_Context.SetCameraTransform(pCameraTransformComponent->RigidTransform);
+			m_Renderer.SetCameraTransform(pCameraTransformComponent->RigidTransform);
 			m_PreviousCameraTransform = pCameraTransformComponent->RigidTransform;
 		}
 
@@ -175,7 +175,7 @@ namespace CMEngine
 		descriptor.VertexByteStride = pMesh->Data.Descriptor.VertexByteStride;
 		descriptor.IndexByteStride = pMesh->Data.Descriptor.IndexByteStride;
 
-		m_Context.DrawIndexedInstanced<const std::byte, const std::byte, float>(
+		m_Renderer.DrawIndexedInstanced<const std::byte, const std::byte, float>(
 			pMesh->Data.VertexData,
 			pMesh->Data.IndexData,
 			instanceRadii,
@@ -201,43 +201,43 @@ namespace CMEngine
 		// Full width, fixed height (scrollable if content overflows)
 		ImVec2 childSize(0.0f, 150.0f);
 
-		m_Context.ImGuiBegin("Mesh Transform");
+		m_Renderer.ImGuiBegin("Mesh Transform");
 
-		if (m_Context.ImGuiCollapsingHeader("Scaling"))
+		if (m_Renderer.ImGuiCollapsingHeader("Scaling"))
 		{
 			// Begin a child region inside the collapsing header
-			m_Context.ImGuiBeginChild("ChildScaling", childSize, ImGuiChildFlags_Border);
+			m_Renderer.ImGuiBeginChild("ChildScaling", childSize, ImGuiChildFlags_Border);
 
-			m_Context.ImGuiSlider("X", &meshTransform.Scaling.x, 0.01f, 20.0f);
-			m_Context.ImGuiSlider("Y", &meshTransform.Scaling.y, 0.01f, 20.0f);
-			m_Context.ImGuiSlider("Z", &meshTransform.Scaling.z, 0.01f, 20.0f);
+			m_Renderer.ImGuiSlider("X", &meshTransform.Scaling.x, 0.01f, 20.0f);
+			m_Renderer.ImGuiSlider("Y", &meshTransform.Scaling.y, 0.01f, 20.0f);
+			m_Renderer.ImGuiSlider("Z", &meshTransform.Scaling.z, 0.01f, 20.0f);
 
-			m_Context.ImGuiEndChild();
+			m_Renderer.ImGuiEndChild();
 		}
-		if (m_Context.ImGuiCollapsingHeader("Rotation"))
+		if (m_Renderer.ImGuiCollapsingHeader("Rotation"))
 		{
 			// Begin a child region inside the collapsing header
-			m_Context.ImGuiBeginChild("ChildRotation", childSize, ImGuiChildFlags_Border);
+			m_Renderer.ImGuiBeginChild("ChildRotation", childSize, ImGuiChildFlags_Border);
 
-			m_Context.ImGuiSliderAngle("X", &meshTransform.Rotation.x, -360.0f, 360.0f);
-			m_Context.ImGuiSliderAngle("Y", &meshTransform.Rotation.y, -360.0f, 360.0f);
-			m_Context.ImGuiSliderAngle("Z", &meshTransform.Rotation.z, -360.0f, 360.0f);
+			m_Renderer.ImGuiSliderAngle("X", &meshTransform.Rotation.x, -360.0f, 360.0f);
+			m_Renderer.ImGuiSliderAngle("Y", &meshTransform.Rotation.y, -360.0f, 360.0f);
+			m_Renderer.ImGuiSliderAngle("Z", &meshTransform.Rotation.z, -360.0f, 360.0f);
 
-			m_Context.ImGuiEndChild();
+			m_Renderer.ImGuiEndChild();
 		}
-		if (m_Context.ImGuiCollapsingHeader("Translation"))
+		if (m_Renderer.ImGuiCollapsingHeader("Translation"))
 		{
 			// Begin a child region inside the collapsing header
-			m_Context.ImGuiBeginChild("ChildTranslation", childSize, ImGuiChildFlags_Border);
+			m_Renderer.ImGuiBeginChild("ChildTranslation", childSize, ImGuiChildFlags_Border);
 
-			m_Context.ImGuiSlider("X", &meshTransform.Translation.x, -20, 20);
-			m_Context.ImGuiSlider("Y", &meshTransform.Translation.y, -20, 20);
-			m_Context.ImGuiSlider("Z", &meshTransform.Translation.z, -20, 20);
+			m_Renderer.ImGuiSlider("X", &meshTransform.Translation.x, -20, 20);
+			m_Renderer.ImGuiSlider("Y", &meshTransform.Translation.y, -20, 20);
+			m_Renderer.ImGuiSlider("Z", &meshTransform.Translation.z, -20, 20);
 
-			m_Context.ImGuiEndChild();
+			m_Renderer.ImGuiEndChild();
 		}
 
-		m_Context.ImGuiEnd();
+		m_Renderer.ImGuiEnd();
 	}
 
 	void CMTestScene::ShowCameraWindow(CMCommon::CMRigidTransform& cameraTransform) noexcept
@@ -245,31 +245,31 @@ namespace CMEngine
 		// Full width, fixed height (scrollable if content overflows)
 		ImVec2 childSize(0.0f, 150.0f);
 
-		m_Context.ImGuiBegin("Camera Transform");
+		m_Renderer.ImGuiBegin("Camera Transform");
 
-		if (m_Context.ImGuiCollapsingHeader("Rotation"))
+		if (m_Renderer.ImGuiCollapsingHeader("Rotation"))
 		{
 			// Begin a child region inside the collapsing header
-			m_Context.ImGuiBeginChild("ChildRotation", childSize, ImGuiChildFlags_Border);
+			m_Renderer.ImGuiBeginChild("ChildRotation", childSize, ImGuiChildFlags_Border);
 
-			m_Context.ImGuiSliderAngle("X", &cameraTransform.Rotation.x, -360.0f, 360.0f);
-			m_Context.ImGuiSliderAngle("Y", &cameraTransform.Rotation.y, -360.0f, 360.0f);
-			m_Context.ImGuiSliderAngle("Z", &cameraTransform.Rotation.z, -360.0f, 360.0f);
+			m_Renderer.ImGuiSliderAngle("X", &cameraTransform.Rotation.x, -360.0f, 360.0f);
+			m_Renderer.ImGuiSliderAngle("Y", &cameraTransform.Rotation.y, -360.0f, 360.0f);
+			m_Renderer.ImGuiSliderAngle("Z", &cameraTransform.Rotation.z, -360.0f, 360.0f);
 
-			m_Context.ImGuiEndChild();
+			m_Renderer.ImGuiEndChild();
 		}
-		if (m_Context.ImGuiCollapsingHeader("Translation"))
+		if (m_Renderer.ImGuiCollapsingHeader("Translation"))
 		{
 			// Begin a child region inside the collapsing header
-			m_Context.ImGuiBeginChild("ChildTranslation", childSize, ImGuiChildFlags_Border);
+			m_Renderer.ImGuiBeginChild("ChildTranslation", childSize, ImGuiChildFlags_Border);
 
-			m_Context.ImGuiSlider("X", &cameraTransform.Translation.x, -20, 20);
-			m_Context.ImGuiSlider("Y", &cameraTransform.Translation.y, -20, 20);
-			m_Context.ImGuiSlider("Z", &cameraTransform.Translation.z, -20, 20);
+			m_Renderer.ImGuiSlider("X", &cameraTransform.Translation.x, -20, 20);
+			m_Renderer.ImGuiSlider("Y", &cameraTransform.Translation.y, -20, 20);
+			m_Renderer.ImGuiSlider("Z", &cameraTransform.Translation.z, -20, 20);
 
-			m_Context.ImGuiEndChild();
+			m_Renderer.ImGuiEndChild();
 		}
 
-		m_Context.ImGuiEnd();
+		m_Renderer.ImGuiEnd();
 	}
 }

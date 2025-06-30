@@ -2,7 +2,7 @@
 
 #include "Core/CME_AssetManager.hpp"
 #include "Core/CME_Component.hpp"
-#include "DirectX/CME_DXContext.hpp"
+#include "DirectX/CME_DXRenderer.hpp"
 #include "CMC_ECS.hpp"
 
 #include <functional>
@@ -21,7 +21,7 @@ namespace CMEngine
 			CMCommon::CMLoggerWide& logger,
 			CMCommon::CMECS& ecs,
 			Asset::CMAssetManager& assetManager,
-			DirectXAPI::DX11::DXContext& context,
+			DirectXAPI::DX11::DXRenderer& renderer,
 			std::function<void(float)> onUpdateFunc
 		) noexcept;
 
@@ -35,7 +35,7 @@ namespace CMEngine
 		CMCommon::CMLoggerWide& m_Logger;
 		CMCommon::CMECS& m_ECS;
 		Asset::CMAssetManager& m_AssetManager;
-		DirectXAPI::DX11::DXContext& m_Context;
+		DirectXAPI::DX11::DXRenderer& m_Renderer;
 	private:
 		std::function<void(float)> m_OnUpdateFunc;
 	};
@@ -54,7 +54,7 @@ namespace CMEngine
 			CMCommon::CMLoggerWide& logger,
 			CMCommon::CMECS& ecs,
 			Asset::CMAssetManager& assetManager,
-			DirectXAPI::DX11::DXContext& context
+			DirectXAPI::DX11::DXRenderer& renderer
 		) noexcept;
 
 		~CMTestScene() = default;

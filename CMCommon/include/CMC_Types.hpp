@@ -63,6 +63,25 @@ namespace CMCommon
 		float y = 0.0f;
 		float z = 0.0f;
 	};
+	
+	struct CMRect
+	{
+		inline constexpr CMRect(float left, float right, float top, float bottom) noexcept;
+		inline constexpr CMRect(CMFloat2 xBounds, CMFloat2 yBounds) noexcept;
+
+		CMRect() = default;
+		~CMRect() = default;
+
+		inline constexpr [[nodiscard]] float Width() const noexcept;
+		inline constexpr [[nodiscard]] float Height() const noexcept;
+		inline constexpr [[nodiscard]] CMFloat2 XBounds() const noexcept;
+		inline constexpr [[nodiscard]] CMFloat2 YBounds() const noexcept;
+
+		float Left = 0;
+		float Right = 0;
+		float Top = 0;
+		float Bottom = 0;
+	};
 
 	struct CMTransform
 	{
@@ -141,6 +160,42 @@ namespace CMCommon
 		return x == other.x &&
 			y == other.y &&
 			z == other.z;
+	}
+
+	inline constexpr CMRect::CMRect(float left, float right, float top, float bottom) noexcept
+		: Left(left),
+		  Right(right),
+		  Top(top),
+		  Bottom(bottom)
+	{
+	}
+
+	inline constexpr CMRect::CMRect(CMFloat2 xBounds, CMFloat2 yBounds) noexcept
+		: Left(xBounds.x),
+		  Right(xBounds.y),
+		  Top(yBounds.x),
+		  Bottom(yBounds.y)
+	{
+	}
+
+	inline constexpr [[nodiscard]] float CMRect::Width() const noexcept
+	{
+		return Right - Left;
+	}
+
+	inline constexpr [[nodiscard]] float CMRect::Height() const noexcept
+	{
+		return Bottom - Top;
+	}
+
+	inline constexpr [[nodiscard]] CMFloat2 CMRect::XBounds() const noexcept
+	{
+		return CMFloat2(Left, Right);
+	}
+
+	inline constexpr [[nodiscard]] CMFloat2 CMRect::YBounds() const noexcept
+	{
+		return CMFloat2(Top, Bottom);
 	}
 
 	inline constexpr CMTransform::CMTransform(CMFloat3 scaling, CMFloat3 rotation, CMFloat3 translation) noexcept

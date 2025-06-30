@@ -3,14 +3,14 @@ CMSerializedMesh:
     MeshName: TestQuadMesh
     VertexCount: 4
     IndexCount: 6
-    VertexByteStride: 12
+    VertexByteStride: 8
     IndexByteStride: 2
-    VertexByteStrideHint: float32x3
+    VertexByteStrideHint: float32x2
     IndexByteStrideHint: uint16
     VertexAttributes:
-      - Name: Pos3
-        TypeHint: float32x3
+      - Name: UV_Pos2D
+        TypeHint: float32x2
         ByteOffset: 0
   Data:
-    Vertices: AAAAvwAAAD8AAAC/AAAAPwAAAD8AAAC/AAAAPwAAAL8AAAC/AAAAvwAAAL8AAAC/
-    Indices: AAABAAIAAAACAAMA/f39/QAAAAAAAAAA1tNhmAAJAIzA/hEYigEAAHBv+hOKAQAA
+    Vertices: AAAAvwAAAD8AAAA/AAAAPwAAAD8AAAC/AAAAvwAAAL8=
+    Indices: AAABAAIAAAACAAMA/f39/QMAAAADAAAAOsfguQAXAIw=

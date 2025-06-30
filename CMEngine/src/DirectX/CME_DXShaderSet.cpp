@@ -12,9 +12,11 @@ namespace CMEngine::DirectXAPI::DX11
 	{
 		switch (setType)
 		{
-		case DXShaderSetType::INVALID: return;
 		case DXShaderSetType::QUAD:
 			DXShaderSetQuad::GetInputElementDescs(outInputElementDescs);
+			return;
+		case DXShaderSetType::QUAD_OUTLINED:
+			DXShaderSetQuadOutlined::GetInputElementDescs(outInputElementDescs);
 			return;
 		case DXShaderSetType::QUAD_DEPTH:
 			DXShaderSetQuadDepth::GetInputElementDescs(outInputElementDescs);
@@ -22,6 +24,7 @@ namespace CMEngine::DirectXAPI::DX11
 		case DXShaderSetType::CIRCLE:
 			DXShaderSetCircle::GetInputElementDescs(outInputElementDescs);
 			return;
+		case DXShaderSetType::INVALID: [[fallthrough]];
 		default:
 			return;
 		}
@@ -64,7 +67,7 @@ namespace CMEngine::DirectXAPI::DX11
 		);
 
 		logger.LogFatalNLIf(
-			hResult != S_OK,
+			FAILED(hResult),
 			L"IDXShaderSet [CreateMandatoryShaders] | Failed to create vertex shader."
 		);
 
@@ -76,7 +79,7 @@ namespace CMEngine::DirectXAPI::DX11
 		);
 
 		logger.LogFatalNLIf(
-			hResult != S_OK, 
+			FAILED(hResult), 
 			L"IDXShaderSet [CreateMandatoryShaders] | Failed to create pixel shader."
 		);
 
@@ -106,6 +109,34 @@ namespace CMEngine::DirectXAPI::DX11
 
 		D3D11_INPUT_ELEMENT_DESC descs[] = {
 			{ "Pos2D", 0u, DXGI_FORMAT_R32G32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u }
+		};
+
+		outInputElementDescs.assign(std::begin(descs), std::end(descs));
+	}
+
+	DXShaderSetQuadOutlined::DXShaderSetQuadOutlined(const DXShaderData& vertexData, const DXShaderData& pixelData) noexcept
+		: IDXShaderSet(DXShaderSetType::QUAD_OUTLINED, vertexData, pixelData)
+	{
+	}
+
+	void DXShaderSetQuadOutlined::CreateShaderSet(DXDevice& device, CMCommon::CMLoggerWide& logger) noexcept
+	{
+		CreateMandatoryShaders(device, logger);
+
+		CreateInputLayout<DXShaderSetQuadOutlined>(device, logger);
+
+		logger.LogInfoNL(L"DXShaderSetQuadOutlined [CreateShaderSet] | Created shader set.");
+
+		IsCreated = true;
+	}
+
+	void DXShaderSetQuadOutlined::GetInputElementDescs(std::vector<D3D11_INPUT_ELEMENT_DESC>& outInputElementDescs) noexcept
+	{
+		outInputElementDescs.clear();
+		outInputElementDescs.reserve(S_TOTAL_INPUT_LAYOUT_DESC_ELEMENTS);
+
+		D3D11_INPUT_ELEMENT_DESC descs[] = {
+			{ "UV_Pos2D", 0u, DXGI_FORMAT_R32G32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u }
 		};
 
 		outInputElementDescs.assign(std::begin(descs), std::end(descs));

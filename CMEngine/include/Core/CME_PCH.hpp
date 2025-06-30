@@ -40,6 +40,8 @@
 #include <chrono>
 #include <memory>
 #include <unordered_map>
+#include <variant>
+
 #include <cstdint>
 
 #include "yaml-cpp/yaml.h"
