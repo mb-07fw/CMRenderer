@@ -98,14 +98,6 @@ namespace CMEngine
 			m_EngineHeap
 		);
 
-		/*std::shared_ptr<CMEditorLayer> pEditorLayer = m_LayerStack.RetrieveAs<CMEditorLayer>(editorHandle);
-
-		m_EngineLogger.LogFatalNLTaggedIf(
-			pEditorLayer.get() == nullptr,
-			FuncTag,
-			L"Failed to retrieve editor layer."
-		);*/
-
 		float deltaTime = 0.0f;
 		while (m_Window.IsRunning())
 		{
@@ -133,40 +125,7 @@ namespace CMEngine
 
 			std::this_thread::sleep_for(std::chrono::duration<float, std::milli>(TARGET_FRAME_TIME - deltaTime));
 		}
-		
 	}
-
-	/*void CMEngine::Run() noexcept
-	{
-		constexpr float TARGET_FRAME_TIME = 1000.0f / 60.0f;
-
-		float deltaTime = 0.0f;
-		while (m_Window.IsRunning())
-		{
-			auto startTime = std::chrono::high_resolution_clock::now();
-
-			UpdateWindow();
-
-			if (!m_Window.IsMinimized())
-			{
-				Clear(CMCommon::NormColor{ 0.0f, 0.0f, 0.0f, 1.0f });
-
-				m_SceneManager.UpdateActiveScene(deltaTime);
-
-				ShowEngineControl(deltaTime);
-
-				Present();
-			}
-
-			auto endTime = std::chrono::high_resolution_clock::now();
-
-			std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-
-			deltaTime = static_cast<float>(duration.count());
-
-			std::this_thread::sleep_for(std::chrono::duration<float, std::milli>(TARGET_FRAME_TIME - deltaTime));
-		}
-	}*/
 
 	void CMEngine::ShowEngineControl(float deltaTime) noexcept
 	{
@@ -177,7 +136,11 @@ namespace CMEngine
 
 		m_Renderer.ImGuiBegin("Engine");
 
-		ImGui::Text("Millis per frame : %.2f", deltaTime);
+		m_Renderer.ImGuiText("Millis per frame: %.2f", deltaTime);
+		m_Renderer.ImGuiText("Borderless fullscreen: %s", CMCommon::Utility::BoolToString(m_Window.IsMaximized()));
+
+		if (m_Renderer.ImGuiButton("Restore"))
+			m_Window.Restore();
 
 		m_Renderer.ImGuiEnd();
 	}

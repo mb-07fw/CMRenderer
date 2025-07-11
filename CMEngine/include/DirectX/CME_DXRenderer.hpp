@@ -197,6 +197,9 @@ namespace CMEngine::DirectXAPI::DX11
 			ImGuiWindowFlags windowFlags = ImGuiWindowFlags_None
 		) noexcept;
 
+		template <typename... Args>
+		void ImGuiText(std::string_view fmt, Args&&... args) noexcept;
+
 		void ImGuiSlider(std::string_view label, float* pValue, float valueMin, float valueMax) noexcept;
 		void ImGuiSliderAngle(std::string_view label, float* pRadians, float angleMin, float angleMax) noexcept;
 
@@ -483,6 +486,17 @@ namespace CMEngine::DirectXAPI::DX11
 				m_Logger.LogFatalNL(L"DXRenderer [DrawIndexedInstanced] | Debug messages generated after drawing.");
 			}
 		);
+	}
+
+	template <typename... Args>
+	void DXRenderer::ImGuiText(std::string_view fmt, Args&&... args) noexcept
+	{
+		m_Logger.LogFatalNLIf(
+			!m_Initialized,
+			L"DXRenderer [ImGuiBeginChild] Attempted to perform ImGui operation before context was initialized."
+		);
+
+		ImGui::Text(fmt.data(), std::forward<Args>(args)...);
 	}
 
 	template <typename VertexTy>

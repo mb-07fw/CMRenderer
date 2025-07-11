@@ -25,11 +25,17 @@ namespace CMEngine
 		virtual void OnAttach() noexcept override;
 		virtual void OnDetach() noexcept override;
 		virtual void OnUpdate(float deltaTime) noexcept override;
+
+		void ShowMeshWindow(CMCommon::CMTransform& meshTransform) noexcept;
+		void ShowCameraWindow(CMCommon::CMRigidTransform& cameraTransform) noexcept;
 	private:
 		CMCommon::CMECS& m_ECS;
 		Asset::CMAssetManager& m_AssetManager;
 		CMSceneManager& m_SceneManager;
 		CMCommon::CMMetaArena& m_EngineHeap;
+		CMCommon::CMECSEntity m_CameraEntity;
 		CMCommon::CMECSEntity m_GUIEntity;
+		CMCommon::CMRigidTransform m_PreviousCameraTransform;
+		CMCommon::CMTransform m_PreviousMeshTransform;
 	};
 }

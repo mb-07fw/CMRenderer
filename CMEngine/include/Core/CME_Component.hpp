@@ -60,4 +60,6 @@ namespace CMEngine
 		Asset::CMAssetHandle Handle = Asset::CMAssetHandle::Invalid();
 		DirectXAPI::DX11::DXShaderSetType SetType = DirectXAPI::DX11::DXShaderSetType::INVALID;
 	};
+
+	using CMCameraComponent = CMRigidTransformComponent;
 }
