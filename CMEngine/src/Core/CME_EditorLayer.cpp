@@ -99,9 +99,12 @@ namespace CMEngine
 
 	void CMEditorLayer::OnDetach() noexcept
 	{
-		m_ECS.DestroyEntity(m_GUIEntity);
+		CMMeshComponent* pGuiMeshComponent = m_ECS.GetComponent<CMMeshComponent>(m_GUIEntity);
 
-		// Technically, unloading the mesh would be a good idea, but whatever...
+		if (pGuiMeshComponent != nullptr)
+			m_AssetManager.Unregister(pGuiMeshComponent->Handle);
+
+		m_ECS.DestroyEntity(m_GUIEntity);
 	}
 
 	void CMEditorLayer::OnUpdate(float deltaTime) noexcept

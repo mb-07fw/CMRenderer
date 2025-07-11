@@ -1,6 +1,6 @@
 newaction {
     trigger     = "clean",
-    description = "Clean all project files, build files and intermediate files",
+    description = "Clean all project files, build files and intermediate files.",
     execute     = function ()
         os.rmdir("bin")
         os.rmdir("build")
@@ -16,7 +16,7 @@ newaction {
 
 newaction {
     trigger     = "clean-build",
-    description = "Clean only build files and intermediate files",
+    description = "Removes the build directory.",
     execute     = function ()
         os.rmdir("bin")
         os.rmdir("build")
@@ -42,10 +42,37 @@ workspace "CMEngine"
     startproject "CMEngine"
     architecture "x64"
 
+	filter { "configurations:Debug" }
+		defines { "CM_DEBUG" }
+		symbols "On"
+		
+	filter { "configurations:Release" }
+		defines { "CM_NDEBUG" }
+		optimize "On"
+
+	filter { "configurations:Dist" }
+		defines { "CM_NDEBUG", "CM_DIST" }
+		optimize "Full"
+		symbols "Off"
+
+	filter "action:vs*"
+		warnings "High"        -- /W4
+		buildoptions { "/sdl" } -- /sdl security flag
+
+	filter {}
+
+	shadermodel "5.0"
+	shaderoptions { "/WX" } -- Warnings as errors
+
+	defines { "CM_CONFIG=\"%{cfg.buildcfg}\"" }
+
 	project "CMEngine"
 		kind "ConsoleApp"
         language "C++"
         cppdialect "C++20"
+
+		pchheader "Core/CME_PCH.hpp"
+		pchsource "CMEngine/src/Core/CME_PCH.cpp"
 
 		targetname "CMEngine"
 		targetdir "build/%{cfg.buildcfg}/out/CMEngine/"
@@ -91,112 +118,45 @@ workspace "CMEngine"
 			"CMDep_yaml-cpp.lib"
 		}
 
-		-- YAML_CPP_STATIC_DEFINE heeds to be defined for any other project that uses it as a .lib
-		defines { "YAML_CPP_STATIC_DEFINE", "CM_CONFIG=\"%{cfg.buildcfg}\"" }
-
-		filter { "configurations:Debug" }
-			defines { "CM_DEBUG" }
-			symbols "On"
-		
-		filter { "configurations:Release" }
-			defines { "CM_NDEBUG", "CM_RELEASE" }
-			optimize "On"
-
-		filter { "configurations:Dist" }
-			defines { "CM_NDEBUG", "CM_DIST" }
-			optimize "Full"
-			symbols "Off"
-
-		filter {}
+		-- Note to self: YAML_CPP_STATIC_DEFINE heeds to be defined for any other project that uses it as a .lib
+		defines { "YAML_CPP_STATIC_DEFINE" }
 
 		vpaths {
 			["CMEngine/Source Files/Core"] = {
 				"CMEngine/src/Core/CME_*.cpp",
-				"CMEngine/src/Windows/CME_WN*.h"
+				"CMEngine/src/Core/CME_*.hpp"
 			},
 
-			["CMEngine/Source Files/Core"] = {
-				"CMEngine/include/Windows/CME_WN*.h"
+			["CMEngine/Include Files/Core"] = {
+				"CMEngine/include/Core/CME_*.hpp"
 			},
 
 			--| Windows specific filters ... |--
 			["CMEngine/Source Files/Windows"]  = {
 				"CMEngine/src/Windows/CME_WN*.cpp",
-				"CMEngine/src/Windows/CME_WN*.h"
+				"CMEngine/src/Windows/CME_WN*.hpp"
 			},
 
 			["CMEngine/Include Files/Windows"] = {
-				"CMEngine/include/Windows/CME_WN*.h"
+				"CMEngine/include/Windows/CME_WN*.hpp"
 			},
 
 			-- --| DirectX specific filters ... |--
 			["CMEngine/Source Files/DirectX"]  = {
 				"CMEngine/src/DirectX/CME_DX*.cpp",
-				"CMEngine/src/DirectX/CME_DX*.h"
+				"CMEngine/src/DirectX/CME_DX*.hpp"
 			},
 			
 			["CMEngine/Include Files/DirectX"] = {
-				"CMEngine/include/DirectX/CME_DX*.h"
+				"CMEngine/include/DirectX/CME_DX*.hpp"
 			},
 
 			["CMEngine/Shaders/Pixel"] = { "**/*PS.hlsl" },
 			["CMEngine/Shaders/Vertex"] = { "**/*VS.hlsl" }
 		}
 
-		-- local function table_append(dst, src)
-		-- 	for _, v in ipairs(src) do
-		-- 		table.insert(dst, v)
-		-- 	end
-		-- end
-		-- 
-		-- local function add_core_src_files_to_vpath()
-		-- 	local core_files = {}
-		-- 
-		-- 	table_append(core_files, os.matchfiles("CMEngine/src/CME_*.h*"))
-		-- 	table_append(core_files, os.matchfiles("CMEngine/src/CME_*.cpp"))
-		-- 	table_append(core_files, os.matchfiles("CMEngine/src/CME_*.hpp"))
-		-- 
-		-- 	local filtered = {}
-		-- 
-		-- 	for _, path in ipairs(core_files) do
-		-- 		local filename = path:match("[^/\\]+$")  -- Extract filename
-		-- 		if not filename:match("^CME_DX") and not filename:match("^CME_WN") then
-		-- 			table.insert(filtered, path)
-		-- 		end
-		-- 	end
-		-- 
-		-- 	vpaths {
-		-- 		["CMEngine/Source Files/Core"] = filtered
-		-- 	}
-		-- end
-		-- 
-		-- local function add_core_include_files_to_vpath()
-		-- 	local core_files = os.matchfiles("CMEngine/include/CME_*.h*")
-		-- 
-		-- 	table_append(core_files, os.matchfiles("CMEngine/include/CME_*.hpp*"))
-		-- 
-		-- 	local filtered = {}
-		-- 
-		-- 	for _, path in ipairs(core_files) do
-		-- 		local filename = path:match("[^/\\]+$")  -- Extract filename
-		-- 		if not filename:match("^CME_DX") and not filename:match("^CME_WN") then
-		-- 			table.insert(filtered, path)
-		-- 		end
-		-- 	end
-		-- 
-		-- 	vpaths {
-		-- 		["CMEngine/Include Files/Core"] = filtered
-		-- 	};
-		-- end
-		-- 
-		-- add_core_src_files_to_vpath()
-		-- add_core_include_files_to_vpath()
-
-		shadermodel "5.0"
-		
 		filter("files:**.hlsl")
 			flags("ExcludeFromBuild")
-			--shaderobjectfileoutput("%{cfg.targetdir}" .. "%{file.basename}" .. ".cso")
 		
 		filter("files:**_PS.hlsl")
 			removeflags("ExcludeFromBuild")
@@ -207,60 +167,26 @@ workspace "CMEngine"
 			shadertype("Vertex")
 		
 		filter {}
-		
-		-- Warnings as errors
-		shaderoptions { "/WX" }
-
-		filter "action:vs*"
-			warnings "High"        -- /W4
-			buildoptions { "/sdl" } -- /sdl security flag
-		filter {}
 
 	project "CMCommon"
 		kind "StaticLib"
-        -- staticruntime "On"
         language "C++"
         cppdialect "C++20"
 
 		targetname "CMCommon"
-		targetdir "build/%{cfg.buildcfg}/out/CMCommon/"
-		objdir "build/%{cfg.buildcfg}/int/CMCommon/"
+		targetdir "build/%{cfg.buildcfg}/out/CMCommon"
+		objdir "build/%{cfg.buildcfg}/int/CMCommon"
 
-		includedirs { "CMCommon/include." }
+		includedirs { "CMCommon/include" }
 
 		files {
 			"CMCommon/include/**.hpp",
-			"CMCommon/include/**.h",
 			"CMCommon/src/**.hpp",
-			"CMCommon/src/**.h",
 			"CMCommon/src/**.cpp"
 		}
 
-		defines { "CM_CONFIG=\"%{cfg.buildcfg}\"" }
-
-		filter { "configurations:Debug" }
-			defines { "CM_DEBUG" }
-			symbols "On"
-		
-		filter { "configurations:Release" }
-			defines { "CM_NDEBUG" }
-			optimize "On"
-
-		filter { "configurations:Dist" }
-			defines { "CM_NDEBUG", "DIST" }
-			optimize "Full"
-			symbols "Off"
-
-		filter {}
-
-		filter "action:vs*"
-			warnings "High"        -- /W4
-			buildoptions { "/sdl" } -- /sdl security flag
-		filter {}
-
 	project "CMDep_DearImGui"
 		kind "StaticLib"
-		-- staticruntime "On"
 		language "C++"
 		cppdialect "C++20"
 
@@ -276,29 +202,8 @@ workspace "CMEngine"
 			"vendor/CMDep_DearImGui/**.cpp"
 		}
 
-		filter { "configurations:Debug" }
-			defines { "CM_DEBUG" }
-			symbols "On"
-		
-		filter { "configurations:Release" }
-			defines { "CM_NDEBUG" }
-			optimize "On"
-
-		filter { "configurations:Dist" }
-			defines { "CM_NDEBUG", "DIST" }
-			optimize "Full"
-			symbols "Off"
-
-		filter {}
-
-		filter "action:vs*"
-			warnings "High"        -- /W4
-			buildoptions { "/sdl" } -- /sdl security flag
-		filter {}
-
 	project "CMDep_yaml-cpp"
 		kind "StaticLib"
-		-- staticruntime "On"
 		language "C++"
 		cppdialect "C++20"
 
@@ -318,23 +223,3 @@ workspace "CMEngine"
 			"vendor/CMDep_yaml-cpp/src/**.h",
 			"vendor/CMDep_yaml-cpp/src/**.cpp"
 		}
-
-		filter { "configurations:Debug" }
-			defines { "CM_DEBUG" }
-			symbols "On"
-		
-		filter { "configurations:Release" }
-			defines { "CM_NDEBUG" }
-			optimize "On"
-
-		filter { "configurations:Dist" }
-			defines { "CM_NDEBUG", "DIST" }
-			optimize "Full"
-			symbols "Off"
-
-		filter {}
-
-		filter "action:vs*"
-			warnings "High"        -- /W4
-			buildoptions { "/sdl" } -- /sdl security flag
-		filter {}

@@ -1,4 +1,5 @@
 #include "Core/CME_PCH.hpp"
+#include "Core/CME_Paths.hpp"
 #include "DirectX/CME_DXShaderLibrary.hpp"
 
 namespace CMEngine::DirectXAPI::DX11
@@ -188,9 +189,7 @@ namespace CMEngine::DirectXAPI::DX11
 
 	void DXShaderLibrary::GetCompiledShaderDirectory() noexcept
 	{
-		std::filesystem::path workingDirectory = std::filesystem::current_path();
-
-		m_CompiledShaderPath = workingDirectory / "build" / CM_CONFIG / "out" / "CMEngine";
+		m_CompiledShaderPath = CMEOutDirectory();
 
 		m_Logger.LogInfoNLAppend(
 			L"DXShaderLibrary [GetCompiledShaderDirectory] | Compiled shader path : ",

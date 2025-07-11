@@ -4,6 +4,10 @@
 	#error This project is currently only usable on Windows, due to it's heavy usage of the glorious WinAPI.
 #endif
 
+#if !defined(CM_DEBUG) && !defined(CM_RELEASE) && !defined(CM_DIST)
+	#error An invalid build configuration has been set. This is problematic as code may be modified with the preprocessor depending on configuration. Continuing will result in unpredictable behavior.
+#endif
+
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "D2D1.lib")
@@ -18,6 +22,7 @@
 #include "Core/CME_LayerStack.hpp"
 #include "Windows/CME_WNWindow.hpp"
 #include "DirectX/CME_DXRenderer.hpp"
+
 #include "CMC_Logger.hpp"
 #include "CMC_ECS.hpp"
 #include "CMC_MetaArena.hpp"

@@ -407,7 +407,7 @@ namespace CMEngine::DirectXAPI::DX11
 		for (size_t i = 0; i < mP_InfoQueue->GetNumStoredMessages(); ++i)
 		{
 			// Get size of message.
-			hResult = mP_InfoQueue->GetMessageW(i, nullptr, &messageLength);
+			hResult = mP_InfoQueue->GetMessage(i, nullptr, &messageLength);
 
 			if (messageLength == 0)
 				continue;
@@ -415,7 +415,7 @@ namespace CMEngine::DirectXAPI::DX11
 			std::unique_ptr<std::byte[]> pMessage(new std::byte[messageLength]);
 			D3D11_MESSAGE* pRawMessage = reinterpret_cast<D3D11_MESSAGE*>(pMessage.get());
 
-			hResult = mP_InfoQueue->GetMessageW(i, pRawMessage, &messageLength);
+			hResult = mP_InfoQueue->GetMessage(i, pRawMessage, &messageLength);
 
 			bool failed = m_Logger.LogWarningNLIf(
 				FAILED(hResult),

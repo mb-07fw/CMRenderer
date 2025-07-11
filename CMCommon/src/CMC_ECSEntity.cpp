@@ -29,7 +29,7 @@ namespace CMCommon
 		/* Clear the lower 24 bits of ID :
 		 *	 (ID & ~G_CM_ECS_INDEX_MASK)
 		 *
-		 * Mask the index to ensure that the input doesn’t overflow into the version bits,
+		 * Mask the index to ensure that the input doesn't overflow into the version bits,
 		 *	 as only the lower 24 bits of index are kept, any other bits will be cleared :
 		 *
 		 *	 (The value of index is clipped to just the lower 24 bits (0x345678), and any
