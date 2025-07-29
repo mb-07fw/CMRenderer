@@ -17,7 +17,7 @@ target_include_directories(CMDep_DearImGui PUBLIC
 SetTargetCommonWarnings(CMDep_DearImGui)
 
 set_target_properties(CMDep_DearImGui PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/vendor/CMDep_DearImGui/out
-        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/vendor/CMDep_DearImGui/out
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/vendor/CMDep_DearImGui/int
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/$<CONFIG>/vendor/CMDep_DearImGui/out"
+        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/$<CONFIG>/vendor/CMDep_DearImGui/out"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/$<CONFIG>/vendor/CMDep_DearImGui/int"
 )

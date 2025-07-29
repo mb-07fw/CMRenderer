@@ -64,24 +64,22 @@ workspace "CMEngine"
 	shadermodel "5.0"
 	shaderoptions { "/WX" } -- Warnings as errors
 
-	defines { "CM_CONFIG=\"%{cfg.buildcfg}\"" }
+	defines { 'CM_CONFIG="%{cfg.buildcfg}"' }
 
 	project "CMEngine"
 		kind "ConsoleApp"
         language "C++"
         cppdialect "C++20"
 
-		pchheader "Core/CME_PCH.hpp"
-		pchsource "CMEngine/src/Core/CME_PCH.cpp"
+		pchheader "Core/PCH.hpp"
+		pchsource "CMEngine/src/Core/PCH.cpp"
 
 		targetname "CMEngine"
-		targetdir "build/%{cfg.buildcfg}/out/CMEngine/"
-		objdir "build/%{cfg.buildcfg}/int/CMEngine/"
+		targetdir "build/%{cfg.buildcfg}/CMEngine/out/"
+		objdir "build/%{cfg.buildcfg}/CMEngine/int/"
 
 		includedirs {
 			"CMEngine/include/",
-			"CMCommon/include/",
-			"CMRenderer/include/",
 			"vendor/CMDep_DearImGui/",
 			"vendor/CMDep_yaml-cpp/include/"
 		}
@@ -93,62 +91,72 @@ workspace "CMEngine"
 			"CMEngine/src/**.h",
 			"CMEngine/src/**.cpp",
 
+			-- Collect all .hlsl files to filter them later.
 			"**/*.hlsl"
 		}
 
 		libdirs {
-			"build/%{cfg.buildcfg}/vendor/out/CMDep_yaml-cpp/",
-			"build/%{cfg.buildcfg}/vendor/out/CMDep_DearImGui/",
-			"build/%{cfg.buildcfg}/out/CMRenderer/",
-			"build/%{cfg.buildcfg}/out/CMCommon/"
+			"build/%{cfg.buildcfg}/vendor/CMDep_yaml-cpp/out/",
+			"build/%{cfg.buildcfg}/vendor/CMDep_DearImGui/out/",
 		}
 
 		dependson {
-			"CMCommon",
 			"CMDep_DearImGui", 
 			"CMDep_yaml-cpp"
 		}
 
 		links {
-			"CMCommon",
 			"CMDep_DearImGui",
 			"CMDep_yaml-cpp",
-			"CMCommon.lib",
 			"CMDep_DearImGui.lib",
 			"CMDep_yaml-cpp.lib"
 		}
 
+		local CM_SOURCE_DIR = os.getcwd()
+
+		-- Escape backslashes for C++ string literal compatibility
+		local escapedSourceDir = CM_SOURCE_DIR:gsub("\\", "\\\\")
+
 		-- Note to self: YAML_CPP_STATIC_DEFINE heeds to be defined for any other project that uses it as a .lib
-		defines { "YAML_CPP_STATIC_DEFINE" }
+		defines { "YAML_CPP_STATIC_DEFINE", 'CM_SOURCE_DIR="' .. escapedSourceDir .. '"' }
 
 		vpaths {
+			["CMEngine/Source Files/Common"] = {
+				"CMEngine/src/Common/*.cpp",
+				"CMEngine/src/Common/*.hpp"
+			},
+
+			["CMEngine/Include Files/Common"] = {
+				"CMEngine/include/Common/*.hpp"
+			},
+
 			["CMEngine/Source Files/Core"] = {
-				"CMEngine/src/Core/CME_*.cpp",
-				"CMEngine/src/Core/CME_*.hpp"
+				"CMEngine/src/Core/*.cpp",
+				"CMEngine/src/Core/*.hpp"
 			},
 
 			["CMEngine/Include Files/Core"] = {
-				"CMEngine/include/Core/CME_*.hpp"
+				"CMEngine/include/Core/*.hpp"
 			},
 
 			--| Windows specific filters ... |--
-			["CMEngine/Source Files/Windows"]  = {
-				"CMEngine/src/Windows/CME_WN*.cpp",
-				"CMEngine/src/Windows/CME_WN*.hpp"
+			["CMEngine/Source Files/Win"]  = {
+				"CMEngine/src/Win/*.cpp",
+				"CMEngine/src/Win/*.hpp"
 			},
 
-			["CMEngine/Include Files/Windows"] = {
-				"CMEngine/include/Windows/CME_WN*.hpp"
+			["CMEngine/Include Files/Win"] = {
+				"CMEngine/include/Win/*.hpp"
 			},
 
 			-- --| DirectX specific filters ... |--
-			["CMEngine/Source Files/DirectX"]  = {
-				"CMEngine/src/DirectX/CME_DX*.cpp",
-				"CMEngine/src/DirectX/CME_DX*.hpp"
+			["CMEngine/Source Files/DX"]  = {
+				"CMEngine/src/DX/*.cpp",
+				"CMEngine/src/DX/*.hpp"
 			},
 			
 			["CMEngine/Include Files/DirectX"] = {
-				"CMEngine/include/DirectX/CME_DX*.hpp"
+				"CMEngine/include/DX/*.hpp"
 			},
 
 			["CMEngine/Shaders/Pixel"] = { "**/*PS.hlsl" },
@@ -168,31 +176,14 @@ workspace "CMEngine"
 		
 		filter {}
 
-	project "CMCommon"
-		kind "StaticLib"
-        language "C++"
-        cppdialect "C++20"
-
-		targetname "CMCommon"
-		targetdir "build/%{cfg.buildcfg}/out/CMCommon"
-		objdir "build/%{cfg.buildcfg}/int/CMCommon"
-
-		includedirs { "CMCommon/include" }
-
-		files {
-			"CMCommon/include/**.hpp",
-			"CMCommon/src/**.hpp",
-			"CMCommon/src/**.cpp"
-		}
-
 	project "CMDep_DearImGui"
 		kind "StaticLib"
 		language "C++"
 		cppdialect "C++20"
 
 		targetname "CMDep_DearImGui"
-		targetdir "build/%{cfg.buildcfg}/vendor/out/CMDep_DearImGui/"
-		objdir "build/%{cfg.buildcfg}/vendor/int/CMDep_DearImGui/"
+		targetdir "build/CMDep_DearImGui/%{cfg.buildcfg}/out/"
+		objdir "build/CMDep_DearImGui/%{cfg.buildcfg}/int/"
 
 		includedirs { "vendor/CMDep_DearImGui/imgui/" }
 
@@ -208,8 +199,8 @@ workspace "CMEngine"
 		cppdialect "C++20"
 
 		targetname "CMDep_yaml-cpp"
-		targetdir "build/%{cfg.buildcfg}/vendor/out/CMDep_yaml-cpp/"
-		objdir "build/%{cfg.buildcfg}/vendor/int/CMDep_yaml-cpp/"
+		targetdir "build/CMDep_yaml-cpp/%{cfg.buildcfg}/out/"
+		objdir "build/CMDep_yaml-cpp/%{cfg.buildcfg}/int/"
 
 		includedirs { "vendor/CMDep_yaml-cpp/include/" }
 

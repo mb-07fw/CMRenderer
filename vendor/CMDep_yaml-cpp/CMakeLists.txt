@@ -20,9 +20,9 @@ target_compile_definitions(CMDep_yaml-cpp PUBLIC YAML_CPP_STATIC_DEFINE)
 SetTargetCommonWarnings(CMDep_yaml-cpp)
 
 set_target_properties(CMDep_yaml-cpp PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/vendor/CMDep_yaml-cpp/out
-        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/vendor/CMDep_yaml-cpp/out
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/vendor/CMDep_yaml-cpp/int
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/$<CONFIG>/vendor/CMDep_yaml-cpp/out"
+        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/$<CONFIG>/vendor/CMDep_yaml-cpp/out"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/$<CONFIG>/vendor/CMDep_yaml-cpp/int"
 )
 
 # Disable due to yaml-cpp using a part of the C++ STL

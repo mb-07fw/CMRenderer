@@ -1,16 +1,16 @@
-CMSerializedMesh:
+SerializedMesh:
   Descriptor:
     MeshName: TestQuadMesh
     VertexCount: 4
     IndexCount: 6
     VertexByteStride: 8
     IndexByteStride: 2
-    VertexByteStrideHint: float32x2
-    IndexByteStrideHint: uint16
+    VertexByteStrideHint: none
+    IndexByteStrideHint: none
     VertexAttributes:
-      - Name: UV_Pos2D
-        TypeHint: float32x2
+      - Name: Screen_Pos2D
+        TypeHint: none
         ByteOffset: 0
   Data:
     Vertices: AAAAvwAAAD8AAAA/AAAAPwAAAD8AAAC/AAAAvwAAAL8=
-    Indices: AAABAAIAAAACAAMA/f39/QAAAAAAAAAACmtECgAqAIw=
+    Indices: AAABAAIAAAACAAMA/f39/QAAAAAAAAAAlZ5CoAAkAIw=
