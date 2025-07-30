@@ -140,6 +140,7 @@ namespace CMEngine
 
 		m_Renderer.ImGuiBegin("Engine");
 
+		m_Renderer.ImGuiText("FPS: %.2f", 1000 / deltaTime);
 		m_Renderer.ImGuiText("Millis per frame: %.2f", deltaTime);
 		m_Renderer.ImGuiText("Borderless fullscreen: %s", Common::Utility::BoolToString(m_Window.IsMaximized()));
 		

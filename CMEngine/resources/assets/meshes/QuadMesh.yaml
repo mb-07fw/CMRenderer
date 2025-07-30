@@ -3,7 +3,7 @@ SerializedMesh:
     MeshName: TestQuadMesh
     VertexCount: 4
     IndexCount: 6
-    VertexByteStride: 8
+    VertexByteStride: 12
     IndexByteStride: 2
     VertexByteStrideHint: none
     IndexByteStrideHint: none
@@ -12,5 +12,5 @@ SerializedMesh:
         TypeHint: none
         ByteOffset: 0
   Data:
-    Vertices: AAAAvwAAAD8AAAA/AAAAPwAAAD8AAAC/AAAAvwAAAL8=
-    Indices: AAABAAIAAAACAAMA/f39/QAAAAAAAAAAlZ5CoAAkAIw=
+    Vertices: AAAAvwAAAD8AAAC/AAAAPwAAAD8AAAC/AAAAPwAAAL8AAAC/AAAAvwAAAL8AAAC/
+    Indices: AAABAAIAAAACAAMA/f39/d3d3d36fwAAVCmfVwAFAIyAeVjZygIAACDgV9nKAgAA

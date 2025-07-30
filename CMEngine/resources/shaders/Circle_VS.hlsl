@@ -5,29 +5,30 @@ cbuffer CameraTransform
 
 struct VSInput
 {
-    float3 pos : Pos3D;
-    float radius : InstanceRadius;
+    float3 Pos : Pos3D;
+    float Radius : InstanceRadius;
 };
 
 struct VSOutput
 {
-    float outRadius : InstanceRadius;
-    float2 outUV : OutUV; /* Assumes that quad is [-0.5, 0.5] in NDC... */
-    float4 outPos : SV_Position;
+    float OutRadius : InstanceRadius;
+    float2 OutUV : OutUV; /* Assumes that quad is [-0.5, 0.5] in NDC... */
+    float4 OutPos : SV_Position;
 };
 
 VSOutput main( VSInput input )
 {    
     VSOutput output;
     
-    float4 pos4 = float4(input.pos, 1.0f);
+    float4 pos4 = float4(input.Pos, 1.0f);
     
-    output.outRadius = input.radius;
+    output.OutRadius = input.Radius;
     
     /* Assumes that quad is [-0.5, 0.5] in NDC... */
-    output.outUV = input.pos.xy;
+    //output.OutUV = input.Pos.xy * input.Radius; // Should get multiplied by radius.
+    output.OutUV = input.Pos.xy; 
     
-    output.outPos = mul(pos4, CT_MVP);
+    output.OutPos = mul(pos4, CT_MVP);
     
     return output;
 }

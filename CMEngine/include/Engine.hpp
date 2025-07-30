@@ -25,6 +25,13 @@
 #include "Win/Win_Window.hpp"
 #include "DX/DX11/DX11_Renderer.hpp"
 
+/* TODO: (for the big future)
+ *
+ *   1 (or 2) - Make CMEngine a shared library!
+ *   2 (or 1) - Add OpenGL as another backend renderer!
+ *   
+ */
+
 namespace CMEngine
 {
 	class CMEngine

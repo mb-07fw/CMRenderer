@@ -29,6 +29,9 @@ namespace CMEngine::DX::DX11
 
 		CreateShaderSets(device);
 
+		std::filesystem::path testShaderPath = Core::AssetShaderDirectory() / "Circle_PS.hlsl";
+		Common::WatcherID id = m_ShaderWatcher.WatchFile(testShaderPath);
+
 		m_Logger.LogInfoNL(L"ShaderLibrary [Init] | Initialized.");
 
 		m_Initialized = true;
@@ -189,7 +192,7 @@ namespace CMEngine::DX::DX11
 
 	void ShaderLibrary::GetCompiledShaderDirectory() noexcept
 	{
-		m_CompiledShaderPath = Core::CMEOutDirectory();
+		m_CompiledShaderPath = Core::OutDirectory();
 
 		m_Logger.LogInfoNLAppend(
 			L"ShaderLibrary [GetCompiledShaderDirectory] | Compiled shader path : ",

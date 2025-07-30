@@ -6,6 +6,9 @@
 
 namespace CMEngine::Common
 {
+	template <typename... Args>
+	constexpr bool AllTriviallyCopyable = (std::is_trivially_copyable_v<Args>&&...);
+
 	namespace Constants
 	{
 		inline constexpr uint32_t U32_MAX_VALUE = std::numeric_limits<uint32_t>::max();

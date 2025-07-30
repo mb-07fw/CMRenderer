@@ -32,17 +32,17 @@ namespace CMEngine::Core
 		meshData.Descriptor.MeshName = "TestQuadMesh";
 		meshData.Descriptor.VertexCount = static_cast<uint32_t>(Asset::MeshConstants::S_QUAD_FRONT_VERTICES.size());
 		meshData.Descriptor.IndexCount = static_cast<uint32_t>(Asset::MeshConstants::S_QUAD_FRONT_INDICES.size());
-		meshData.Descriptor.VertexByteStride = sizeof(Common::Float2);
+		meshData.Descriptor.VertexByteStride = sizeof(Common::Float3);
 		meshData.Descriptor.IndexByteStride = 2;
 		meshData.Descriptor.VertexByteStrideHint = TypeHint::NONE;
 		meshData.Descriptor.IndexByteStrideHint = TypeHint::NONE;
 		meshData.Descriptor.Attributes.emplace_back("Screen_Pos2D", TypeHint::NONE, 0);
 
-		constexpr size_t QuadVerticesByteSize = sizeof(Asset::MeshConstants::S_QUAD_FRONT_VERTICES);
+		constexpr size_t QuadVerticesByteSize = sizeof(Asset::MeshConstants::S_QUAD_FRONT_DEPTH_VERTICES);
 		constexpr size_t QuadIndicesByteSize = sizeof(Asset::MeshConstants::S_QUAD_FRONT_INDICES);
 
 		const std::byte* pQuadVertices = reinterpret_cast<const std::byte*>(
-			Asset::MeshConstants::S_QUAD_FRONT_VERTICES.data()
+			Asset::MeshConstants::S_QUAD_FRONT_DEPTH_VERTICES.data()
 		);
 
 		const std::byte* pQuadIndices = reinterpret_cast<const std::byte*>(
@@ -73,18 +73,11 @@ namespace CMEngine::Core
 
 		Common::Float2 renderResolution = m_Renderer.CurrentResolution();
 
-		m_PreviousMeshTransform = Common::Transform::Translate(
-			Common::Float3(
-				renderResolution.x / 2,
-				renderResolution.y / 2
-			)
-		);
-
 		bool emplaced = m_ECS.EmplaceComponent<MeshComponent>(
 			m_GUIEntity,
 			m_PreviousMeshTransform,
 			meshHandle.Other,
-			DX::DX11::ShaderSetType::QUAD_OUTLINED
+			DX::DX11::ShaderSetType::CIRCLE
 		);
 
 		m_Logger.LogFatalNLTaggedIf(
@@ -112,13 +105,24 @@ namespace CMEngine::Core
 
 		CameraData cameraData(
 			m_PreviousCameraTransform,
-			OrthographicParams(renderArea),
-			0.5f, // near z
-			100.0f // far z
+			PerspectiveParams(45.0f),
+			0.5f,
+			100.0f
 		);
 
-		m_Renderer.CacheCamera(cameraData);
-		m_Renderer.SetShaderSet(DX::DX11::ShaderSetType::QUAD_OUTLINED);
+		m_Renderer.SetCamera(cameraData);
+		m_Renderer.SetShaderSet(DX::DX11::ShaderSetType::CIRCLE);
+
+		const Asset::MeshDescriptor& meshDescriptor = meshData.Descriptor;
+
+		m_DrawDescriptor.TotalVertices = meshDescriptor.VertexCount;
+		m_DrawDescriptor.VertexByteStride = meshDescriptor.VertexByteStride;
+		m_DrawDescriptor.TotalIndices = meshDescriptor.IndexCount;
+		m_DrawDescriptor.IndexByteStride = meshDescriptor.IndexByteStride;
+
+		m_DrawDescriptor.TotalInstances = 1;
+		m_DrawDescriptor.InstanceByteStride = sizeof(m_InstanceRadius);
+		m_DrawDescriptor.IndicesPerInstance = m_DrawDescriptor.TotalIndices;
 	}
 
 	void EditorLayer::OnDetach() noexcept
@@ -146,8 +150,7 @@ namespace CMEngine::Core
 		);
 
 		/* Here so visual studio doesn't yell at me for de-referencing a
-		 * null pointer even though fatal logs terminate the program.
-		 */
+		 * null pointer even though fatal logs terminate the program. */
 		if (pMeshComponent == nullptr)
 			return;
 
@@ -161,68 +164,37 @@ namespace CMEngine::Core
 		);
 
 		/* Here so visual studio doesn't yell at me for de-referencing a
-		 * null pointer even though fatal logs terminate the program.
-		 */
+		 * null pointer even though fatal logs terminate the program. */
 		if (pMesh == nullptr)
 			return;
 
 		Common::Transform& currentMeshTransform = pMeshComponent->Transform;
 		Common::RigidTransform& currentCameraTransform = pCameraComponent->RigidTransform;
 
-		/*if (!currentMeshTransform.IsNearEqual(m_PreviousMeshTransform))
-		{
-			DirectX::XMMATRIX updatedModelMatrix = DirectX::XMMatrixScaling(
-				currentMeshTransform.Scaling.x,
-				currentMeshTransform.Scaling.y,
-				currentMeshTransform.Scaling.z
-			) * DirectX::XMMatrixRotationRollPitchYaw(
-				currentMeshTransform.Rotation.x,
-				currentMeshTransform.Rotation.y,
-				currentMeshTransform.Rotation.z
-			) * DirectX::XMMatrixTranslation(
-				currentMeshTransform.Translation.x,
-				currentMeshTransform.Translation.y,
-				currentMeshTransform.Translation.z
-			);
-
-			m_Renderer.SetModelMatrix(updatedModelMatrix);
-			m_PreviousMeshTransform = currentMeshTransform;
-		}*/
-
 		if (!currentCameraTransform.IsNearEqual(m_PreviousCameraTransform))
-			m_Renderer.CacheCameraTransform(currentCameraTransform);
-
-		
-
-		DX::DX11::DrawDescriptor drawDescriptor;
-		const Asset::MeshDescriptor& meshDescriptor = pMesh->Data.Descriptor;
-
-		drawDescriptor.TotalVertices = meshDescriptor.VertexCount;
-		drawDescriptor.VertexByteStride = meshDescriptor.VertexByteStride;
-		drawDescriptor.TotalIndices = meshDescriptor.IndexCount;
-		drawDescriptor.IndexByteStride = meshDescriptor.IndexByteStride;
+			m_Renderer.SetCameraTransform(currentCameraTransform);
 
 		/* Note to future self: 
 		 * 
 		 *   Since the orthographic projection matrix is based
 		 *	   off of screen-space units (pixels), all vertices
-		 *     must be in screen-space units as well; not world-space.
-		 */
-		Common::Float2 vertices[] = {
+		 *     must be in screen-space units as well; not world-space. */
+		/*Common::Float2 vertices[] = {
 			{ 0.0f,   0.0f },
 			{ 100.0f, 0.0f },
 			{ 100.0,  100.0f },
 			{ 0.0f,   100.0f }
-		};
+		};*/
 
-		/* TODO: Update translation is window size changes. */
-		m_Renderer.DrawIndexed(
-			Common::Utility::ToBytes(vertices),
+		m_Renderer.CacheModelTransform(currentMeshTransform);
+
+		m_Renderer.DrawIndexedInstanced(
+			pMesh->Data.VertexData,
 			pMesh->Data.IndexData,
-			currentMeshTransform,
-			drawDescriptor
+			Common::Utility::AsBytes(m_InstanceRadius),
+			m_DrawDescriptor
 		);
-		
+
 		ShowCameraWindow(currentCameraTransform);
 		ShowMeshWindow(currentMeshTransform);
 	}
@@ -264,6 +236,15 @@ namespace CMEngine::Core
 			m_Renderer.ImGuiSlider("X", &meshTransform.Translation.x, -20, 20);
 			m_Renderer.ImGuiSlider("Y", &meshTransform.Translation.y, -20, 20);
 			m_Renderer.ImGuiSlider("Z", &meshTransform.Translation.z, -20, 20);
+
+			m_Renderer.ImGuiEndChild();
+		}
+		if (m_Renderer.ImGuiCollapsingHeader("Instance"))
+		{
+			// Begin a child region inside the collapsing header
+			m_Renderer.ImGuiBeginChild("ChildInstance", childSize, ImGuiChildFlags_Border);
+
+			m_Renderer.ImGuiSlider("Radius", &m_InstanceRadius, 0, 10);
 
 			m_Renderer.ImGuiEndChild();
 		}

@@ -26,9 +26,6 @@ namespace CMEngine
 
 namespace CMEngine::DX::DX11
 {
-	template <typename... Args>
-	constexpr bool AllTriviallyCopyable = (std::is_trivially_copyable_v<Args>&&...);
-
 	struct FrameData
 	{
 		float ResolutionX = 0.0f;
@@ -53,35 +50,34 @@ namespace CMEngine::DX::DX11
 
 	struct DrawDescriptor
 	{
-		static constexpr uint32_t S_INVALID_SENTINEL = static_cast<UINT>(-1);
-		static constexpr uint32_t S_INFER_FROM_CONTAINER = S_INVALID_SENTINEL;
+		static constexpr uint32_t S_INVALID_SENTINEL = static_cast<uint32_t>(-1);
 		static constexpr uint32_t S_DEFAULT = 0;
 
 		static constexpr uint32_t S_VERTEX_BUFFER_REGISTER_DEFAULT = 0;
 		static constexpr uint32_t S_INSTANCE_BUFFER_REGISTER_DEFAULT = 1;
 
 		/* <---- Universal Draw Call Parameters: ----> */
-		uint32_t TotalVertices = S_INFER_FROM_CONTAINER;						// Total vertices to be submitted for rendering.
-		uint32_t VertexByteStride = S_INFER_FROM_CONTAINER;						// Stride in bytes of each vertex in the vertex buffer.
+		uint32_t TotalVertices = S_INVALID_SENTINEL;						// Total vertices to be submitted for rendering.
+		uint32_t VertexByteStride = S_INVALID_SENTINEL;						// Stride in bytes of each vertex in the vertex buffer.
 		uint32_t VertexByteOffset = S_DEFAULT;									// Offset in bytes from the start of the vertex buffer to the first vertex to read.
 		uint32_t VertexBufferRegister = S_VERTEX_BUFFER_REGISTER_DEFAULT;		// Register slot to bind vertex buffer to; see ID3D11DeviceContext::IASetVertexBuffers @StartSlot.
 
 		/* <---- Indexed Draw Call Parameters: ---->  */
-		uint32_t TotalIndices = S_INFER_FROM_CONTAINER;							// Total indices to be submitted.
-		uint32_t IndexByteStride = S_INFER_FROM_CONTAINER;						// Stride in bytes of each index in the index buffer.
+		uint32_t TotalIndices = S_INVALID_SENTINEL;							// Total indices to be submitted.
+		uint32_t IndexByteStride = S_INVALID_SENTINEL;						// Stride in bytes of each index in the index buffer.
 		uint32_t IndexByteOffset = S_DEFAULT;									// Offset in bytes from the start of the index buffer to the first index to read.
 		uint32_t StartIndexLocation = S_DEFAULT;								// Index of first index to be read from the index buffer.
 		uint32_t BaseVertexLocation = S_DEFAULT;								// A value added to each index before reading a vertex from the vertex buffer.
 
 		/* <---- Instanced Draw Call Parameters: ----> */
-		uint32_t TotalInstances = S_INFER_FROM_CONTAINER;						// Total instances to be submitted.
-		uint32_t InstanceByteStride = S_INFER_FROM_CONTAINER;					// Stride in bytes of each instance in the instance buffer.
+		uint32_t TotalInstances = S_INVALID_SENTINEL;						// Total instances to be submitted.
+		uint32_t InstanceByteStride = S_INVALID_SENTINEL;					// Stride in bytes of each instance in the instance buffer.
 		uint32_t InstanceByteOffset = S_DEFAULT;								// Offset in bytes from the start of the instance buffer to the first instance to read.
 		uint32_t InstanceBufferRegister = S_INSTANCE_BUFFER_REGISTER_DEFAULT;   // Register slot to bind instance buffer to; see ID3D11DeviceContext::IASetVertexBuffers @StartSlot.
 		uint32_t StartInstanceLocation = S_DEFAULT;								// A value added to each index before reading an instance from the instance buffer.
 
 		/* <---- IndexedInstanced Draw Call Parameters: ----> */
-		uint32_t IndicesPerInstance = S_INFER_FROM_CONTAINER;					// Number of indices read from the index buffer for each instance.						   
+		uint32_t IndicesPerInstance = S_INVALID_SENTINEL;					// Number of indices read from the index buffer for each instance.						   
 	};
 
 	class RendererState
@@ -97,8 +93,11 @@ namespace CMEngine::DX::DX11
 		~RendererState() = default;
 	public:
 		void SetCurrentShaderSet(ShaderSetType shaderType) noexcept;
+
 		void SetCurrentCameraData(const Core::CameraData& cameraData) noexcept;
 		void SetCurrentCameraTransform(const Common::RigidTransform& rigidTransform) noexcept;
+		void SetCurrentCameraProjection(Core::PerspectiveParams perspectiveParams) noexcept;
+		void SetCurrentCameraProjection(const Core::OrthographicParams orthographicParams) noexcept;
 
 		void RebindCurrentShaderSet() noexcept;
 
@@ -126,6 +125,7 @@ namespace CMEngine::DX::DX11
 		DX11::Camera m_Camera;
 		bool m_CameraUpdated = false;
 		bool m_CameraTransformUpdated = false;
+		bool m_CameraProjectionUpdated = false;
 		bool m_WindowResized = false;
 	};
 	
@@ -140,8 +140,13 @@ namespace CMEngine::DX::DX11
 		void Shutdown() noexcept;
 
 		void SetShaderSet(ShaderSetType setType) noexcept;
-		void CacheCamera(const Core::CameraData& cameraData) noexcept;
-		void CacheCameraTransform(const Common::RigidTransform& rigidTransform) noexcept;
+
+		void SetCamera(const Core::CameraData& cameraData) noexcept;
+		void SetCameraTransform(const Common::RigidTransform& rigidTransform) noexcept;
+		void SetCameraProjection(Core::PerspectiveParams perspectiveParams) noexcept;
+		void SetCameraProjection(const Core::OrthographicParams& orthographicParams) noexcept;
+
+		void CacheModelTransform(const Common::Transform& modelTransform) noexcept;
 
 		void Clear(Common::NormColor normColor) noexcept;
 		void Present() noexcept;
@@ -153,14 +158,12 @@ namespace CMEngine::DX::DX11
 			const DrawDescriptor& descriptor
 		) noexcept;
 
-		//template <typename VertexTy, typename IndexTy>
-		//	requires AllTriviallyCopyable<VertexTy, IndexTy>
-		//inline void DrawIndexed(
-		//	std::span<const VertexTy> vertices,
-		//	std::span<const IndexTy> indices,
-		//	const Common::Transform& modelTransform,
-		//	DrawDescriptor& descriptor // NOTE: Will be modified if any fields are inferred.
-		//) noexcept;
+		void DrawIndexedInstanced(
+			std::span<const std::byte> vertices,
+			std::span<const std::byte> indices,
+			std::span<const std::byte> instances,
+			const DrawDescriptor& descriptor
+		) noexcept;
 
 		//template <typename VertexTy, typename IndexTy, typename InstanceTy>
 		//	requires AllTriviallyCopyable<VertexTy, IndexTy, InstanceTy>
@@ -170,9 +173,6 @@ namespace CMEngine::DX::DX11
 		//	std::span<const InstanceTy> instances,
 		//	DrawDescriptor& descriptor // NOTE: Will be modified if any fields are inferred.
 		//) noexcept;
-
-		//void TestDraw(float rotAngleX, float rotAngleY, float offsetX, float offsetY, float offsetZ) noexcept;
-		//void TestTextureDraw(float rotAngleX, float rotAngleY, float offsetX, float offsetY, float offsetZ) noexcept;
 
 		void ImGuiNewFrame() noexcept;
 
@@ -237,13 +237,11 @@ namespace CMEngine::DX::DX11
 			const DrawDescriptor& descriptor
 		) noexcept;
 
-		template <typename VertexTy, typename IndexTy, typename InstanceTy>
-			requires AllTriviallyCopyable<VertexTy, IndexTy, InstanceTy>
 		void EnforceValidDrawDescriptorIndexedInstanced(
-			std::span<VertexTy> vertices,
-			std::span<IndexTy> indices,
-			std::span<InstanceTy> instances,
-			DrawDescriptor& descriptor
+			std::span<const std::byte> vertices,
+			std::span<const std::byte> indices,
+			std::span<const std::byte> instances,
+			const DrawDescriptor& descriptor
 		) noexcept;
 
 		void InitImGui(const HWND hWnd) noexcept;
@@ -280,124 +278,11 @@ namespace CMEngine::DX::DX11
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> mP_DSV;
 		ConstantBuffer m_CBFrameData;
 		Common::Transform m_CachedModelTransform;
-		DirectX::XMMATRIX m_CachedModelMatrix;
+		DirectX::XMMATRIX m_CachedModelMatrix = DirectX::XMMatrixIdentity();
 		bool m_ModelTransformSet = false;
 		bool m_Initialized = false;
 		bool m_Shutdown = false;
 	};
-
-	//template <typename VertexTy, typename IndexTy>
-	//	requires AllTriviallyCopyable<VertexTy, IndexTy>
-	//inline void Renderer::DrawIndexed(
-	//	std::span<const VertexTy> vertices,
-	//	std::span<const IndexTy> indices,
-	//	const Common::Transform& modelTransform,
-	//	DrawDescriptor& descriptor
-	//) noexcept
-	//{
-	//	/* TODO: Rework Draw Call system. (Tidy up calls under a single base Draw() function)
-	//	 *		 Update model matrices if @modelTransform differs from previous model transfrom. (Base Draw() function)
-	//	 */
-
-	//	constexpr std::wstring_view FuncTag = L"Renderer [DrawIndexed] | ";
-
-	//	m_Logger.LogFatalNLIf(
-	//		!m_Initialized,
-	//		L"Renderer [DrawIndexed] | Renderer isn't initialized."
-	//	);
-
-	//	m_Logger.LogFatalNLIf(
-	//		vertices.data() == nullptr,
-	//		L"Renderer [DrawIndexed] | Vertices data is nullptr."
-	//	);
-
-	//	m_Logger.LogFatalNLIf(
-	//		indices.data() == nullptr,
-	//		L"Renderer [DrawIndexed] | Indices data is nullptr."
-	//	);
-
-	//	m_Logger.LogFatalNLIf(
-	//		vertices.size() == 0, 
-	//		L"Renderer [DrawIndexed] | Vertices size is 0."
-	//	);
-
-	//	m_Logger.LogFatalNLIf(
-	//		indices.size() == 0,
-	//		L"Renderer [DrawIndexed] | Indices size is 0."
-	//	);
-
-	//	EnforceValidDrawDescriptorIndexed(vertices, indices, descriptor);
-
-	//	BindRTV();
-
-	//	DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN;
-
-	//	if (descriptor.IndexByteStride == sizeof(uint8_t))
-	//		format = DXGI_FORMAT_R8_UINT;
-	//	else if (descriptor.IndexByteStride == sizeof(uint16_t))
-	//		format = DXGI_FORMAT_R16_UINT;
-
-	//	m_Logger.LogFatalNLFormattedIf(
-	//		format == DXGI_FORMAT_UNKNOWN,
-	//		FuncTag,
-	//		L"Index type format is unsupported. Stride : `{}`.",
-	//		descriptor.IndexByteStride
-	//	);
-
-	//	DirectX::XMMATRIX modelMatrix = {};
-	//	if (m_State.IsModelMatrixSet())
-	//		modelMatrix = m_State.CurrentModelMatrix();
-	//	else
-	//		modelMatrix = DirectX::XMMatrixTranslation(0.0f, 0.0f, 0.0f);
-
-	//	if (m_State.CameraUpdated() || m_State.WindowResized())
-	//		m_State.UpdateCamera();
-
-	//	DirectX::XMMATRIX mvpMatrix = DirectX::XMMatrixTranspose(
-	//		modelMatrix * 
-	//		m_State.Camera().ViewProjectionMatrix()
-	//	);
-
-	//	VertexBuffer vertexBuffer(descriptor.VertexByteStride, vertices);
-	//	IndexBuffer indexBuffer(format, indices);
-	//	ConstantBuffer mvpBuffer(
-	//		ShaderConstants::S_CAMERA_TRANSFORM_REGISTER_SLOT,
-	//		std::span<DirectX::XMMATRIX>(&mvpMatrix, 1u)
-	//	);
-
-	//	m_Logger.LogFatalNLIf(
-	//		FAILED(vertexBuffer.Create(m_Device)),
-	//		L"Renderer [DrawIndexed] | Failed to create vertex buffer."
-	//	);
-
-	//	m_Logger.LogFatalNLIf(
-	//		FAILED(indexBuffer.Create(m_Device)),
-	//		L"Renderer [DrawIndexed] | Failed to create index buffer."
-	//	);
-
-	//	m_Logger.LogFatalNLIf(
-	//		FAILED(mvpBuffer.Create(m_Device)),
-	//		L"Renderer [DrawIndexed] | Failed to create mvp constant buffer."
-	//	);
-
-	//	vertexBuffer.Bind(m_Device, descriptor.VertexByteOffset);
-	//	indexBuffer.Bind(m_Device, descriptor.IndexByteOffset);
-	//	mvpBuffer.BindVS(m_Device);
-
-	//	m_Device.ContextRaw()->DrawIndexed(descriptor.TotalIndices, 0, 0);
-
-	//	vertexBuffer.Release();
-	//	indexBuffer.Release();
-	//	mvpBuffer.Release();
-
-	//	CM_IF_DEBUG(
-	//		if (!m_InfoQueue.IsQueueEmpty())
-	//		{
-	//			m_InfoQueue.LogMessages();
-	//			m_Logger.LogFatalNL(L"Renderer [DrawIndexed] | Debug messages generated after drawing.");
-	//		}
-	//	);
-	//}
 
 	//template <typename VertexTy, typename IndexTy, typename InstanceTy>
 	//	requires AllTriviallyCopyable<VertexTy, IndexTy, InstanceTy>
@@ -513,85 +398,6 @@ namespace CMEngine::DX::DX11
 		);
 
 		ImGui::Text(fmt.data(), std::forward<Args>(args)...);
-	}
-
-	template <typename VertexTy, typename IndexTy, typename InstanceTy>
-		requires AllTriviallyCopyable<VertexTy, IndexTy, InstanceTy>
-	void Renderer::EnforceValidDrawDescriptorIndexedInstanced(
-		std::span<VertexTy> vertices,
-		std::span<IndexTy> indices,
-		std::span<InstanceTy> instances,
-		DrawDescriptor& descriptor // NOTE: Will be modified if any fields are inferred.
-	) noexcept
-	{
-		constexpr std::wstring_view FuncTag = L"Renderer [EnforceValidDrawDescriptorIndexedInstanced] | ";
-
-		EnforceValidDrawDescriptorIndexed(vertices, indices, descriptor);
-
-		if (descriptor.TotalInstances == DrawDescriptor::S_INFER_FROM_CONTAINER)
-			descriptor.TotalInstances = static_cast<UINT>(instances.size());
-		if (descriptor.InstanceByteStride == DrawDescriptor::S_INFER_FROM_CONTAINER)
-			descriptor.InstanceByteStride = sizeof(InstanceTy);
-
-		if (descriptor.IndicesPerInstance == DrawDescriptor::S_INFER_FROM_CONTAINER)
-			descriptor.IndicesPerInstance = descriptor.TotalIndices;
-
-		UINT instancesSize = static_cast<UINT>(instances.size());
-		UINT instancesSizeBytes = static_cast<UINT>(instances.size_bytes());
-
-		m_Logger.LogFatalNLTaggedIf(
-			descriptor.TotalInstances == 0,
-			FuncTag,
-			L"TotalInstances should not be 0."
-		);
-
-		m_Logger.LogFatalNLFormattedIf(
-			descriptor.TotalInstances > instancesSize,
-			FuncTag,
-			L"TotalInstances exceeds size of instance buffer. "
-			L"TotalInstances : `{}`, Size : `{}`.",
-			descriptor.TotalInstances, instancesSize
-		);
-
-		m_Logger.LogFatalNLTaggedIf(
-			descriptor.InstanceByteStride == 0,
-			FuncTag,
-			L"InstanceByteStride should not be 0."
-		);
-
-		m_Logger.LogFatalNLFormattedIf(
-			descriptor.InstanceByteStride > instancesSizeBytes,
-			FuncTag,
-			L"InstanceByteStride exceeds byte size of instance buffer. "
-			L"InstanceByteStride : `{}`, Byte Size : `{}`.",
-			descriptor.InstanceByteStride, instancesSizeBytes
-		);
-
-		m_Logger.LogFatalNLFormattedIf(
-			descriptor.InstanceByteOffset > instancesSizeBytes,
-			FuncTag,
-			L"InstanceByteOffset exceeds byte size of instance buffer. "
-			L"InstanceByteOffset : `{}`, Byte Size : `{}`.",
-			descriptor.InstanceByteOffset, instancesSizeBytes
-		);
-
-		constexpr UINT MaxRegisterSlot = VertexBuffer::MaxRegisterSlot();
-
-		m_Logger.LogFatalNLFormattedIf(
-			!VertexBuffer::IsValidRegister(descriptor.InstanceBufferRegister),
-			FuncTag,
-			L"InstanceBufferRegister is invalid : `{}`. "
-			L"Must be within [0 - {}]",
-			descriptor.InstanceBufferRegister, MaxRegisterSlot
-		);
-
-		m_Logger.LogFatalNLFormattedIf(
-			descriptor.VertexBufferRegister == descriptor.InstanceBufferRegister,
-			FuncTag,
-			L"VertexBufferRegister and InstanceBufferRegister clash. "
-			L"Two vertex buffers should not have the same register slot : `{}`.",
-			descriptor.VertexBufferRegister
-		);
 	}
 
 	inline constexpr [[nodiscard]] DXGI_FORMAT Renderer::BytesToDXGIFormat(uint32_t bytes) const noexcept

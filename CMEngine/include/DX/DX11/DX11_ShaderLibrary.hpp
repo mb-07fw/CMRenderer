@@ -10,6 +10,7 @@
 
 #include "DX/DX11/DX11_ShaderSet.hpp"
 #include "Common/Logger.hpp"
+#include "Common/FileWatcher.hpp"
 
 namespace CMEngine::DX::DX11
 {
@@ -51,6 +52,7 @@ namespace CMEngine::DX::DX11
 		Common::LoggerWide& m_Logger;
 		std::filesystem::path m_CompiledShaderPath;
 		std::vector<std::shared_ptr<IShaderSet>> m_ShaderSets;
+		Common::FileWatcher m_ShaderWatcher;
 		bool m_Initialized = false;
 		bool m_Shutdown = false;
 	};

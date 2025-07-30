@@ -17,6 +17,12 @@ namespace CMEngine::DX::DX11
 		CalculateViewProjectionMatrix();
 	}
 
+	void Camera::SetProjection(const Core::CameraData::ProjectionTy& projection) noexcept
+	{
+		CalculateProjectionMatrix(projection);
+		CalculateViewProjectionMatrix();
+	}
+
 	void Camera::SetAspectRatio(float aspectRatio) noexcept
 	{
 		m_AspectRatio = aspectRatio;

@@ -12,6 +12,17 @@
 
 namespace CMEngine::Common::Utility
 {
+	// Primary template: default is false
+	template <typename T, template <typename...> class Template>
+	struct IsSpecializationOf : std::false_type {};
+
+	// Specialization: true if T is Template<...>
+	template <template <typename...> class Template, typename... Args>
+	struct IsSpecializationOf<Template<Args...>, Template> : std::true_type {};
+
+	template <typename T, template <typename...> class Template>
+	constexpr bool Specialized = IsSpecializationOf<T, Template>::value;
+
 	inline constexpr [[nodiscard]] const wchar_t* BoolToWString(bool value) noexcept
 	{
 		return (value) ? L"TRUE" : L"FALSE";
@@ -114,15 +125,28 @@ namespace CMEngine::Common::Utility
 	}
 
 	template <typename FromTy, size_t FromExtent>
-	inline constexpr [[nodiscard]] std::span<const std::byte> ToBytes(std::span<const FromTy, FromExtent> span) noexcept
+	inline constexpr [[nodiscard]] std::span<const std::byte> AsBytes(std::span<const FromTy, FromExtent> span) noexcept
 	{
 		return std::as_bytes(span);
 	}
 
 	template <typename Ty, size_t Size>
 		requires (!sizeof(Ty) != sizeof(std::byte))
-	inline constexpr [[nodiscard]] std::span<const std::byte> ToBytes(const Ty(&array)[Size]) noexcept
+	inline constexpr [[nodiscard]] std::span<const std::byte> AsBytes(const Ty(&array)[Size]) noexcept
 	{
 		return std::as_bytes(AsSpan(array));
+	}
+
+	template <typename Ty>
+		requires (!sizeof(Ty) != sizeof(std::byte))
+	inline constexpr [[nodiscard]] std::span<const std::byte> AsBytes(const Ty& instance) noexcept
+	{
+		return std::as_bytes(AsSpan(instance));
+	}
+
+	template <typename CharTy>
+	inline constexpr std::span<const std::byte> AsBytes(std::basic_string_view<CharTy> str) noexcept
+	{
+		return std::as_bytes(std::span<const CharTy>(str.data(), str.size()));
 	}
 }

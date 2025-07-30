@@ -90,6 +90,18 @@ namespace CMEngine::DX::DX11
 		m_CameraUpdated = true;
 	}
 
+	void RendererState::SetCurrentCameraProjection(Core::PerspectiveParams perspectiveParams) noexcept
+	{
+		m_CameraData.Projection = perspectiveParams;
+		m_CameraUpdated = true;
+	}
+
+	void RendererState::SetCurrentCameraProjection(const Core::OrthographicParams orthographicParams) noexcept
+	{
+		m_CameraData.Projection = orthographicParams;
+		m_CameraUpdated = true;
+	}
+
 	void RendererState::RebindCurrentShaderSet() noexcept
 	{
 		m_Logger.LogFatalNLIf(
@@ -123,12 +135,16 @@ namespace CMEngine::DX::DX11
 		/* Camera transform updated, only View and ViewProjection matrices need to be recalculated. */
 		else if (m_CameraTransformUpdated)
 			m_Camera.SetTransform(m_CameraData.RigidTransform);
+		/* Camera projection updated, only Projection and ViewProjection matrices need to be recalculated. */
+		else if (m_CameraProjectionUpdated)
+			m_Camera.SetProjection(m_CameraData.Projection);
 		/* Window resolution updated, only Projection and ViewProjection matrices need to be recalculated. */
 		else if (m_WindowResized)
 			m_Camera.SetAspectRatio(CurrentAspectRatio());
 
 		m_CameraUpdated = false;
 		m_CameraTransformUpdated = false;
+		m_CameraProjectionUpdated = false;
 		m_WindowResized = false;
 	}
 
@@ -308,14 +324,54 @@ namespace CMEngine::DX::DX11
 		m_State.SetCurrentShaderSet(setType);
 	}
 
-	void Renderer::CacheCamera(const Core::CameraData& cameraData) noexcept
+	void Renderer::SetCamera(const Core::CameraData& cameraData) noexcept
 	{
 		m_State.SetCurrentCameraData(cameraData);
 	}
 
-	void Renderer::CacheCameraTransform(const Common::RigidTransform& rigidTransform) noexcept
+	void Renderer::SetCameraTransform(const Common::RigidTransform& rigidTransform) noexcept
 	{
 		m_State.SetCurrentCameraTransform(rigidTransform);
+	}
+
+	void Renderer::SetCameraProjection(Core::PerspectiveParams perspectiveParams) noexcept
+	{
+		m_State.SetCurrentCameraProjection(perspectiveParams);
+	}
+
+	void Renderer::SetCameraProjection(const Core::OrthographicParams& orthographicParams) noexcept
+	{
+		m_State.SetCurrentCameraProjection(orthographicParams);
+	}
+
+	void Renderer::CacheModelTransform(const Common::Transform& modelTransform) noexcept
+	{
+		if (m_CachedModelTransform.IsNearEqual(modelTransform))
+			return;
+
+		m_CachedModelTransform = modelTransform;
+		m_CachedModelMatrix = DirectX::XMMatrixIdentity();
+
+		if (!modelTransform.Scaling.IsEqual(Common::Float3(1.0f, 1.0f, 1.0f)))
+			m_CachedModelMatrix *= DirectX::XMMatrixScaling(
+				modelTransform.Scaling.x,
+				modelTransform.Scaling.y,
+				modelTransform.Scaling.z
+			);
+
+		if (!modelTransform.Rotation.IsZero())
+			m_CachedModelMatrix *= DirectX::XMMatrixRotationRollPitchYaw(
+				modelTransform.Rotation.x,
+				modelTransform.Rotation.y,
+				modelTransform.Rotation.z
+			);
+
+		if (!modelTransform.Translation.IsZero())
+			m_CachedModelMatrix *= DirectX::XMMatrixTranslation(
+				modelTransform.Translation.x,
+				modelTransform.Translation.y,
+				modelTransform.Translation.z
+			);
 	}
 
 	void Renderer::Clear(Common::NormColor normColor) noexcept
@@ -374,41 +430,17 @@ namespace CMEngine::DX::DX11
 
 		m_State.UpdateCamera();
 
-		DXGI_FORMAT indexByteFormat = BytesToDXGIFormat(descriptor.IndexByteStride);
-
-		DirectX::XMMATRIX modelMatrix = DirectX::XMMatrixIdentity();
-		if (!m_CachedModelTransform.IsNearEqual(modelTransform))
-		{
-			if (!modelTransform.Scaling.IsEqual(Common::Float3(1.0f, 1.0f, 1.0f)))
-				modelMatrix = DirectX::XMMatrixScaling(
-					modelTransform.Scaling.x,
-					modelTransform.Scaling.y,
-					modelTransform.Scaling.z
-				);
-
-			if (!modelTransform.Rotation.IsZero())
-				modelMatrix *= DirectX::XMMatrixRotationRollPitchYaw(
-					modelTransform.Rotation.x,
-					modelTransform.Rotation.y,
-					modelTransform.Rotation.z
-				);
-			
-			if (!modelTransform.Translation.IsZero())
-				modelMatrix *= DirectX::XMMatrixTranslation(
-					modelTransform.Translation.x,
-					modelTransform.Translation.y,
-					modelTransform.Translation.z
-				);
-		}
-
+		/* TODO: Only re-calculate mvp if camera or model transform get's updated. */
 		DirectX::XMMATRIX mvpMatrix = DirectX::XMMatrixTranspose(
-			modelMatrix * m_State.Camera().ViewProjectionMatrix()
+			m_CachedModelMatrix * m_State.Camera().ViewProjectionMatrix()
 		);
 
 		constexpr uint8_t MVPRegisterSlot = ShaderConstants::S_CAMERA_TRANSFORM_REGISTER_SLOT;
 		std::span<const DirectX::XMMATRIX> mvpMatrixSpan = Common::Utility::AsSpan(mvpMatrix);
 
-		VertexBuffer vertexBuffer(descriptor.VertexByteStride, vertices);
+		DXGI_FORMAT indexByteFormat = BytesToDXGIFormat(descriptor.IndexByteStride);
+
+		VertexBuffer vertexBuffer(descriptor.VertexByteStride, vertices, descriptor.VertexBufferRegister);
 		IndexBuffer indexBuffer(indexByteFormat, indices);
 		ConstantBuffer mvpBuffer(MVPRegisterSlot, mvpMatrixSpan);
 		
@@ -435,6 +467,82 @@ namespace CMEngine::DX::DX11
 		mvpBuffer.BindVS(m_Device);
 
 		m_Device.ContextRaw()->DrawIndexed(descriptor.TotalIndices, 0, 0);
+
+		CM_IF_DEBUG(
+			if (!m_InfoQueue.IsQueueEmpty())
+			{
+				m_InfoQueue.LogMessages();
+				m_Logger.LogFatalNLTagged(FuncTag, L"Debug messages generated after drawing.");
+			}
+		);
+	}
+
+	void Renderer::DrawIndexedInstanced(
+		std::span<const std::byte> vertices,
+		std::span<const std::byte> indices,
+		std::span<const std::byte> instances,
+		const DrawDescriptor& descriptor
+	) noexcept
+	{
+		constexpr std::wstring_view FuncTag = L"Renderer [DrawIndexed] | ";
+
+		EnforceValidDrawDescriptorIndexedInstanced(vertices, indices, instances, descriptor);
+
+		m_State.UpdateCamera();
+
+		BindRTV();
+
+		/* TODO: Only update upload mvpBuffer if it changes. */
+		DirectX::XMMATRIX mvpMatrix = DirectX::XMMatrixTranspose(
+			m_CachedModelMatrix * m_State.Camera().ViewProjectionMatrix()
+		);
+
+		constexpr uint8_t MVPRegisterSlot = ShaderConstants::S_CAMERA_TRANSFORM_REGISTER_SLOT;
+		std::span<const DirectX::XMMATRIX> mvpMatrixSpan = Common::Utility::AsSpan(mvpMatrix);
+
+		DXGI_FORMAT indexByteFormat = BytesToDXGIFormat(descriptor.IndexByteStride);
+
+		VertexBuffer vertexBuffer(descriptor.VertexByteStride, vertices, descriptor.VertexBufferRegister);
+		VertexBuffer instanceBuffer(descriptor.InstanceByteStride, instances, descriptor.InstanceBufferRegister);
+		IndexBuffer indexBuffer(indexByteFormat, indices);
+		ConstantBuffer mvpBuffer(MVPRegisterSlot, mvpMatrixSpan);
+
+		m_Logger.LogFatalNLTaggedIf(
+			FAILED(vertexBuffer.Create(m_Device)),
+			FuncTag,
+			L"Failed to create vertex buffer."
+		);
+
+		m_Logger.LogFatalNLTaggedIf(
+			FAILED(instanceBuffer.Create(m_Device)),
+			FuncTag,
+			L"Failed to create instance buffer."
+		);
+
+		m_Logger.LogFatalNLTaggedIf(
+			FAILED(indexBuffer.Create(m_Device)),
+			FuncTag,
+			L"Failed to create index buffer."
+		);
+
+		m_Logger.LogFatalNLTaggedIf(
+			FAILED(mvpBuffer.Create(m_Device)),
+			FuncTag,
+			L"Failed to create constant buffer for MVP matrix."
+		);
+
+		vertexBuffer.Bind(m_Device, descriptor.VertexByteOffset);
+		instanceBuffer.Bind(m_Device, descriptor.InstanceByteOffset);
+		indexBuffer.Bind(m_Device, descriptor.IndexByteOffset);
+		mvpBuffer.BindVS(m_Device);
+
+		m_Device.ContextRaw()->DrawIndexedInstanced(
+			descriptor.IndicesPerInstance,
+			descriptor.TotalInstances,
+			descriptor.StartIndexLocation,
+			descriptor.BaseVertexLocation,
+			descriptor.StartInstanceLocation
+		);
 
 		CM_IF_DEBUG(
 			if (!m_InfoQueue.IsQueueEmpty())
@@ -629,7 +737,7 @@ namespace CMEngine::DX::DX11
 		return static_cast<bool>(isFullscreen);
 	}
 
-#pragma region EnforceDrawDescriptor
+#pragma region EnforceDrawDescriptor Functions
 	void Renderer::EnforceValidDrawDescriptor(
 		std::span<const std::byte> vertices,
 		const DrawDescriptor descriptor
@@ -774,6 +882,75 @@ namespace CMEngine::DX::DX11
 			L"from this offset. Total: `{}`. Start Location: `{}`.",
 			descriptor.TotalIndices,
 			descriptor.StartIndexLocation
+		);
+	}
+
+	void Renderer::EnforceValidDrawDescriptorIndexedInstanced(
+		std::span<const std::byte> vertices,
+		std::span<const std::byte> indices,
+		std::span<const std::byte> instances,
+		const DrawDescriptor& descriptor
+	) noexcept
+	{
+		constexpr std::wstring_view FuncTag = L"Renderer [EnforceValidDrawDescriptorIndexedInstanced] |";
+
+		EnforceValidDrawDescriptorIndexed(vertices, indices, descriptor);
+
+		UINT instancesSize = static_cast<UINT>(instances.size());
+		UINT instancesSizeBytes = static_cast<UINT>(instances.size_bytes());
+
+		m_Logger.LogFatalNLTaggedIf(
+			descriptor.TotalInstances == 0,
+			FuncTag,
+			L"TotalInstances should not be 0."
+		);
+
+		m_Logger.LogFatalNLFormattedIf(
+			descriptor.TotalInstances > instancesSize,
+			FuncTag,
+			L"`TotalInstances` exceeds size of instance buffer. "
+			L"TotalInstances: `{}`, Size : `{}`.",
+			descriptor.TotalInstances, instancesSize
+		);
+
+		m_Logger.LogFatalNLTaggedIf(
+			descriptor.InstanceByteStride == 0,
+			FuncTag,
+			L"`InstanceByteStride` should not be 0."
+		);
+
+		m_Logger.LogFatalNLFormattedIf(
+			descriptor.InstanceByteStride > instancesSizeBytes,
+			FuncTag,
+			L"`InstanceByteStride` exceeds byte size of instance buffer. "
+			L"InstanceByteStride: `{}`, Byte Size : `{}`.",
+			descriptor.InstanceByteStride, instancesSizeBytes
+		);
+
+		m_Logger.LogFatalNLFormattedIf(
+			descriptor.InstanceByteOffset >= instancesSizeBytes,
+			FuncTag,
+			L"`InstanceByteOffset` exceeds or equals byte size of instance buffer. "
+			L"InstanceByteOffset: `{}`, Byte Size: `{}`.",
+			descriptor.InstanceByteOffset, instancesSizeBytes
+		);
+
+		constexpr UINT MaxRegisterSlot = VertexBuffer::MaxRegisterSlot();
+
+		m_Logger.LogFatalNLFormattedIf(
+			!VertexBuffer::IsValidRegister(descriptor.InstanceBufferRegister),
+			FuncTag,
+			L"`InstanceBufferRegister` must be within [0 - {}]: `{}`. "
+			L"",
+			MaxRegisterSlot, descriptor.InstanceBufferRegister
+		);
+
+		m_Logger.LogFatalNLFormattedIf(
+			descriptor.VertexBufferRegister == descriptor.InstanceBufferRegister,
+			FuncTag,
+			L"`VertexBufferRegister` and `InstanceBufferRegister` clash. "
+			L"Two vertex buffers should not have the same register slot: `{}`.",
+			descriptor.VertexBufferRegister
 		);
 	}
 #pragma endregion

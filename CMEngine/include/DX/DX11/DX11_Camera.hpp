@@ -18,6 +18,7 @@ namespace CMEngine::DX::DX11
 		~Camera() = default;
 	public:
 		void SetTransform(const Common::RigidTransform& rigidTransform) noexcept;
+		void SetProjection(const Core::CameraData::ProjectionTy& projection) noexcept;
 		void SetAspectRatio(float aspectRatio) noexcept;
 		void SetAll(const Core::CameraData& cameraData, float aspectRatio) noexcept;
 

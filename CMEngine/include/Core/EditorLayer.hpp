@@ -38,5 +38,7 @@ namespace CMEngine::Core
 		Core::ECSEntity m_GUIEntity;
 		Common::RigidTransform m_PreviousCameraTransform;
 		Common::Transform m_PreviousMeshTransform;
+		DX::DX11::DrawDescriptor m_DrawDescriptor;
+		float m_InstanceRadius = 1.0f;
 	};
 }

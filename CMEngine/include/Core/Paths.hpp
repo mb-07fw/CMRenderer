@@ -8,20 +8,25 @@
 
 namespace CMEngine::Core
 {
-	inline [[nodiscard]] std::filesystem::path CMERootDirectory() noexcept
+	inline [[nodiscard]] std::filesystem::path RootDirectory() noexcept
 	{
 		return CM_SOURCE_DIR;
 	}
 
-	inline [[nodiscard]] std::filesystem::path CMEOutDirectory() noexcept
+	inline [[nodiscard]] std::filesystem::path OutDirectory() noexcept
 	{
 		std::filesystem::path sourcePath = CM_SOURCE_DIR;
 
 		return sourcePath / "build" / CM_CONFIG / "CMEngine" / "out";
 	}
 
-	inline [[nodiscard]] std::filesystem::path CMEAssetMeshDirectory() noexcept
+	inline [[nodiscard]] std::filesystem::path AssetMeshDirectory() noexcept
 	{
-		return CMERootDirectory() / "CMEngine" / "resources\\assets\\meshes\\";
+		return RootDirectory() / "CMEngine" / "resources\\assets\\meshes\\";
+	}
+
+	inline [[nodiscard]] std::filesystem::path AssetShaderDirectory() noexcept
+	{
+		return RootDirectory() / "CMEngine" / "resources" / "shaders";
 	}
 }

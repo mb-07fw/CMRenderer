@@ -31,7 +31,7 @@ namespace CMEngine::Core::Asset
 	{
 		AssetHandle handle = AssetHandle::Invalid();
 
-		std::filesystem::path meshPath = CMEAssetMeshDirectory() / meshName;
+		std::filesystem::path meshPath = AssetMeshDirectory() / meshName;
 		meshPath.replace_extension(".yaml");
 
 		if (!std::filesystem::exists(meshPath))
@@ -127,7 +127,7 @@ namespace CMEngine::Core::Asset
 
 	[[nodiscard]] AMResult AssetManager::SerializeMesh(const MeshData& meshData, std::string_view meshName) noexcept
 	{
-		std::filesystem::path meshPath = CMEAssetMeshDirectory() / meshName;
+		std::filesystem::path meshPath = AssetMeshDirectory() / meshName;
 		meshPath.replace_extension(".yaml");
 
 		if (!m_MeshSerializer.SaveMesh(meshPath, meshData))
