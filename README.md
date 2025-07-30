@@ -2,7 +2,7 @@
 
 This project is a rendering framework I am implementing in C++ to learn graphics programming in depth. I have plans for portability, but the project is currently only buildable on Windows, and with MSVC bias.
 
-The project also current relies heavily on D3D11, and will terminate at runtime if not supported. Dependencies are currently expected to be present.
+The project also current relies heavily on D3D11, and will terminate at runtime if not supported.
 
 ## Prerequisites:
 - A compiler supporting C++20.
@@ -11,8 +11,8 @@ The project also current relies heavily on D3D11, and will terminate at runtime 
 - A *Windows* operating system.
 
 ## Note:
-This project may not fully support a wide variety IDE's, and is not currently guaranteed to be portable.
-You may need to update the project's *premake5.lua* or *CMakeLists* to fit your desired needs.
+This project may not fully support a wide variety of IDE's, and is not currently guaranteed to be portable.
+You may need to update the project's *premake5.lua* or *CMakeLists.txt* to fit your desired needs.
 
 ## Installing:
 This project relies on various submodules (currently only DirectXTK)
