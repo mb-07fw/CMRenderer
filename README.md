@@ -44,7 +44,7 @@ cmake -S . -B build -G "[your-generator-here]"
 ```
 Note: if you wish to use a generator other than Visual Studio 17 2022 (which is used by default in this project)
 with Visual Studio's CMake integration, I recommend you also update the *"generator"* fields for
-each configuration in *CMakeSettings.json* from *"Visual Studio 17 2022"* to your desired generator.
+each configuration in *CMakeSettings.json* from *"Visual Studio 17 2022 Win64"* to your desired generator.
 
 From here you can build using your IDE of choice, or invoke CMake by running:
 ```

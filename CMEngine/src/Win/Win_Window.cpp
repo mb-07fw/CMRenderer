@@ -514,7 +514,6 @@ namespace CMEngine::Win
 		switch (msgCode)
 		{
 		case WM_KEYDOWN:
-
 			m_Keyboard.SetPressedVK(static_cast<BYTE>(wParam));
 			return DefWindowProcW(hWnd, msgCode, wParam, lParam);
 		case WM_KEYUP:
