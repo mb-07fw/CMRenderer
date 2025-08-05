@@ -11,8 +11,8 @@
 #include <string_view>
 #include <memory>
 
-#include "Platform/Export.hpp"
-#include "Platform/LoadPlatform.hpp"
+#include "CMPlatform/Export.hpp"
+#include "CMPlatform/LoadPlatform.hpp"
 
 namespace CMEngine
 {

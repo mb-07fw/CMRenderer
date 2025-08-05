@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Platform/IWindow.hpp"
-#include "Platform/IGraphics.hpp"
+#include "CMPlatform/IWindow.hpp"
+#include "CMPlatform/IGraphics.hpp"
 
 #include <memory>
 

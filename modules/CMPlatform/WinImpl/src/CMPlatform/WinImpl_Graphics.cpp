@@ -1,9 +1,27 @@
-#include "Platform/WinImpl_PCH.hpp"
-#include "Platform/WinImpl_Graphics.hpp"
-#include "Platform/WinImpl_Platform.hpp"
+#include "CMPlatform/WinImpl_PCH.hpp"
+#include "CMPlatform/WinImpl_Graphics.hpp"
+#include "CMPlatform/WinImpl_Platform.hpp"
 
 namespace CMEngine::Platform::WinImpl
 {
+	ShaderLibrary::ShaderLibrary() noexcept
+	{
+		Init();
+	}
+
+	ShaderLibrary::~ShaderLibrary() noexcept
+	{
+		Shutdown();
+	}
+
+	void ShaderLibrary::Init() noexcept
+	{
+	}
+
+	void ShaderLibrary::Shutdown() noexcept
+	{
+	}
+
 	extern WinImpl_Platform* gP_PlatformInstance;
 
 	extern void WinImpl_EnforceInstantiated();

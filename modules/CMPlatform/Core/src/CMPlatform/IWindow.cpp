@@ -1,4 +1,4 @@
-#include "Platform/IWindow.hpp"
+#include "CMPlatform/IWindow.hpp"
 
 namespace CMEngine::Platform
 {

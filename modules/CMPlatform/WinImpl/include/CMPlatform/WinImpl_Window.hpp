@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Platform/IWindow.hpp"
-#include "Platform/Export.hpp"
+#include "CMPlatform/IWindow.hpp"
+#include "CMPlatform/Export.hpp"
 
 #include <string_view>
 

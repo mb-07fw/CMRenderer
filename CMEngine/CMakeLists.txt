@@ -1,5 +1,4 @@
 # CMEngine CMakeLists.txt
-
 set(ROOT_DIR "${CMAKE_SOURCE_DIR}/CMEngine")
 
 set(OUTPUT_DIR "${CMAKE_SOURCE_DIR}/build/$<CONFIG>/CMEngine/out")
@@ -15,7 +14,7 @@ add_library(CMEngine SHARED
 target_include_directories(CMEngine PUBLIC
     "${CMAKE_SOURCE_DIR}/CMEngine/include"
     "${CMAKE_SOURCE_DIR}/CMEngine/src"
-    "${CMAKE_SOURCE_DIR}/CMEngine/CMPlatform_Core/include"
+    "${CMAKE_SOURCE_DIR}/modules/CMPlatform/Core/include"
 )
 
 set_target_properties(CMEngine PROPERTIES
@@ -39,13 +38,10 @@ target_compile_definitions(CMEngine PRIVATE
 
 SetTargetCommonWarnings(CMEngine)
 
-add_subdirectory("CMPlatform_Core")
-
-if (WIN32)
-
-add_subdirectory("CMPlatform_WinImpl")
-
-endif()
+add_subdirectory(
+    "${CMAKE_SOURCE_DIR}/modules/CMPlatform/Core" # Actual directory
+    "${CMAKE_BINARY_DIR}/modules/CMPlatform/Core" # Binary directory of module.
+)
 
 target_link_libraries(CMEngine PRIVATE CMPlatform_Core)
 

@@ -1,5 +1,5 @@
-#include "Platform/LoadPlatform.hpp"
-#include "Platform/Platform.hpp"
+#include "CMPlatform/LoadPlatform.hpp"
+#include "CMPlatform/Platform.hpp"
 
 #include <spdlog/spdlog.h>
 
@@ -12,7 +12,7 @@ namespace CMEngine::Platform
 
 	[[nodiscard]] void Win32LoadPlatform(IPlatform*& pPlatform) noexcept
 	{
-		sP_PlatformWin = LoadLibraryEx(L"CMPlatform_WinImpl.dll", nullptr, 0);
+		sP_PlatformWin = LoadLibraryEx(CM_PLATFORM_WIN_IMPL_PATHW, nullptr, 0);
 	
 		if (sP_PlatformWin == nullptr)
 		{
@@ -43,8 +43,6 @@ namespace CMEngine::Platform
 			spdlog::error("Retrieved platform is nullptr. Error Code: {}", GetLastError());
 			exit(-1);
 		}
-
-		//return gP_PlatformInstance;
 	}
 
 	void Win32Unload(IPlatform*& pPlatform) noexcept

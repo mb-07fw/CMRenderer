@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Platform/IPlatform.hpp"
+#include "CMPlatform/IPlatform.hpp"
 
 #include <memory>
 

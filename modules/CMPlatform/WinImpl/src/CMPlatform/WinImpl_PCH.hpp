@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Platform/Platform.hpp"
+#include "CMPlatform/Platform.hpp"
 
 #include <spdlog/spdlog.h>
 #include <spdlog/logger.h>
@@ -10,6 +10,12 @@
 #include <cstdlib>
 #include <cstdint>
 
-#include <functional>
-#include <memory>
 #include <iostream>
+#include <string>
+#include <string_view>
+#include <array>
+#include <vector>
+#include <span>
+#include <memory>
+#include <filesystem>
+#include <functional>

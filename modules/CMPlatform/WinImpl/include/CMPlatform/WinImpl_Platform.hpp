@@ -1,11 +1,11 @@
 #pragma once
 
 
-#include "Platform/WinImpl_Window.hpp"
-#include "Platform/WinImpl_Graphics.hpp"
+#include "CMPlatform/IPlatform.hpp"
+#include "CMPlatform/Export.hpp"
 
-#include "Platform/IPlatform.hpp"
-#include "Platform/Export.hpp"
+#include "CMPlatform/WinImpl_Window.hpp"
+#include "CMPlatform/WinImpl_Graphics.hpp"
 
 namespace CMEngine::Platform::WinImpl
 {

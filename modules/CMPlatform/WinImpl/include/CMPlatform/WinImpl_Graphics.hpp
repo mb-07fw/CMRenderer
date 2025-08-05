@@ -1,15 +1,37 @@
 #pragma once
 
-#include "Platform/IGraphics.hpp"
-#include "Platform/PlatformDef.hpp"
+#include "CMPlatform/IGraphics.hpp"
+#include "CMPlatform/PlatformDef.hpp"
 
 #include <d3d11.h>
 #include <dxgi.h>
-#include <dxgi1_2.h>
+#include <dxgi1_5.h>
 #include <wrl/client.h>
+
+#include <array>
+#include <vector>
+#include <string_view>
 
 namespace CMEngine::Platform::WinImpl
 {
+	class ShaderLibrary
+	{
+	public:
+		ShaderLibrary() noexcept;
+		~ShaderLibrary() noexcept;
+	public:
+	private:
+		void Init() noexcept;
+		void Shutdown() noexcept;
+	private:
+		static constexpr std::array<std::wstring_view, 1> S_STOCK_VERTEX_SHADER_NAMES = {
+			std::wstring_view(L"Quad_VS.cso")
+		};
+		static constexpr std::array<std::wstring_view, 1> S_STOCK_PIXEL_SHADER_NAMES = {
+			std::wstring_view(L"Quad_PS.cso")
+		};
+	};
+
 	class Graphics : public IGraphics
 	{
 	public:

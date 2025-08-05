@@ -1,5 +1,5 @@
-#include "Platform/WinImpl_PCH.hpp"
-#include "Platform/WinImpl_Platform.hpp"
+#include "CMPlatform/WinImpl_PCH.hpp"
+#include "CMPlatform/WinImpl_Platform.hpp"
 
 namespace CMEngine::Platform::WinImpl
 {

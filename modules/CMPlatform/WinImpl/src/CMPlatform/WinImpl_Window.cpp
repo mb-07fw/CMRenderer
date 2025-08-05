@@ -1,6 +1,6 @@
-#include "Platform/WinImpl_PCH.hpp"
-#include "Platform/WinImpl_Window.hpp"
-#include "Platform/WinImpl_Platform.hpp"
+#include "CMPlatform/WinImpl_PCH.hpp"
+#include "CMPlatform/WinImpl_Window.hpp"
+#include "CMPlatform/WinImpl_Platform.hpp"
 
 namespace CMEngine::Platform::WinImpl
 {
@@ -21,13 +21,6 @@ namespace CMEngine::Platform::WinImpl
 
 		return gP_PlatformInstance->Impl_Window().Impl_ShouldClose();
 	}
-
-	/*CM_DYNAMIC_LOAD void WinImpl_Window_Update()
-	{
-		WinImpl_EnforceInstantiated();
-
-		return gP_PlatformInstance->Impl_Window().Impl_Update();
-	}*/
 
 	Window::Window() noexcept
 		: IWindow(

@@ -25,12 +25,11 @@ if (WIN32)
 
 add_dependencies(CMSandbox CMPlatform_WinImpl)
 
-add_custom_command(TARGET CMSandbox POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "$<TARGET_FILE:CMPlatform_WinImpl>"
-        "${OUTPUT_DIR}"  # destination folder
-)
-
+# add_custom_command(TARGET CMSandbox POST_BUILD
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#         "$<TARGET_FILE:CMPlatform_WinImpl>"
+#         "${OUTPUT_DIR}"  # destination folder
+# )
 
 endif()
 
