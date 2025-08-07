@@ -11,11 +11,14 @@ set(PLATFORM_FILES
     "${INCLUDE_DIR}/CMPlatform/IPlatform.hpp"
     "${INCLUDE_DIR}/CMPlatform/LoadPlatform.hpp"
     "${INCLUDE_DIR}/CMPlatform/Platform.hpp"
-    "${INCLUDE_DIR}/CMPlatform/PlatformDef.hpp"
+    "${INCLUDE_DIR}/CMPlatform/PlatformTypes.hpp"
+    "${INCLUDE_DIR}/CMPlatform/Types.hpp"
 
     "${SRC_DIR}/CMPlatform/LoadPlatform.cpp"
     "${SRC_DIR}/CMPlatform/IPlatform.cpp"
     "${SRC_DIR}/CMPlatform/IWindow.cpp"
+    "${SRC_DIR}/CMPlatform/IGraphics.cpp"
+    "${SRC_DIR}/CMPlatform/Types.cpp"
 )
 
 add_library(CMPlatform_Core STATIC ${PLATFORM_FILES})
@@ -39,10 +42,10 @@ target_compile_definitions(CMPlatform_Core
     PRIVATE CM_BUILD
     PUBLIC UNICODE
     PUBLIC _UNICODE
-    PUBLIC CM_PLATFORM_CORE_PATH_SHADER_DIRECTORY="${CMAKE_SOURCE_DIR}/modules/CMShaders/"
-    PUBLIC CM_PLATFORM_CORE_PATH_SHADER_DIRECTORYW=L"${CMAKE_SOURCE_DIR}/modules/CMShaders/"
-    PUBLIC CM_PLATFORM_CORE_PATH_COMPILED_SHADER_DIRECTORY="${CMAKE_BINARY_DIR}/modules/CMShaders/"
-    PUBLIC CM_PLATFORM_CORE_PATH_COMPILED_SHADER_DIRECTORYW=L"${CMAKE_BINARY_DIR}/modules/CMShaders/"
+    PUBLIC CM_PLATFORM_CORE_PATH_SHADER_DIRECTORY="${CMAKE_SOURCE_DIR}/modules/CMShaders/out"
+    PUBLIC CM_PLATFORM_CORE_PATH_SHADER_DIRECTORYW=L"${CMAKE_SOURCE_DIR}/modules/CMShaders/out"
+    PUBLIC CM_PLATFORM_CORE_PATH_COMPILED_SHADER_DIRECTORY="${CMAKE_BINARY_DIR}/modules/CMShaders/out"
+    PUBLIC CM_PLATFORM_CORE_PATH_COMPILED_SHADER_DIRECTORYW=L"${CMAKE_BINARY_DIR}/modules/CMShaders/out"
 )
 
 set(OUTPUT_DIR "${CMAKE_SOURCE_DIR}/build/$<CONFIG>/modules/CMPlatform/Core/out")

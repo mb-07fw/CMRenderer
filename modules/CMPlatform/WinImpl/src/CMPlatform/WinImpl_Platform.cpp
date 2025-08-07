@@ -5,16 +5,16 @@ namespace CMEngine::Platform::WinImpl
 {
 	WinImpl_Platform* gP_PlatformInstance = nullptr;
 
-	static void WinImpl_HandleError(const spdlog::details::log_msg& msg) noexcept
+	static void WinImpl_Platform_HandleError(const spdlog::details::log_msg& msg) noexcept
 	{
 		spdlog::info("(WinImpl_Platform) Received error: {}", msg.payload.data());
 		std::exit(-1);
 	}
 
-	static void WinImpl_InitLog() noexcept
+	static void WinImpl_Platform_InitLog() noexcept
 	{
 		auto consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-		auto newLogger = spdlog::callback_logger_mt("WinImpl_Platform", spdlog::custom_log_callback(WinImpl_HandleError));
+		auto newLogger = spdlog::callback_logger_mt("WinImpl_Platform", spdlog::custom_log_callback(WinImpl_Platform_HandleError));
 		
 		newLogger->sinks().back()->set_level(spdlog::level::err);
 		newLogger->sinks().emplace_back(consoleSink);
@@ -22,7 +22,7 @@ namespace CMEngine::Platform::WinImpl
 		spdlog::set_default_logger(newLogger);
 	}
 
-	void WinImpl_EnforceInstantiated() noexcept
+	void WinImpl_Platform_EnforceInstantiated() noexcept
 	{
 		if (gP_PlatformInstance != nullptr)
 			return;
@@ -31,12 +31,12 @@ namespace CMEngine::Platform::WinImpl
 		exit(-1);
 	}
 
-	CM_DYNAMIC_LOAD IPlatform* WinImpl_Init()
+	CM_DYNAMIC_LOAD IPlatform* WinImpl_Platform_Init()
 	{
 		if (gP_PlatformInstance != nullptr)
 			spdlog::error("(WinImpl_Init) Attempted to re-initialize the platform instance.");
 
-		WinImpl_InitLog();
+		WinImpl_Platform_InitLog();
 
 		gP_PlatformInstance = new WinImpl_Platform();
 
@@ -45,7 +45,7 @@ namespace CMEngine::Platform::WinImpl
 		return gP_PlatformInstance;
 	}
 
-	CM_DYNAMIC_LOAD void WinImpl_Shutdown(IPlatform** ppPlatform)
+	CM_DYNAMIC_LOAD void WinImpl_Platform_Shutdown(IPlatform** ppPlatform)
 	{
 		if (gP_PlatformInstance == nullptr)
 		{
@@ -62,9 +62,9 @@ namespace CMEngine::Platform::WinImpl
 	}
 
 #pragma region Platform Functions
-	CM_DYNAMIC_LOAD void WinImpl_Update()
+	CM_DYNAMIC_LOAD void WinImpl_Platform_Update()
 	{
-		WinImpl_EnforceInstantiated();
+		WinImpl_Platform_EnforceInstantiated();
 
 		gP_PlatformInstance->Impl_Update();
 	}
@@ -78,11 +78,11 @@ namespace CMEngine::Platform::WinImpl
 			&m_Window,
 			&m_Graphics,
 			PlatformFuncTable(
-				WinImpl_Update
+				WinImpl_Platform_Update
 			)
 		  ),
-		  m_Window(),
-		  m_Graphics(m_Window.Impl_HWND())
+		  m_Window(), /* Window MUST outlive Graphics due to Graphics' dependancy on Window. */
+		  m_Graphics(m_Window)
 	{
 		Impl_Init();
 	}

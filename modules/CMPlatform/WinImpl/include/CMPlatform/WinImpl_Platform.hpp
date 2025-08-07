@@ -30,9 +30,9 @@ namespace CMEngine::Platform::WinImpl
 		WinImpl::Graphics m_Graphics;
 	};
 
-	CM_DYNAMIC_LOAD IPlatform* WinImpl_Init();
-	CM_DYNAMIC_LOAD void WinImpl_Shutdown(IPlatform** ppPlatform);
+	CM_DYNAMIC_LOAD IPlatform* WinImpl_Platform_Init();
+	CM_DYNAMIC_LOAD void WinImpl_Platform_Shutdown(IPlatform** ppPlatform);
 
 	/* Platform functions. */
-	CM_DYNAMIC_LOAD void WinImpl_Update();
+	CM_DYNAMIC_LOAD void WinImpl_Platform_Update();
 }

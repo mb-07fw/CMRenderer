@@ -17,5 +17,9 @@
 #include <vector>
 #include <span>
 #include <memory>
+#include <map>
+#include <unordered_map>
 #include <filesystem>
+#include <type_traits>
+#include <limits>
 #include <functional>

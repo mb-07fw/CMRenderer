@@ -20,7 +20,7 @@ namespace CMEngine::Platform
 			exit(-1);
 		}
 	
-		sP_InitFunc = (PlatformOutFunc)GetProcAddress(sP_PlatformWin, "WinImpl_Init");
+		sP_InitFunc = (PlatformOutFunc)GetProcAddress(sP_PlatformWin, "WinImpl_Platform_Init");
 	
 		if (sP_InitFunc == nullptr)
 		{
@@ -28,7 +28,7 @@ namespace CMEngine::Platform
 			exit(-1);
 		}
 	
-		sP_ShutdownFunc = (PlatformInFunc)GetProcAddress(sP_PlatformWin, "WinImpl_Shutdown");
+		sP_ShutdownFunc = (PlatformInFunc)GetProcAddress(sP_PlatformWin, "WinImpl_Platform_Shutdown");
 	
 		if (sP_ShutdownFunc == nullptr)
 		{

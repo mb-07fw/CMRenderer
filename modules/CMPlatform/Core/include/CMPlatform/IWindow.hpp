@@ -1,25 +1,64 @@
 #pragma once
 
+#include "CMPlatform/Types.hpp"
+
+#include <functional>
+#include <type_traits>
+
 namespace CMEngine::Platform
 {
+	struct ScreenResolution
+	{
+		Float2 Res;
+	};
+
 	struct WindowFuncTable
 	{
-		using BoolFunc = bool (*)();
-		using VoidFunc = void (*)();
+		using VoidFunc = void(*)();
+		using BoolFunc = bool(*)();
+		using ResolutionFunc = ScreenResolution(*)();
 
+		VoidFunc Update = nullptr;
 		BoolFunc IsRunning = nullptr;
 		BoolFunc ShouldClose = nullptr;
-		VoidFunc Update = nullptr;
+		ResolutionFunc Resolution = nullptr;
 
 		inline WindowFuncTable(
+			VoidFunc updateFunc,
 			BoolFunc isRunningFunc,
-			BoolFunc shouldCloseFunc
+			BoolFunc shouldCloseFunc,
+			ResolutionFunc resolutionFunc
 		) noexcept
-			: IsRunning(isRunningFunc),
-			  ShouldClose(shouldCloseFunc)
+			: Update(updateFunc),
+			  IsRunning(isRunningFunc),
+			  ShouldClose(shouldCloseFunc),
+			  Resolution(resolutionFunc)
 		{
 		}
 	};
+
+	using WindowCallbackSignatureOnResize = void (*)(ScreenResolution, void* pUserData);
+
+	template <typename Callback>
+	concept WindowActionCallback = std::is_same_v<Callback, WindowCallbackSignatureOnResize>;
+
+	template <typename CallbackSignature>
+		requires WindowActionCallback<CallbackSignature>
+	struct WindowCallback
+	{
+		CallbackSignature pCallback = nullptr;
+		void* pUserData = nullptr;
+
+		inline WindowCallback(CallbackSignature pCallback, void* pUserData) noexcept
+			: pCallback(pCallback),
+			  pUserData(pUserData)
+		{
+		}
+
+		WindowCallback() = default;
+	};
+
+	using WindowCallbackOnResize = WindowCallback<WindowCallbackSignatureOnResize>;
 
 	class IWindow
 	{

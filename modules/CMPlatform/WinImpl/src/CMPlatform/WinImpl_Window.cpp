@@ -5,28 +5,43 @@
 namespace CMEngine::Platform::WinImpl
 {
 	extern WinImpl_Platform* gP_PlatformInstance;
+	extern void WinImpl_Platform_EnforceInstantiated();
 
-	extern void WinImpl_EnforceInstantiated();
+	CM_DYNAMIC_LOAD void WinImpl_Window_Update()
+	{
+		WinImpl_Platform_EnforceInstantiated();
+
+		return gP_PlatformInstance->Impl_Window().Impl_Update();
+	}
 
 	CM_DYNAMIC_LOAD bool WinImpl_Window_IsRunning()
 	{
-		WinImpl_EnforceInstantiated();
+		WinImpl_Platform_EnforceInstantiated();
 
 		return gP_PlatformInstance->Impl_Window().Impl_IsRunning();
 	}
 
 	CM_DYNAMIC_LOAD bool WinImpl_Window_ShouldClose()
 	{
-		WinImpl_EnforceInstantiated();
+		WinImpl_Platform_EnforceInstantiated();
 
 		return gP_PlatformInstance->Impl_Window().Impl_ShouldClose();
+	}
+
+	CM_DYNAMIC_LOAD ScreenResolution WinImpl_Window_Resolution()
+	{
+		WinImpl_Platform_EnforceInstantiated();
+
+		return gP_PlatformInstance->Impl_Window().Impl_Resolution();
 	}
 
 	Window::Window() noexcept
 		: IWindow(
 			WindowFuncTable(
+				WinImpl_Window_Update,
 				WinImpl_Window_IsRunning,
-				WinImpl_Window_ShouldClose
+				WinImpl_Window_ShouldClose,
+				WinImpl_Window_Resolution
 		    )
 		  )
 	{
@@ -47,10 +62,7 @@ namespace CMEngine::Platform::WinImpl
 		while ((result = PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) != 0)
 		{
 			if (msg.message == WM_QUIT)
-			{
-				PostQuitMessage(0);
 				break;
-			}
 
 			// Translate any raw virtual-key messages in character messages. (e.g., 'w', 'a', 's', 'd', etc)
 			TranslateMessage(&msg);
@@ -60,12 +72,47 @@ namespace CMEngine::Platform::WinImpl
 		}
 	}
 
+	void Window::Impl_SetCallbackOnResize(WindowCallbackSignatureOnResize pCallback, void* pUserData) noexcept
+	{
+		m_CallbacksOnResize.emplace_back(pCallback, pUserData);
+	}
+
+	bool Window::Impl_RemoveCallbackOnResize(WindowCallbackSignatureOnResize pCallback, void* pUserData) noexcept
+	{
+		for (size_t i = 0; i < m_CallbacksOnResize.size(); ++i)
+		{
+			WindowCallbackOnResize& currentCallback = m_CallbacksOnResize[i];
+
+			if (currentCallback.pCallback != pCallback && 
+				currentCallback.pUserData != pUserData)
+				continue;
+
+			/* Utilize std::vector's erase to preserve the order of callbacks after removal. */
+			auto whereIt = m_CallbacksOnResize.begin() + i;
+			m_CallbacksOnResize.erase(whereIt);
+
+			return true;
+		}
+
+		return false;
+	}
+
+	[[nodiscard]] ScreenResolution Window::Impl_Resolution() noexcept
+	{
+		return ScreenResolution{
+			Float2(
+				static_cast<float>(m_ClientArea.right),
+				static_cast<float>(m_ClientArea.bottom)
+			)
+		};
+	}
+
 	void Window::Impl_Init() noexcept
 	{
 		BOOL succeeded = GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, nullptr, &mP_HINSTANCE);
 
 		if (!succeeded)
-			spdlog::error("(WinImpl_Window) Internal error: Failed to retrieve DLL's HINSTANCE.");
+			spdlog::critical("(WinImpl_Window) Internal error: Failed to retrieve DLL's HINSTANCE.");
 
 		WNDCLASSEX wndClass = {};
 
@@ -86,21 +133,18 @@ namespace CMEngine::Platform::WinImpl
 		wndClass.lpszClassName = S_CLASS_NAME.data();
 
 		if (!RegisterClassEx(&wndClass))
-			spdlog::error("(WinImpl_Window) Internal error: Failed to register window class.");
+			spdlog::critical("(WinImpl_Window) Internal error: Failed to register window class.");
 
 		constexpr long WindowStyle = WS_OVERLAPPEDWINDOW;
+		
+		/* TODO: Keep separate variables for client size and actual window size. */
+		m_ClientArea.right = 800;
+		m_ClientArea.bottom = 600;
 
-		RECT clientArea = {};
-		clientArea.right = 800;
-		clientArea.bottom = 600;
-
-		succeeded = AdjustWindowRect(&clientArea, WindowStyle, false);
+		succeeded = AdjustWindowRect(&m_ClientArea, WindowStyle, false);
 
 		if (!succeeded)
-		{
-			spdlog::error("(WinImpl_Window) Internal error: Failed to adjust to client area.");
-			std::exit(-1);
-		}
+			spdlog::critical("(WinImpl_Window) Internal error: Failed to adjust to desired client area.");
 
 		mP_HWND = CreateWindowEx(
 			0,
@@ -109,8 +153,8 @@ namespace CMEngine::Platform::WinImpl
 			WS_OVERLAPPEDWINDOW,
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
-			clientArea.right,
-			clientArea.bottom,
+			m_ClientArea.right,
+			m_ClientArea.bottom,
 			nullptr,
 			nullptr,
 			wndClass.hInstance,
@@ -119,7 +163,7 @@ namespace CMEngine::Platform::WinImpl
 
 		if (mP_HWND == nullptr)
 		{
-			spdlog::error("(WinImpl_Window) Internal error: Failed to create the window.");
+			spdlog::critical("(WinImpl_Window) Internal error: Failed to create the window.");
 			std::exit(-1);
 		}
 
@@ -133,12 +177,18 @@ namespace CMEngine::Platform::WinImpl
 	void Window::Impl_Shutdown() noexcept
 	{
 		if (!DestroyWindow(mP_HWND))
-			spdlog::error("(WinImpl_Window) Internal error: Failed to destroy window instance.");
+			spdlog::critical("(WinImpl_Window) Internal error: Failed to destroy window instance.");
 
 		if (!UnregisterClass(S_CLASS_NAME.data(), mP_HINSTANCE))
-			spdlog::error("(WinImpl_Window) Internal error: Failed to unregister the window's class.");
+			spdlog::critical("(WinImpl_Window) Internal error: Failed to unregister the window's class.");
 
 		spdlog::info("(WinImpl_Window) Window Shutdown!");
+	}
+
+	void Window::Impl_NotifyOnResize() noexcept
+	{
+		for (const WindowCallbackOnResize& callback : m_CallbacksOnResize)
+			callback.pCallback(Impl_Resolution(), callback.pUserData);
 	}
 
 	[[nodiscard]] LRESULT CALLBACK Window::WndProcSetup(
@@ -198,6 +248,12 @@ namespace CMEngine::Platform::WinImpl
 		case WM_CLOSE:
 			m_Running = false;
 			PostQuitMessage(0);
+			return S_OK;
+		case WM_SIZE:
+			if (!GetClientRect(mP_HWND, &m_ClientArea))
+				spdlog::critical("(WinImpl_Window) Internal error: Failed to retrieve window client area after resizing.");
+
+			Impl_NotifyOnResize();
 			return S_OK;
 		default:
 			return DefWindowProcW(hWnd, msgCode, wParam, lParam);
