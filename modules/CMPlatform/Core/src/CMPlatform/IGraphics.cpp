@@ -16,4 +16,9 @@ namespace CMEngine::Platform
 	{
 		m_FuncTable.Present();
 	}
+
+	void IGraphics::Draw(const void* pBuffer, const DrawDescriptor* pDescriptor) noexcept
+	{
+		m_FuncTable.Draw(pBuffer, pDescriptor);
+	}
 }

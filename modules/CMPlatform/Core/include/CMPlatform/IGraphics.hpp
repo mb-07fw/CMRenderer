@@ -46,20 +46,31 @@ namespace CMEngine::Platform
 		ShaderSetEnum::QUAD
 	};
 
+	struct DrawDescriptor
+	{
+		uint32_t TotalVertices = 0;
+		uint32_t StartVertexLocation = 0; /* Index of the first vertex to draw. (Offset into the vertex buffer) */
+		uint32_t VertexByteStride = 0;
+	};
+
 	struct GraphicsFuncTable
 	{
-		using ColorFuncSignature = void (*)(ColorNorm color);
 		using VoidFunc = void (*)();
+		using ClearSignature = void (*)(ColorNorm clearColor);
+		using DrawSignature = void (*)(const void* pBuffer, const DrawDescriptor* descriptor);
 
-		ColorFuncSignature Clear = nullptr;
+		ClearSignature Clear = nullptr;
 		VoidFunc Present = nullptr;
+		DrawSignature Draw = nullptr;
 
 		inline GraphicsFuncTable(
-			ColorFuncSignature clearFunc,
-			VoidFunc presentFunc
+			ClearSignature clearFunc,
+			VoidFunc presentFunc,
+			DrawSignature drawFunc
 		) noexcept
 			: Clear(clearFunc),
-			  Present(presentFunc)
+			  Present(presentFunc),
+			  Draw(drawFunc)
 		{
 		}
 	};
@@ -72,6 +83,8 @@ namespace CMEngine::Platform
 	public:
 		void Clear(ColorNorm color) noexcept;
 		void Present() noexcept;
+
+		void Draw(const void* pBuffer, const DrawDescriptor* pDescriptor) noexcept;
 	private:
 		GraphicsFuncTable m_FuncTable;
 	};

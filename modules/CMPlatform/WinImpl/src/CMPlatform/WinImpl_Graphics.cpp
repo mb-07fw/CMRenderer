@@ -32,9 +32,34 @@ namespace CMEngine::Platform::WinImpl
 			);
 	}
 
-	void ShaderSetQuad::CreateShaders(Microsoft::WRL::ComPtr<ID3D11Device> pDevice) noexcept
+	void BasicShaderSet::BindBasicShaders(Microsoft::WRL::ComPtr<ID3D11DeviceContext> pContext) noexcept
+	{
+		pContext->VSSetShader(pVertexShader.Get(), nullptr, 0);
+		pContext->PSSetShader(pPixelShader.Get(), nullptr, 0);
+	}
+
+	void ShaderSetQuad::Create(Microsoft::WRL::ComPtr<ID3D11Device> pDevice) noexcept
 	{
 		CreateBasicShaders(pDevice);
+
+		HRESULT hResult = pDevice->CreateInputLayout(
+			S_INPUT_DESCS,
+			std::size(S_INPUT_DESCS),
+			VertexData.pBytecode->GetBufferPointer(),
+			VertexData.pBytecode->GetBufferSize(),
+			pInputLayout.GetAddressOf()
+		);
+		
+		if (FAILED(hResult))
+			spdlog::critical("(ShaderSetQuad) Internal error: Failed to create input layout. Error code: `{}`",
+				hResult
+			);
+	}
+
+	void ShaderSetQuad::Bind(Microsoft::WRL::ComPtr<ID3D11DeviceContext> pContext) noexcept
+	{
+		pContext->IASetInputLayout(pInputLayout.Get());
+		BindBasicShaders(pContext);
 	}
 
 	ShaderLibrary::ShaderLibrary() noexcept
@@ -50,7 +75,37 @@ namespace CMEngine::Platform::WinImpl
 	void ShaderLibrary::CreateResources(Microsoft::WRL::ComPtr<ID3D11Device> pDevice) noexcept
 	{
 		for (const std::shared_ptr<BasicShaderSet>& pSet : m_Sets)
-			pSet->CreateShaders(pDevice);
+			pSet->Create(pDevice);
+	}
+
+	[[nodiscard]] std::weak_ptr<BasicShaderSet> ShaderLibrary::GetSet(ShaderSetEnum::Enum setType) noexcept
+	{
+		if (setType == ShaderSetEnum::INVALID)
+		{
+			spdlog::warn("(WinImpl_ShaderLibrary) Internal warning: Attempted to retrieve a shader set with the ShaderSetEnum::INVALID enum. Nullptr is returned.");
+			return std::weak_ptr<BasicShaderSet>();
+		}
+
+		for (const std::shared_ptr<BasicShaderSet>& pSet : m_Sets)
+			if (pSet->SetType == setType)
+				return pSet;
+
+		spdlog::error("(WinImpl_ShaderLibrary) Internal error: Failed to find a matching shader set for the provided ShaderSetEnum. Enum: {}", 
+			static_cast<size_t>(setType)
+		);
+
+		return std::weak_ptr<BasicShaderSet>();
+	}
+
+	void ShaderLibrary::BindSet(ShaderSetEnum::Enum setType, Microsoft::WRL::ComPtr<ID3D11DeviceContext> pContext) noexcept
+	{
+		std::weak_ptr<BasicShaderSet> pWeakSet = GetSet(setType);
+
+		if (pWeakSet.expired())
+			spdlog::critical("(WinImpl_ShaderLibrary) Internal error: Retrieved shader set is expired.");
+
+		std::shared_ptr<BasicShaderSet> pBasicSet = pWeakSet.lock();
+		pBasicSet->Bind(pContext);
 	}
 
 	void ShaderLibrary::Init() noexcept
@@ -248,11 +303,19 @@ namespace CMEngine::Platform::WinImpl
 		gP_PlatformInstance->Impl_Graphics().Impl_Present();
 	}
 
+	CM_DYNAMIC_LOAD void WinImpl_Graphics_Draw(const void* pBuffer, const DrawDescriptor* pDescriptor)
+	{
+		WinImpl_Platform_EnforceInstantiated();
+
+		gP_PlatformInstance->Impl_Graphics().Impl_Draw(pBuffer, *pDescriptor);
+	}
+
 	Graphics::Graphics(Window& window) noexcept
 		: IGraphics(
 			GraphicsFuncTable(
 				WinImpl_Graphics_Clear,
-				WinImpl_Graphics_Present
+				WinImpl_Graphics_Present,
+				WinImpl_Graphics_Draw
 			)
 		  ),
 		  m_Window(window)
@@ -267,12 +330,47 @@ namespace CMEngine::Platform::WinImpl
 		Impl_Shutdown();
 	}
 
+	void Graphics::Impl_NewFrame() noexcept
+	{
+		ImGui_ImplDX11_NewFrame();
+		ImGui_ImplWin32_NewFrame();
+		ImGui::NewFrame();
+	}
+
+	void Graphics::Impl_EndFrame() noexcept
+	{
+		ImGui::EndFrame();
+	}
+
 	void Graphics::Impl_Update() noexcept
 	{
 		ColorNorm rgba = { 0.0f, 0.0f, 0.0f, 0.0f };
 
+		m_Library.BindSet(ShaderSetEnum::QUAD, mP_Context);
+
+		Impl_NewFrame();
 		Impl_Clear(rgba);
+
+		constexpr float Vertices[] = {
+			 0.5f, -0.5f,
+			 0.5f,  0.5f,
+			-0.5f, -0.5f
+		};
+
+		constexpr DrawDescriptor Descriptor = {
+			.TotalVertices = static_cast<uint32_t>(std::size(Vertices) / 2),
+			.VertexByteStride = sizeof(decltype(Vertices[0])) * 2
+		};
+
+		Impl_Draw(Vertices, Descriptor);
+	
+		if (ImGui::Begin("Window", nullptr, ImGuiWindowFlags_None))
+			ImGui::Text("This is text!");
+
+		ImGui::End();
+
 		Impl_Present();
+		Impl_EndFrame();
 	}
 
 	void Graphics::Impl_Clear(ColorNorm color) noexcept
@@ -283,22 +381,78 @@ namespace CMEngine::Platform::WinImpl
 
 	void Graphics::Impl_Present() noexcept
 	{
+		ImGui::Render();
+
+		ImGuiIO& io = ImGui::GetIO();
+
+		// Update and Render additional Platform Windows
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+		}
+
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 		mP_SwapChain->Present(m_PresentSyncInterval, m_PresentFlags);
 
 		Impl_BindViews();
 	}
 
+	void Graphics::Impl_Draw(const void* pBuffer, const DrawDescriptor& descriptor) noexcept
+	{
+		Microsoft::WRL::ComPtr<ID3D11Buffer> pVertexBuffer;
+
+		CD3D11_BUFFER_DESC vbDesc(
+			descriptor.VertexByteStride * descriptor.TotalVertices,
+			D3D11_BIND_VERTEX_BUFFER
+		);
+
+		D3D11_SUBRESOURCE_DATA vbSubData = {};
+		vbSubData.pSysMem = pBuffer;
+
+		HRESULT hResult = mP_Device->CreateBuffer(&vbDesc, &vbSubData, pVertexBuffer.GetAddressOf());
+
+		if (FAILED(hResult))
+			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create vertex buffer.");
+
+		UINT stride = descriptor.VertexByteStride;
+		UINT offset = 0;
+
+		mP_Context->IASetVertexBuffers(0, 1, pVertexBuffer.GetAddressOf(), &stride, &offset);
+
+		mP_Context->Draw(descriptor.TotalVertices, descriptor.StartVertexLocation);
+
+		if (mP_InfoQueue->GetNumStoredMessages() == 0)
+			return;
+
+		std::vector<std::wstring> messages;
+		Impl_GetMessages(messages);
+
+		for (const std::wstring& msg : messages)
+			std::wcout << L"(WinImpl_Graphics) Internal error: Debug message generated afer drawing: " <<
+				msg << L'\n';
+
+		spdlog::critical("(WinImpl_Graphics) Internal error: Debug messages generated after drawing.");
+	}
+
+#pragma region State Management
 	void Graphics::Impl_Init() noexcept
 	{
+		/* TODO: Provide interface for platform specific ImGui context and provide context to CMEngine.dll. (include ImGui in CMPlatform_Core) */
 		Impl_InitPipeline();
+		Impl_InitImGui();
 
 		m_Library.CreateResources(mP_Device);
+
+		Impl_BindViews();
 
 		spdlog::info("(WinImpl_Graphics) Graphics Init!");
 	}
 
 	void Graphics::Impl_Shutdown() noexcept
 	{
+		Impl_ShutdownImGui();
+
 		spdlog::info("(WinImpl_Graphics) Graphics Shutdown!");
 	}
 
@@ -444,6 +598,43 @@ namespace CMEngine::Platform::WinImpl
 		Impl_CreateViews();
 	}
 
+	void Graphics::Impl_InitImGui() noexcept
+	{
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+		ImGuiIO& io = ImGui::GetIO();
+
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+		ImGui_ImplWin32_Init(m_Window.Impl_HWND());
+		ImGui_ImplDX11_Init(mP_Device.Get(), mP_Context.Get());
+
+		ImGui::StyleColorsDark();
+	}
+
+	void Graphics::Impl_ShutdownPipeline() noexcept
+	{
+		mP_Context->ClearState();
+		mP_Context->Flush();
+
+		Impl_ReleaseViews();
+
+		mP_Device.Reset();
+		mP_Context.Reset();
+		mP_Factory.Reset();
+		mP_SwapChain.Reset();
+	}
+
+	void Graphics::Impl_ShutdownImGui() noexcept
+	{
+		ImGui_ImplDX11_Shutdown();
+		ImGui_ImplWin32_Shutdown();
+		ImGui::DestroyContext();
+	}
+
 	void Graphics::Impl_CreateViews() noexcept
 	{
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> pBackBuffer;
@@ -487,9 +678,9 @@ namespace CMEngine::Platform::WinImpl
 		}
 
 		D3D11_DEPTH_STENCIL_DESC dsDesc = {};
-		dsDesc.DepthEnable = true;
+		dsDesc.DepthEnable = false;
 		dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-		dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
+		dsDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 		dsDesc.StencilEnable = false;
 
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilState> pDSState;
@@ -523,7 +714,6 @@ namespace CMEngine::Platform::WinImpl
 		);
 
 		mP_Context->RSSetViewports(1, &viewport);
-
 		mP_Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
@@ -579,5 +769,33 @@ namespace CMEngine::Platform::WinImpl
 	{
 		Graphics* pGraphics = reinterpret_cast<Graphics*>(pThis);
 		pGraphics->Impl_OnResizeCallback(resolution);
+	}
+#pragma endregion
+
+	void Graphics::Impl_GetMessages(std::vector<std::wstring>& outMessages) noexcept
+	{
+		outMessages.reserve((size_t)mP_InfoQueue->GetNumStoredMessages());
+
+		HRESULT hResult = S_OK;
+		size_t messageLength = 0;
+
+		for (size_t i = 0; i < mP_InfoQueue->GetNumStoredMessages(); ++i)
+		{
+			// Get size of message.
+			hResult = mP_InfoQueue->GetMessage(i, nullptr, &messageLength);
+
+			if (messageLength == 0)
+				continue;
+
+			std::unique_ptr<std::byte[]> pMessage(new std::byte[messageLength]);
+			D3D11_MESSAGE* pRawMessage = reinterpret_cast<D3D11_MESSAGE*>(pMessage.get());
+
+			hResult = mP_InfoQueue->GetMessage(i, pRawMessage, &messageLength);
+
+			if (FAILED(hResult))
+				spdlog::warn("(WinImpl_Graphics) Internal warning: Failed to retrieve message from info queue.");
+
+			outMessages.emplace_back(pRawMessage->pDescription, pRawMessage->pDescription + pRawMessage->DescriptionByteLength);
+		}
 	}
 }

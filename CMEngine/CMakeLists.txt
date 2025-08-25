@@ -3,13 +3,13 @@ set(ROOT_DIR "${CMAKE_SOURCE_DIR}/CMEngine")
 
 set(OUTPUT_DIR "${CMAKE_SOURCE_DIR}/build/$<CONFIG>/CMEngine/out")
 
-set(ENGINE_FILES "${ROOT_DIR}/include/Engine.hpp" "${ROOT_DIR}/src/Engine.cpp")
-set(COMMON_INC "${ROOT_DIR}/src/Common/Macros.hpp")
+set(ENGINE_FILES
+    "${ROOT_DIR}/include/Engine.hpp"
+    "${ROOT_DIR}/src/Engine.cpp"
+    "${ROOT_DIR}/src/Macros.hpp"
+)
 
-add_library(CMEngine SHARED
-    ${ENGINE_FILES}
-    ${COMMON_INC}
- )
+add_library(CMEngine SHARED ${ENGINE_FILES})
 
 target_include_directories(CMEngine PUBLIC
     "${CMAKE_SOURCE_DIR}/CMEngine/include"
@@ -38,12 +38,7 @@ target_compile_definitions(CMEngine PRIVATE
 
 SetTargetCommonWarnings(CMEngine)
 
-add_subdirectory(
-    "${CMAKE_SOURCE_DIR}/modules/CMPlatform/Core" # Actual directory
-    "${CMAKE_BINARY_DIR}/modules/CMPlatform/Core" # Binary directory of module.
-)
-
-target_link_libraries(CMEngine PRIVATE CMPlatform_Core)
+target_link_libraries(CMEngine PRIVATE CMPlatform_Core CMImGui)
 
 # Note for me in the future, user define is different from FXC_EXECUTABLE as CMake
 #   remembers find_program through the cache, and was causing it to use the x86

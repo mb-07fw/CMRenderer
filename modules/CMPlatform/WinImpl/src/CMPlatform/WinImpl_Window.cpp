@@ -2,6 +2,8 @@
 #include "CMPlatform/WinImpl_Window.hpp"
 #include "CMPlatform/WinImpl_Platform.hpp"
 
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 namespace CMEngine::Platform::WinImpl
 {
 	extern WinImpl_Platform* gP_PlatformInstance;
@@ -238,6 +240,9 @@ namespace CMEngine::Platform::WinImpl
 		LPARAM lParam
 	) noexcept
 	{
+		if (ImGui_ImplWin32_WndProcHandler(hWnd, msgCode, wParam, lParam))
+			return true;
+
 		switch (msgCode)
 		{
 		case WM_KEYUP:

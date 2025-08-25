@@ -60,29 +60,49 @@ namespace CMEngine::Platform::WinImpl
 
 	struct BasicShaderSet
 	{
+		ShaderSetEnum::Enum SetType = ShaderSetEnum::INVALID;
 		ShaderData VertexData;
 		ShaderData PixelData;
 		Microsoft::WRL::ComPtr<ID3D11VertexShader> pVertexShader;
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> pPixelShader;
+		Microsoft::WRL::ComPtr<ID3D11InputLayout> pInputLayout;
 
-		inline BasicShaderSet(const ShaderData& vertexData, const ShaderData& pixelData) noexcept
-			: VertexData(vertexData),
+		inline BasicShaderSet(
+			ShaderSetEnum::Enum setType,
+			const ShaderData& vertexData,
+			const ShaderData& pixelData
+		) noexcept
+			: SetType(setType),
+			  VertexData(vertexData),
 			  PixelData(pixelData)
 		{
 		}
 
-		virtual void CreateShaders(Microsoft::WRL::ComPtr<ID3D11Device> pDevice) noexcept = 0;
+		virtual void Create(Microsoft::WRL::ComPtr<ID3D11Device> pDevice) noexcept = 0;
+		virtual void Bind(Microsoft::WRL::ComPtr<ID3D11DeviceContext> pContext) noexcept = 0;
 	protected:
 		void CreateBasicShaders(Microsoft::WRL::ComPtr<ID3D11Device> pDevice) noexcept;
+		void BindBasicShaders(Microsoft::WRL::ComPtr<ID3D11DeviceContext> pContext) noexcept;
 	};
 
 	struct ShaderSetQuad : public BasicShaderSet
 	{
-		using BasicShaderSet::BasicShaderSet;
+		inline ShaderSetQuad(
+			const ShaderData& vertexData,
+			const ShaderData& pixelData
+		) noexcept
+			: BasicShaderSet(ShaderSetEnum::QUAD, vertexData, pixelData)
+		{
+		}
 
 		~ShaderSetQuad() = default;
 
-		virtual void CreateShaders(Microsoft::WRL::ComPtr<ID3D11Device> pDevice) noexcept override;
+		virtual void Create(Microsoft::WRL::ComPtr<ID3D11Device> pDevice) noexcept override;
+		virtual void Bind(Microsoft::WRL::ComPtr<ID3D11DeviceContext> pContext) noexcept override;
+
+		static constexpr D3D11_INPUT_ELEMENT_DESC S_INPUT_DESCS[] = {
+			{ "WorldPos", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		};
 	};
 	
 	class ShaderLibrary
@@ -92,6 +112,11 @@ namespace CMEngine::Platform::WinImpl
 		~ShaderLibrary() noexcept;
 	public:
 		void CreateResources(Microsoft::WRL::ComPtr<ID3D11Device> pDevice) noexcept;
+
+		[[nodiscard]] std::weak_ptr<BasicShaderSet> GetSet(ShaderSetEnum::Enum setType) noexcept;
+		void BindSet(ShaderSetEnum::Enum setType, Microsoft::WRL::ComPtr<ID3D11DeviceContext> pContext) noexcept;
+
+		inline std::vector<std::shared_ptr<BasicShaderSet>>& Sets() noexcept { return m_Sets; }
 	private:
 		void Init() noexcept;
 		void Shutdown() noexcept;
@@ -121,14 +146,23 @@ namespace CMEngine::Platform::WinImpl
 		Graphics(const Graphics& other) = delete;
 		Graphics& operator=(const Graphics& other) = delete;
 	public:
+		void Impl_NewFrame() noexcept;
+		void Impl_EndFrame() noexcept;
+
 		void Impl_Update() noexcept;
 		void Impl_Clear(ColorNorm color) noexcept;
 		void Impl_Present() noexcept;
+
+		void Impl_Draw(const void* pBuffer, const DrawDescriptor& descriptor) noexcept;
 	private:
 		void Impl_Init() noexcept;
 		void Impl_Shutdown() noexcept;
 
 		void Impl_InitPipeline() noexcept;
+		void Impl_InitImGui() noexcept;
+
+		void Impl_ShutdownPipeline() noexcept;
+		void Impl_ShutdownImGui() noexcept;
 
 		/* (Views in this context refer to RTV's and DSV's on the swap chain) */
 		void Impl_CreateViews() noexcept;
@@ -139,6 +173,8 @@ namespace CMEngine::Platform::WinImpl
 		void Impl_OnResizeCallback(ScreenResolution resolution) noexcept;
 
 		static void Impl_OnResizeThunk(ScreenResolution resolution, void* pThis) noexcept;
+
+		void Impl_GetMessages(std::vector<std::wstring>& outMessages) noexcept;
 	private:
 		ShaderLibrary m_Library;
 		Window& m_Window; /* TODO: Come up with a better solution for this... */
@@ -157,4 +193,5 @@ namespace CMEngine::Platform::WinImpl
 
 	CM_DYNAMIC_LOAD void WinImpl_Graphics_Clear(ColorNorm color);
 	CM_DYNAMIC_LOAD void WinImpl_Graphics_Present();
+	CM_DYNAMIC_LOAD void WinImpl_Graphics_Draw(const void* pBuffer, const DrawDescriptor* pDescriptor);
 }

@@ -36,9 +36,10 @@ function(SetTargetCommonWarnings target)
     target_compile_options(${target} PUBLIC ${WARNINGS})
 endfunction()
 
-# add_subdirectory("vendor/CMDep_DearImGui")
-# add_subdirectory("vendor/CMDep_yaml-cpp")
-
 add_subdirectory("vendor/submodules/spdlog")
+
+add_subdirectory("modules/CMPlatform/Core")
+add_subdirectory("modules/CMImGui")
+
 add_subdirectory("CMEngine")
 add_subdirectory("CMSandbox")

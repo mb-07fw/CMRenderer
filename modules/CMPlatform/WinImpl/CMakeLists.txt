@@ -19,6 +19,7 @@ add_library(CMPlatform_WinImpl SHARED ${PLATFORM_FILES})
 
 target_link_libraries(CMPlatform_WinImpl PRIVATE
     CMPlatform_Core
+    CMImGui
     D3D11
     d3dcompiler
     DXGI
@@ -29,11 +30,11 @@ set(SHADER_DIR "${CMAKE_SOURCE_DIR}/CMEngine/resources/shaders/")
 set(COMPILED_SHADER_DIR "${CMAKE_SOURCE_DIR}/CMEngine/resources/shaders/")
 
 target_compile_definitions(CMPlatform_WinImpl PRIVATE CM_BUILD)
-
-target_precompile_headers(CMPlatform_WinImpl PRIVATE "${ROOT_DIR}/src/CMPlatform/WinImpl_PCH.hpp")
 target_include_directories(CMPlatform_WinImpl PRIVATE ${INCLUDE_DIR} ${SRC_DIR})
 
-set(OUTPUT_DIR "${CMAKE_SOURCE_DIR}/build/$<CONFIG>/modules/CMPlatform/WinImpl/out")
+target_precompile_headers(CMPlatform_WinImpl PRIVATE "${ROOT_DIR}/src/CMPlatform/WinImpl_PCH.hpp")
+
+set(OUTPUT_DIR "${CMAKE_BINARY_DIR}/modules/CMPlatform/WinImpl/out")
 
 set_target_properties(CMPlatform_WinImpl PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_DIR}
