@@ -1,49 +1,19 @@
 #pragma once
 
-#include <array>
 #include <cstdint>
 
 namespace CMEngine::Platform
 {
-	/* NOTE: Unscoped-enum's are used for compatibility with `extern "C"` functions. */
-	struct ShaderEnum
-	{
-		enum Enum : int8_t
-		{
-			INVALID = -1,
-			VERTEX,
-			PIXEL
-		};
-	};
-
-	struct ActiveShaderEnum
-	{
-		enum Enum : int8_t
-		{
-			INVALID = -1,
-			QUAD_VS,
-			QUAD_PS
-		};
-	};
-
-	struct ShaderSetEnum
-	{
-		enum Enum : int8_t
-		{
-			INVALID = -1,
-			QUAD = 0,
-			TOTAL_SETS
-		};
-	};
-
 	/* An RGBA value normalized to [-1, 1]. */
-	struct ColorNorm
+	struct RGBANorm
 	{
-		float rgba[4];
-	};
+		inline static constexpr [[nodiscard]] RGBANorm Red() noexcept { return { 1.0f, 0.0f, 0.0f, 1.0f }; }
+		inline static constexpr [[nodiscard]] RGBANorm Green() noexcept { return { 1.0f, 0.0f, 0.0f, 1.0f }; }
+		inline static constexpr [[nodiscard]] RGBANorm Blue() noexcept { return { 1.0f, 0.0f, 0.0f, 1.0f }; }
+		inline static constexpr [[nodiscard]] RGBANorm Black() noexcept { return { 0.0f, 0.0f, 0.0f, 1.0f }; }
+		inline static constexpr [[nodiscard]] RGBANorm White() noexcept { return { 1.0f, 1.0f, 1.0f, 1.0f }; }
 
-	inline constexpr std::array<ShaderSetEnum::Enum, static_cast<size_t>(ShaderSetEnum::TOTAL_SETS)> G_IMPLEMENTED_SHADER_SETS = {
-		ShaderSetEnum::QUAD
+		float rgba[4];
 	};
 
 	struct DrawDescriptor
@@ -56,7 +26,7 @@ namespace CMEngine::Platform
 	struct GraphicsFuncTable
 	{
 		using VoidFunc = void (*)();
-		using ClearSignature = void (*)(ColorNorm clearColor);
+		using ClearSignature = void (*)(RGBANorm clearColor);
 		using DrawSignature = void (*)(const void* pBuffer, const DrawDescriptor* descriptor);
 
 		ClearSignature Clear = nullptr;
@@ -81,7 +51,7 @@ namespace CMEngine::Platform
 		IGraphics(const GraphicsFuncTable& funcTable) noexcept;
 		virtual ~IGraphics() = default;
 	public:
-		void Clear(ColorNorm color) noexcept;
+		void Clear(RGBANorm color) noexcept;
 		void Present() noexcept;
 
 		void Draw(const void* pBuffer, const DrawDescriptor* pDescriptor) noexcept;

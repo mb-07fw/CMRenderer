@@ -13,18 +13,23 @@ set(PLATFORM_FILES
     "${SRC_DIR}/CMPlatform/WinImpl_Platform.cpp"
     "${SRC_DIR}/CMPlatform/WinImpl_Window.cpp"
     "${SRC_DIR}/CMPlatform/WinImpl_Graphics.cpp"
+    "${SRC_DIR}/CMPlatform/WinImpl_ShaderLibrary.cpp"
+    "${SRC_DIR}/CMPlatform/WinImpl_ShaderLibrary.hpp"
 )
 
 add_library(CMPlatform_WinImpl SHARED ${PLATFORM_FILES})
 
-target_link_libraries(CMPlatform_WinImpl PRIVATE
-    CMPlatform_Core
-    CMImGui
-    D3D11
-    d3dcompiler
-    DXGI
-    dxguid
+target_link_libraries(CMPlatform_WinImpl
+    PUBLIC CMPlatform_Core
+    PRIVATE CMImGui
+    PRIVATE D3D11
+    PRIVATE d3dcompiler
+    PRIVATE DXGI
+    PRIVATE dxguid
 )
+
+get_target_property(defs CMShadersConfig INTERFACE_COMPILE_DEFINITIONS)
+message(STATUS "CMShadersConfig defs = ${defs}")
 
 set(SHADER_DIR "${CMAKE_SOURCE_DIR}/CMEngine/resources/shaders/")
 set(COMPILED_SHADER_DIR "${CMAKE_SOURCE_DIR}/CMEngine/resources/shaders/")

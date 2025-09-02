@@ -30,20 +30,12 @@ namespace CMEngine::Platform::WinImpl
 		return gP_PlatformInstance->Impl_Window().Impl_ShouldClose();
 	}
 
-	CM_DYNAMIC_LOAD ScreenResolution WinImpl_Window_Resolution()
-	{
-		WinImpl_Platform_EnforceInstantiated();
-
-		return gP_PlatformInstance->Impl_Window().Impl_Resolution();
-	}
-
 	Window::Window() noexcept
 		: IWindow(
 			WindowFuncTable(
 				WinImpl_Window_Update,
 				WinImpl_Window_IsRunning,
-				WinImpl_Window_ShouldClose,
-				WinImpl_Window_Resolution
+				WinImpl_Window_ShouldClose
 		    )
 		  )
 	{
@@ -99,16 +91,6 @@ namespace CMEngine::Platform::WinImpl
 		return false;
 	}
 
-	[[nodiscard]] ScreenResolution Window::Impl_Resolution() noexcept
-	{
-		return ScreenResolution{
-			Float2(
-				static_cast<float>(m_ClientArea.right),
-				static_cast<float>(m_ClientArea.bottom)
-			)
-		};
-	}
-
 	void Window::Impl_Init() noexcept
 	{
 		BOOL succeeded = GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, nullptr, &mP_HINSTANCE);
@@ -139,11 +121,13 @@ namespace CMEngine::Platform::WinImpl
 
 		constexpr long WindowStyle = WS_OVERLAPPEDWINDOW;
 		
-		/* TODO: Keep separate variables for client size and actual window size. */
 		m_ClientArea.right = 800;
 		m_ClientArea.bottom = 600;
 
-		succeeded = AdjustWindowRect(&m_ClientArea, WindowStyle, false);
+		m_WindowArea = m_ClientArea;
+
+		/* Adjust window area for desired client area. */
+		succeeded = AdjustWindowRect(&m_WindowArea, WindowStyle, false);
 
 		if (!succeeded)
 			spdlog::critical("(WinImpl_Window) Internal error: Failed to adjust to desired client area.");
@@ -190,7 +174,7 @@ namespace CMEngine::Platform::WinImpl
 	void Window::Impl_NotifyOnResize() noexcept
 	{
 		for (const WindowCallbackOnResize& callback : m_CallbacksOnResize)
-			callback.pCallback(Impl_Resolution(), callback.pUserData);
+			callback.pCallback(Impl_ClientResolution(), callback.pUserData);
 	}
 
 	[[nodiscard]] LRESULT CALLBACK Window::WndProcSetup(
@@ -256,7 +240,12 @@ namespace CMEngine::Platform::WinImpl
 			return S_OK;
 		case WM_SIZE:
 			if (!GetClientRect(mP_HWND, &m_ClientArea))
-				spdlog::critical("(WinImpl_Window) Internal error: Failed to retrieve window client area after resizing.");
+				spdlog::critical("(WinImpl_Window) Internal error: Failed to retrieve client area after resizing.");
+			/* NOTE: To get the visible window bounds, not including the invisible resize borders,
+			 *         use DwmGetWindowAttribute, specifying DWMWA_EXTENDED_FRAME_BOUNDS. Unlike the
+			 *         Window Rect, the DWM Extended Frame Bounds are not adjusted for DPI. */
+			else if (!GetWindowRect(mP_HWND, &m_WindowArea))
+				spdlog::critical("(WinImpl_Window) Internal error: Failed to retrieve window area after resizing.");
 
 			Impl_NotifyOnResize();
 			return S_OK;

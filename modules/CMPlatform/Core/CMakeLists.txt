@@ -1,4 +1,8 @@
 # CMPlatform_Core CMakeLists.txt
+
+# TODO: Make CMPlatform_Core a shared library which is load-time linked against by both CMSandbox and CMPlatform_WinImpl to enable safer
+#         polymorphism as the .lib approach for both sides allowed different vtable symbols for types defined in CMPlatform_Core.
+
 set(PARENT_DIR "${CMAKE_SOURCE_DIR}/modules/CMPlatform")
 set(PARENT_BINARY_DIR "${CMAKE_BINARY_DIR}/modules/CMPlatform")
 set(ROOT_DIR "${PARENT_DIR}/Core")
@@ -28,7 +32,9 @@ add_subdirectory(
     "${CMAKE_BINARY_DIR}/modules/CMShaders"
 )
 
+# Depend on CMShaders target, and inherit CMShaders defines.
 add_dependencies(CMPlatform_Core CMShaders)
+target_link_libraries(CMPlatform_Core PUBLIC CMShadersConfig)
 
 target_link_libraries(CMPlatform_Core PUBLIC spdlog::spdlog)
 
@@ -38,14 +44,12 @@ target_include_directories(CMPlatform_Core
     PUBLIC "${CMAKE_SOURCE_DIR}/vendor/submodules/spdlog/include"
     PRIVATE "${SRC_DIR}"
 )
+
 target_compile_definitions(CMPlatform_Core
     PRIVATE CM_BUILD
     PUBLIC UNICODE
     PUBLIC _UNICODE
-    PUBLIC CM_PLATFORM_CORE_PATH_SHADER_DIRECTORY="${CMAKE_SOURCE_DIR}/modules/CMShaders/out"
-    PUBLIC CM_PLATFORM_CORE_PATH_SHADER_DIRECTORYW=L"${CMAKE_SOURCE_DIR}/modules/CMShaders/out"
-    PUBLIC CM_PLATFORM_CORE_PATH_COMPILED_SHADER_DIRECTORY="${CMAKE_BINARY_DIR}/modules/CMShaders/out"
-    PUBLIC CM_PLATFORM_CORE_PATH_COMPILED_SHADER_DIRECTORYW=L"${CMAKE_BINARY_DIR}/modules/CMShaders/out"
+    PUBLIC $<$<CONFIG:Debug>:CM_PLATFORM_DEBUG=1>
 )
 
 set(OUTPUT_DIR "${CMAKE_SOURCE_DIR}/build/$<CONFIG>/modules/CMPlatform/Core/out")
@@ -73,7 +77,7 @@ if (WIN32)
     )
 
     target_compile_definitions(CMPlatform_Core PRIVATE
-        CM_PLATFORM_WIN_IMPL_PATH="$<TARGET_FILE:CMPlatform_WinImpl>"
-        CM_PLATFORM_WIN_IMPL_PATHW=L"$<TARGET_FILE:CMPlatform_WinImpl>"
+        CM_PLATFORM_PATH_WIN_IMPL_DLL="$<TARGET_FILE:CMPlatform_WinImpl>"
+        CM_PLATFORM_PATH_WIN_IMPL_DLLW=L"$<TARGET_FILE:CMPlatform_WinImpl>"
     )
 endif()

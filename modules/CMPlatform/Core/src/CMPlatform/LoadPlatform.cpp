@@ -12,7 +12,7 @@ namespace CMEngine::Platform
 
 	[[nodiscard]] void Win32LoadPlatform(IPlatform*& pPlatform) noexcept
 	{
-		sP_PlatformWin = LoadLibraryEx(CM_PLATFORM_WIN_IMPL_PATHW, nullptr, 0);
+		sP_PlatformWin = LoadLibraryEx(CM_PLATFORM_PATH_WIN_IMPL_DLLW, nullptr, 0);
 	
 		if (sP_PlatformWin == nullptr)
 		{

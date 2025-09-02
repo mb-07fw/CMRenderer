@@ -59,7 +59,7 @@ else()
             endforeach()
         else()
             message(FATAL_ERROR
-                "FXC (Effect-Compiler Tool) not found in Program Files (x86). "
+                "FXC (Effect-Compiler Tool) not found in Program Files (x86). Compiled shaders will not be present."
                 "You may use `-DFXC_EXECUTABLE_USER=\"...\" as a supplimentary path to a custom x64 FXC install instead."
             )
         endif()
@@ -126,4 +126,13 @@ set_target_properties(CMShaders PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_DIR}
     ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_DIR}
     LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_DIR}
+)
+
+add_library(CMShadersConfig INTERFACE)
+
+target_compile_definitions(CMShadersConfig INTERFACE
+    CM_PLATFORM_PATH_SHADER_DIRECTORY="${ROOT_DIR}"
+    CM_PLATFORM_PATH_SHADER_DIRECTORYW=L"${ROOT_DIR}"
+    CM_PLATFORM_PATH_COMPILED_SHADER_DIRECTORY="${OUTPUT_DIR}"
+    CM_PLATFORM_PATH_COMPILED_SHADER_DIRECTORYW=L"${OUTPUT_DIR}"
 )

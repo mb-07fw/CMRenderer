@@ -8,6 +8,9 @@
 
 namespace CMEngine::Platform::WinImpl
 {
+	inline constexpr [[nodiscard]] Rect RECTToRect(RECT) noexcept;
+	inline constexpr [[nodiscard]] Float2 RECTToFloat2(RECT) noexcept;
+
 	struct WindowAction
 	{
 		/* Unscoped enum is used for `extern "C"` compatibility. */
@@ -40,7 +43,18 @@ namespace CMEngine::Platform::WinImpl
 		inline [[nodiscard]] bool Impl_IsRunning() const noexcept { return m_Running; }
 		inline [[nodiscard]] bool Impl_ShouldClose() const noexcept { return !m_Running; }
 		inline [[nodiscard]] HWND Impl_HWND() noexcept { return mP_HWND; }
-		[[nodiscard]] ScreenResolution Impl_Resolution() noexcept;
+
+		/* Returns the width (x) and height (y) of the window's current client area. */
+		inline [[nodiscard]] Float2 Impl_ClientResolution() const noexcept { return RECTToFloat2(m_ClientArea); }
+
+		/* Returns the width (x) and height (y) of the window's current area (bounding box). */
+		inline [[nodiscard]] Float2 Impl_WindowResolution() const noexcept { return RECTToFloat2(m_WindowArea); }
+
+		/* Returns the bounding box of the window's current client area (`left` and `top` are 0.0f). */
+		inline [[nodiscard]] Rect Impl_ClientArea() const noexcept { return RECTToRect(m_ClientArea); }
+
+		/* Returns the bounding box of the window's current area (`left` and `top` are 0.0f). */
+		inline [[nodiscard]] Rect Impl_WindowArea() const noexcept { return RECTToRect(m_WindowArea); }
 	private:
 		void Impl_Init() noexcept;
 		void Impl_Shutdown() noexcept;
@@ -73,11 +87,29 @@ namespace CMEngine::Platform::WinImpl
 		HWND mP_HWND = nullptr;
 		bool m_Running = false;
 		RECT m_ClientArea = {};
+		RECT m_WindowArea = {};
 		std::vector<WindowCallbackOnResize> m_CallbacksOnResize;
 	};
 
 	CM_DYNAMIC_LOAD void WinImpl_Window_Update();
 	CM_DYNAMIC_LOAD bool WinImpl_Window_IsRunning();
 	CM_DYNAMIC_LOAD bool WinImpl_Window_ShouldClose();
-	CM_DYNAMIC_LOAD ScreenResolution WinImpl_Window_Resolution();
+
+	inline constexpr [[nodiscard]] Rect RECTToRect(RECT rect) noexcept
+	{
+		return Rect(
+			static_cast<float>(rect.left),
+			static_cast<float>(rect.top),
+			static_cast<float>(rect.right),
+			static_cast<float>(rect.bottom)
+		);
+	}
+
+	inline constexpr [[nodiscard]] Float2 RECTToFloat2(RECT rect) noexcept
+	{
+		return Float2(
+			static_cast<float>(rect.right),
+			static_cast<float>(rect.bottom)
+		);
+	}
 }

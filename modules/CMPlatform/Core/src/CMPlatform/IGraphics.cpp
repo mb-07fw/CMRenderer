@@ -7,7 +7,7 @@ namespace CMEngine::Platform
 	{
 	}
 
-	void IGraphics::Clear(ColorNorm color) noexcept
+	void IGraphics::Clear(RGBANorm color) noexcept
 	{
 		m_FuncTable.Clear(color);
 	}

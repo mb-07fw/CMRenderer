@@ -4,292 +4,10 @@
 
 namespace CMEngine::Platform::WinImpl
 {
-#pragma region ShaderLibrary
-	void BasicShaderSet::CreateBasicShaders(Microsoft::WRL::ComPtr<ID3D11Device> pDevice) noexcept
-	{
-		HRESULT hResult = pDevice->CreateVertexShader(
-			VertexData.pBytecode->GetBufferPointer(),
-			VertexData.pBytecode->GetBufferSize(),
-			nullptr,
-			pVertexShader.GetAddressOf()
-		);
-
-		if (FAILED(hResult))
-			spdlog::critical("(WinImpl_BasicShaderSet) Internal error: Failed to create vertex shader. Error code: `{}`",
-				hResult
-			);
-
-		hResult = pDevice->CreatePixelShader(
-			PixelData.pBytecode->GetBufferPointer(),
-			PixelData.pBytecode->GetBufferSize(),
-			nullptr,
-			pPixelShader.GetAddressOf()
-		);
-
-		if (FAILED(hResult))
-			spdlog::critical("(WinImpl_BasicShaderSet) Internal error: Failed to create pixel shader. Error code: `{}`",
-				hResult
-			);
-	}
-
-	void BasicShaderSet::BindBasicShaders(Microsoft::WRL::ComPtr<ID3D11DeviceContext> pContext) noexcept
-	{
-		pContext->VSSetShader(pVertexShader.Get(), nullptr, 0);
-		pContext->PSSetShader(pPixelShader.Get(), nullptr, 0);
-	}
-
-	void ShaderSetQuad::Create(Microsoft::WRL::ComPtr<ID3D11Device> pDevice) noexcept
-	{
-		CreateBasicShaders(pDevice);
-
-		HRESULT hResult = pDevice->CreateInputLayout(
-			S_INPUT_DESCS,
-			std::size(S_INPUT_DESCS),
-			VertexData.pBytecode->GetBufferPointer(),
-			VertexData.pBytecode->GetBufferSize(),
-			pInputLayout.GetAddressOf()
-		);
-		
-		if (FAILED(hResult))
-			spdlog::critical("(ShaderSetQuad) Internal error: Failed to create input layout. Error code: `{}`",
-				hResult
-			);
-	}
-
-	void ShaderSetQuad::Bind(Microsoft::WRL::ComPtr<ID3D11DeviceContext> pContext) noexcept
-	{
-		pContext->IASetInputLayout(pInputLayout.Get());
-		BindBasicShaders(pContext);
-	}
-
-	ShaderLibrary::ShaderLibrary() noexcept
-	{
-		Init();
-	}
-
-	ShaderLibrary::~ShaderLibrary() noexcept
-	{
-		Shutdown();
-	}
-
-	void ShaderLibrary::CreateResources(Microsoft::WRL::ComPtr<ID3D11Device> pDevice) noexcept
-	{
-		for (const std::shared_ptr<BasicShaderSet>& pSet : m_Sets)
-			pSet->Create(pDevice);
-	}
-
-	[[nodiscard]] std::weak_ptr<BasicShaderSet> ShaderLibrary::GetSet(ShaderSetEnum::Enum setType) noexcept
-	{
-		if (setType == ShaderSetEnum::INVALID)
-		{
-			spdlog::warn("(WinImpl_ShaderLibrary) Internal warning: Attempted to retrieve a shader set with the ShaderSetEnum::INVALID enum. Nullptr is returned.");
-			return std::weak_ptr<BasicShaderSet>();
-		}
-
-		for (const std::shared_ptr<BasicShaderSet>& pSet : m_Sets)
-			if (pSet->SetType == setType)
-				return pSet;
-
-		spdlog::error("(WinImpl_ShaderLibrary) Internal error: Failed to find a matching shader set for the provided ShaderSetEnum. Enum: {}", 
-			static_cast<size_t>(setType)
-		);
-
-		return std::weak_ptr<BasicShaderSet>();
-	}
-
-	void ShaderLibrary::BindSet(ShaderSetEnum::Enum setType, Microsoft::WRL::ComPtr<ID3D11DeviceContext> pContext) noexcept
-	{
-		std::weak_ptr<BasicShaderSet> pWeakSet = GetSet(setType);
-
-		if (pWeakSet.expired())
-			spdlog::critical("(WinImpl_ShaderLibrary) Internal error: Retrieved shader set is expired.");
-
-		std::shared_ptr<BasicShaderSet> pBasicSet = pWeakSet.lock();
-		pBasicSet->Bind(pContext);
-	}
-
-	void ShaderLibrary::Init() noexcept
-	{
-		LoadAll();
-	}
-
-	void ShaderLibrary::Shutdown() noexcept
-	{
-	}
-
-	void ShaderLibrary::LoadAll() noexcept
-	{
-		std::vector<ShaderData> data;
-
-		LoadShaders(data);
-		CreateShaderSets(data);
-	}
-
-	void ShaderLibrary::LoadShaders(std::vector<ShaderData>& outData) noexcept
-	{
-		std::filesystem::path compiledShaderDirectory(CM_PLATFORM_CORE_PATH_COMPILED_SHADER_DIRECTORY);
-
-		if (!std::filesystem::exists(compiledShaderDirectory))
-			spdlog::critical("(WinImpl_ShaderLibrary) Internal error: Compiled shader directory doesn't exist: `{}`", 
-				CM_PLATFORM_CORE_PATH_COMPILED_SHADER_DIRECTORY
-			);
-		else if (!std::filesystem::is_directory(compiledShaderDirectory))
-			spdlog::critical("(WinImpl_ShaderLibrary) Internal error: Compiled shader directory isn't a directory: `{}`",
-				CM_PLATFORM_CORE_PATH_COMPILED_SHADER_DIRECTORY
-			);
-
-		for (const auto& entry : std::filesystem::directory_iterator(compiledShaderDirectory))
-		{
-			const std::filesystem::path& entryPath = entry.path();
-			std::string entryStr = entryPath.generic_string();
-
-			if (entryPath.extension() != ".cso")
-			{
-				spdlog::warn(
-					"(WinImpl_ShaderLibrary) Internal warning: A file with an extension other than .cso is in compiled "
-					"shader directory. Skipping file: `{}`",
-					entryStr
-				);
-
-				continue;
-			}
-
-			const std::wstring& entryWStr = entryPath.native();
-
-			std::filesystem::path fileNamePath = entryPath.filename();
-
-			const std::wstring& fileNameWStr = fileNamePath.native();
-			std::string fileNameStr = fileNamePath.generic_string();
-
-			auto it = m_ShaderNameMap.find(fileNameWStr);
-
-			if (it == m_ShaderNameMap.end())
-				spdlog::critical("(WinImpl_ShaderLibrary) Internal error: Failed to find a match for compiled shader name: `{}`",
-					fileNameStr
-				);
-
-			ActiveShaderEnum::Enum activeShaderType = it->second;
-			ShaderSetEnum::Enum correspondingSetType = ActiveToCorrespondingType(activeShaderType);
-
-			ShaderEnum::Enum shaderType = ShaderEnum::INVALID;
-
-			constexpr size_t FlagOffsetFromExtension = 6;
-
-			size_t entryLength = entryWStr.length();
-			size_t flagOffset = entryLength - FlagOffsetFromExtension;
-
-			std::wstring_view flagWStr(entryWStr.data() + flagOffset, 2);
-			std::string_view flagStr(entryStr.data() + flagOffset, 2);
-
-			if (flagWStr == S_VERTEX_SHADER_FLAG)
-				shaderType = ShaderEnum::VERTEX;
-			else if (flagWStr == S_PIXEL_SHADER_FLAG)
-				shaderType = ShaderEnum::PIXEL;
-			else
-				spdlog::critical("(WinImpl_ShaderLibrary) Internal error: Compiled shader has invalid flag: `{}`. Compiled shader: `{}`",
-					flagStr,
-					entryStr
-				);
-
-			Microsoft::WRL::ComPtr<ID3DBlob> pShaderBytecode;
-			HRESULT hResult = D3DReadFileToBlob(entryWStr.data(), pShaderBytecode.GetAddressOf());
-
-			if (FAILED(hResult))
-				spdlog::critical("(WinImpl_ShaderLibrary) Internal error: Failed to read compiled shader bytecode. Error code: `{}` Shader: `{}`",
-					hResult,
-					entryStr
-				);
-			else if (pShaderBytecode == nullptr)
-				spdlog::critical("(WinImpl_ShaderLibrary) Internal error: Read bytecode of shader is nullptr: `{}`",
-					entryStr
-				);
-			
-			outData.emplace_back(shaderType, activeShaderType, correspondingSetType, fileNameWStr, pShaderBytecode);
-		}
-	}
-
-	void ShaderLibrary::CreateShaderSets(const std::vector<ShaderData>& data) noexcept
-	{
-		for (ShaderSetEnum::Enum setType : G_IMPLEMENTED_SHADER_SETS)
-		{
-			const ShaderData* pVertexData = nullptr;
-			const ShaderData* pPixelData = nullptr;
-
-			for (const ShaderData& currentData : data)
-			{
-				if (setType != currentData.CorrespondingSet)
-					continue;
-
-				/* To convert name to utf-8. */
-				std::filesystem::path namePath(currentData.Name);
-
-				std::string nameStr = namePath.generic_string();
-
-				switch (currentData.Type)
-				{
-				case ShaderEnum::VERTEX:
-					if (pVertexData != nullptr)
-						spdlog::critical("(WinImpl_ShaderLibrary) Internal error: Found duplicate vertex-type data for the same ShaderSetType. Set: `{}`, Name: `{}`",
-							static_cast<size_t>(currentData.CorrespondingSet),
-							nameStr
-						);
-
-					pVertexData = &currentData;
-					break;
-				case ShaderEnum::PIXEL:
-					if (pPixelData != nullptr)
-						spdlog::critical("(WinImpl_ShaderLibrary) Internal error: Found duplicate pixel-type data for the same ShaderSetType. Set: `{}`, Name: `{}`",
-							static_cast<size_t>(currentData.CorrespondingSet),
-							nameStr
-						);
-
-					pPixelData = &currentData;
-					break;
-				case ShaderEnum::INVALID: [[fallthrough]];
-				default:
-					spdlog::critical("(WinImpl_ShaderLibrary) Internal error: Data has an invalid ShaderType. Set: `{}` Name: `{}`",
-						static_cast<size_t>(currentData.CorrespondingSet),
-						nameStr
-					);
-				}
-			}
-
-			if (pVertexData == nullptr)
-			{
-				spdlog::critical("(WinImpl_ShaderLibrary) Internal error: Failed to find a vertex-type ShaderData for the current implement ShaderSetType. Set: `{}`",
-					static_cast<size_t>(setType)
-				);
-
-				std::exit(-1);
-			}
-			else if (pPixelData == nullptr)
-			{
-				spdlog::critical("(WinImpl_ShaderLibrary) Internal error: Failed to find a pixel-type ShaderData for the current implement ShaderSetType. Set: `{}`",
-					static_cast<size_t>(setType)
-				);
-
-				std::exit(-1);
-			}
-
-			switch (setType)
-			{
-			case ShaderSetEnum::QUAD:
-				m_Sets.emplace_back(std::make_shared<ShaderSetQuad>(*pVertexData, *pPixelData));
-				break;
-			case ShaderSetEnum::INVALID: [[fallthrough]];
-			default:
-				spdlog::critical("(WinImpl_ShaderLibrary) Internal error: Failed to construct a shader set for the current ShaderSetType. Set: `{}`",
-					static_cast<size_t>(setType)
-				);
-			}
-		}
-	}
-#pragma endregion
-
 	extern WinImpl_Platform* gP_PlatformInstance;
 	extern void WinImpl_Platform_EnforceInstantiated();
 
-	CM_DYNAMIC_LOAD void WinImpl_Graphics_Clear(ColorNorm color)
+	CM_DYNAMIC_LOAD void WinImpl_Graphics_Clear(RGBANorm color)
 	{
 		WinImpl_Platform_EnforceInstantiated();
 
@@ -312,7 +30,7 @@ namespace CMEngine::Platform::WinImpl
 
 	Graphics::Graphics(Window& window) noexcept
 		: IGraphics(
-			GraphicsFuncTable(
+		    GraphicsFuncTable(
 				WinImpl_Graphics_Clear,
 				WinImpl_Graphics_Present,
 				WinImpl_Graphics_Draw
@@ -330,391 +48,170 @@ namespace CMEngine::Platform::WinImpl
 		Impl_Shutdown();
 	}
 
-	void Graphics::Impl_NewFrame() noexcept
-	{
-		ImGui_ImplDX11_NewFrame();
-		ImGui_ImplWin32_NewFrame();
-		ImGui::NewFrame();
-	}
-
-	void Graphics::Impl_EndFrame() noexcept
-	{
-		ImGui::EndFrame();
-	}
-
 	void Graphics::Impl_Update() noexcept
 	{
-		ColorNorm rgba = { 0.0f, 0.0f, 0.0f, 0.0f };
+		/* TODO: Define an interface for a shader library based on WinImpl_ShaderLibrary in CMPlatform_Core.
+		 *		 Move all clearing, drawing, and presenting to CMEngine side.
+		 *         - Provide an abstraction for creating vertex buffers. (Worry about managing them later)
+		 */
+		ComPtr<ID3D11Buffer> pVBuffer;
 
-		m_Library.BindSet(ShaderSetEnum::QUAD, mP_Context);
-
-		Impl_NewFrame();
-		Impl_Clear(rgba);
-
-		constexpr float Vertices[] = {
-			 0.5f, -0.5f,
-			 0.5f,  0.5f,
-			-0.5f, -0.5f
+		Float2 vertices[] = {
+			{  0.0f,  0.5f },
+			{  0.5f, -0.5f },
+			{ -0.5f, -0.5f }
 		};
 
-		constexpr DrawDescriptor Descriptor = {
-			.TotalVertices = static_cast<uint32_t>(std::size(Vertices) / 2),
-			.VertexByteStride = sizeof(decltype(Vertices[0])) * 2
-		};
+		CD3D11_BUFFER_DESC vbDesc(
+			sizeof(vertices),
+			D3D11_BIND_VERTEX_BUFFER
+			);
 
-		Impl_Draw(Vertices, Descriptor);
-	
-		if (ImGui::Begin("Window", nullptr, ImGuiWindowFlags_None))
-			ImGui::Text("This is text!");
+		D3D11_SUBRESOURCE_DATA vbSubData = {};
+		vbSubData.pSysMem = vertices;
 
-		ImGui::End();
+		HRESULT hr = mP_Device->CreateBuffer(&vbDesc, &vbSubData, &pVBuffer);
+
+		if (FAILED(hr))
+			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create vertex buffer. Erroe code: {}", hr);
+
+		UINT stride = sizeof(Float2);
+		UINT offset = 0;
+
+		mP_Context->IASetVertexBuffers(0, 1, pVBuffer.GetAddressOf(), &stride, &offset);
+
+		Impl_Clear(RGBANorm::Black());
+
+		mP_Context->Draw(std::size(vertices), 0);
 
 		Impl_Present();
-		Impl_EndFrame();
 	}
 
-	void Graphics::Impl_Clear(ColorNorm color) noexcept
+	void Graphics::Impl_Clear(RGBANorm color) noexcept
 	{
 		mP_Context->ClearRenderTargetView(mP_RTV.Get(), color.rgba);
-		mP_Context->ClearDepthStencilView(mP_DSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
 	void Graphics::Impl_Present() noexcept
 	{
-		ImGui::Render();
+		HRESULT hr = mP_SwapChain->Present(m_PresentSyncInterval, m_PresentFlags);
 
-		ImGuiIO& io = ImGui::GetIO();
-
-		// Update and Render additional Platform Windows
-		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		if (!FAILED(hr))
 		{
-			ImGui::UpdatePlatformWindows();
-			ImGui::RenderPlatformWindowsDefault();
+			mP_Context->OMSetRenderTargets(1, mP_RTV.GetAddressOf(), nullptr);
+			return;
 		}
 
-		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-		mP_SwapChain->Present(m_PresentSyncInterval, m_PresentFlags);
+		if (hr == DXGI_ERROR_DEVICE_REMOVED)
+			spdlog::critical("(WinImpl_Graphics) Internal error: Device removed. Reason: {}", mP_Device->GetDeviceRemovedReason());
+		else
+			spdlog::critical("(WinImpl_Graphics) Internal error: Errer occured after presenting. Error code: {}", hr);
 
-		Impl_BindViews();
+		if (mP_InfoQueue->GetNumStoredMessages(DXGI_DEBUG_ALL) == 0)
+			return;
+
+		spdlog::warn("(WinImpl_Graphics) Internal warning: Debug messages generated after presenting.");
 	}
 
 	void Graphics::Impl_Draw(const void* pBuffer, const DrawDescriptor& descriptor) noexcept
 	{
-		Microsoft::WRL::ComPtr<ID3D11Buffer> pVertexBuffer;
-
-		CD3D11_BUFFER_DESC vbDesc(
-			descriptor.VertexByteStride * descriptor.TotalVertices,
-			D3D11_BIND_VERTEX_BUFFER
-		);
-
-		D3D11_SUBRESOURCE_DATA vbSubData = {};
-		vbSubData.pSysMem = pBuffer;
-
-		HRESULT hResult = mP_Device->CreateBuffer(&vbDesc, &vbSubData, pVertexBuffer.GetAddressOf());
-
-		if (FAILED(hResult))
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create vertex buffer.");
-
-		UINT stride = descriptor.VertexByteStride;
-		UINT offset = 0;
-
-		mP_Context->IASetVertexBuffers(0, 1, pVertexBuffer.GetAddressOf(), &stride, &offset);
-
-		mP_Context->Draw(descriptor.TotalVertices, descriptor.StartVertexLocation);
-
-		if (mP_InfoQueue->GetNumStoredMessages() == 0)
-			return;
-
-		std::vector<std::wstring> messages;
-		Impl_GetMessages(messages);
-
-		for (const std::wstring& msg : messages)
-			std::wcout << L"(WinImpl_Graphics) Internal error: Debug message generated afer drawing: " <<
-				msg << L'\n';
-
-		spdlog::critical("(WinImpl_Graphics) Internal error: Debug messages generated after drawing.");
 	}
 
-#pragma region State Management
 	void Graphics::Impl_Init() noexcept
 	{
-		/* TODO: Provide interface for platform specific ImGui context and provide context to CMEngine.dll. (include ImGui in CMPlatform_Core) */
-		Impl_InitPipeline();
-		Impl_InitImGui();
+		DXGI_SWAP_CHAIN_DESC scDesc = {};
+		scDesc.BufferDesc.Width = 0;
+		scDesc.BufferDesc.Height = 0;
+		scDesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+		scDesc.BufferDesc.RefreshRate.Numerator = 0;
+		scDesc.BufferDesc.RefreshRate.Denominator = 0;
+		scDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+		scDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+		scDesc.SampleDesc.Count = 1; // Count 1 and Quality 0 disables anti-aliasing.
+		scDesc.SampleDesc.Quality = 0;
+		scDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		scDesc.BufferCount = 2;
+		scDesc.OutputWindow = m_Window.Impl_HWND();
+		scDesc.Windowed = true;
+		scDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+		scDesc.Flags = 0;
 
-		m_Library.CreateResources(mP_Device);
+		UINT flags = D3D11_CREATE_DEVICE_SINGLETHREADED;
 
+#ifdef CM_PLATFORM_DEBUG
+		flags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+
+		HRESULT hr = D3D11CreateDeviceAndSwapChain(
+			nullptr,
+			D3D_DRIVER_TYPE_HARDWARE,
+			nullptr,
+			flags,
+			nullptr,
+			0,
+			D3D11_SDK_VERSION,
+			&scDesc,
+			&mP_SwapChain,
+			&mP_Device,
+			nullptr,
+			&mP_Context
+		);
+
+		if (FAILED(hr))
+			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create device and swap chain. Error code: {}", hr);
+
+		HMODULE pDxgiDebugModule = GetModuleHandleW(L"Dxgidebug.dll");
+
+		if (pDxgiDebugModule == nullptr)
+		{
+			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to get Dxgidebug.dll module.");
+			std::exit(-1);
+		}
+
+		using GetDXGIInfoQueueFunc = HRESULT(*)(REFIID, void**);
+		GetDXGIInfoQueueFunc pDXGIGetDebugInterfaceFunc = reinterpret_cast<GetDXGIInfoQueueFunc>(GetProcAddress(pDxgiDebugModule, "DXGIGetDebugInterface"));
+
+		hr = pDXGIGetDebugInterfaceFunc(IID_PPV_ARGS(&mP_InfoQueue));
+
+		if (FAILED(hr))
+			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to get DXGI info queue. Error code: {}", hr);
+
+		hr = pDXGIGetDebugInterfaceFunc(IID_PPV_ARGS(&mP_DebugInterface));
+
+		if (FAILED(hr))
+			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to get DXGIDebug interface. Error code: {}", hr);
+		
+		m_ShaderLibrary.CreateShaderSets(mP_Device);
+
+		Impl_CreateViews();
 		Impl_BindViews();
 
-		spdlog::info("(WinImpl_Graphics) Graphics Init!");
+		Impl_SetViewport();
+
+		m_ShaderLibrary.BindSet(SHADER_SET_TYPE_QUAD, mP_Context);
 	}
 
 	void Graphics::Impl_Shutdown() noexcept
 	{
-		Impl_ShutdownImGui();
-
-		spdlog::info("(WinImpl_Graphics) Graphics Shutdown!");
-	}
-
-	void Graphics::Impl_InitPipeline() noexcept
-	{
-		D3D_FEATURE_LEVEL succeededLevel;
-		HRESULT hResult = S_OK;
-
-		hResult = D3D11CreateDevice(
-			nullptr,
-			D3D_DRIVER_TYPE_HARDWARE,
-			nullptr,
-			D3D11_CREATE_DEVICE_DEBUG | D3D11_CREATE_DEVICE_SINGLETHREADED,
-			nullptr,
-			0,
-			D3D11_SDK_VERSION,
-			mP_Device.GetAddressOf(),
-			&succeededLevel,
-			mP_Context.GetAddressOf()
-		);
-
-		if (FAILED(hResult))
-		{
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create device. Error code: {}", hResult);
-			std::exit(-1);
-		}
-		else if (succeededLevel < D3D_FEATURE_LEVEL_11_0)
-		{
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to match D3D11_1 feature level. Level: {}", static_cast<long>(succeededLevel));
-			std::exit(-1);
-		}
-
-		hResult = mP_Device->QueryInterface(IID_PPV_ARGS(mP_InfoQueue.GetAddressOf()));
-
-		if (FAILED(hResult))
-		{
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to get DXGI info queue. Error code: {}", hResult);
-			std::exit(-1);
-		}
-
-		Microsoft::WRL::ComPtr<IDXGIDevice> pDXGIDevice = nullptr;
-		hResult = mP_Device.As(&pDXGIDevice);
-
-		if (FAILED(hResult))
-		{
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to get DXGI interface from device. Error code: {}", hResult);
-			std::exit(-1);
-		}
-
-		Microsoft::WRL::ComPtr<IDXGIAdapter> pDXGIAdapter = nullptr;
-		hResult = pDXGIDevice->GetAdapter(&pDXGIAdapter);
-
-		if (FAILED(hResult))
-		{
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to get DXGI adapter interface from DXGI device. Error code: {}", hResult);
-			std::exit(-1);
-		}
-
-		hResult = pDXGIAdapter->GetParent(IID_PPV_ARGS(&mP_Factory));
-
-		if (FAILED(hResult))
-		{
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to get IDXGIFactory2 interface from DXGI adapter interface. Error code: {}", hResult);
-			std::exit(-1);
-		}
-
-		BOOL allowTearing = FALSE;
-		mP_Factory->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing));
-
-		UINT swapChainFlags = 0;
-		if (allowTearing)
-		{
-			swapChainFlags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
-
-			m_PresentSyncInterval = S_PRESENT_SYNC_INTERVAL_TEARING;
-			m_PresentFlags = DXGI_PRESENT_ALLOW_TEARING;
-		}
-
-		DXGI_SWAP_CHAIN_DESC1 desc = {};
-		desc.Width = 0;
-		desc.Height = 0;
-		desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		desc.Stereo = false; /* Don't use steroscopic. */
-		desc.SampleDesc.Count = 1;
-		desc.SampleDesc.Quality = 0;
-		desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT;
-		desc.BufferCount = 2;
-		desc.Scaling = DXGI_SCALING_STRETCH;
-		desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; /* Use over standard _DISCARD for higher performance and compatibility. */
-		desc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED; /* Unspecified as the window itself needs to be opaque for CreateSwapChainForHwnd. */
-		desc.Flags = swapChainFlags;
-
-		/* Here so I don't forget this later:
-		 * (from https://learn.microsoft.com/en-us/windows/win32/api/dxgi/ne-dxgi-dxgi_swap_chain_flag)
-		 * DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH:
-		 *   Set this flag to enable an application to switch modes by calling IDXGISwapChain::ResizeTarget.
-		 *   When switching from windowed to full-screen mode, the display mode (or monitor resolution) will
-		 *     be changed to match the dimensions of the application window.
-		 *
-		 * DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING:
-		 *   Tearing support is a requirement to enable displays that support variable refresh rates to function
-		 *   properly when the application presents a swap chain tied to a full screen borderless window. Win32
-		 *   apps can already achieve tearing in fullscreen exclusive mode by calling SetFullscreenState(TRUE),
-		 *     but the recommended approach for Win32 developers is to use this tearing flag instead. This flag
-		 *   requires the use of a DXGI_SWAP_EFFECT_FLIP_* swap effect.
-		 *   To check for hardware support of this feature, refer to IDXGIFactory5::CheckFeatureSupport. For
-		 *     usage information refer to IDXGISwapChain::Present and the DXGI_PRESENT flags.
-		 */
-
-		 /* NOTE:
-		  * (from https://learn.microsoft.com/en-us/windows/win32/api/dxgi1_2/ns-dxgi1_2-dxgi_swap_chain_fullscreen_desc)
-		  * Setting the numerator to 0 forces the native display's refresh rate. */
-		DXGI_SWAP_CHAIN_FULLSCREEN_DESC fullscreenDesc = {};
-		fullscreenDesc.RefreshRate.Numerator = 0;
-		fullscreenDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-		fullscreenDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-		fullscreenDesc.Windowed = true;
-
-		/* Important note:
-		 *
-		 * from (https://learn.microsoft.com/en-us/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgifactory2-createswapchainforhwnd)
-		 *   Because you can associate only one flip presentation model swap chain at a time with an HWND,
-		 *     the Microsoft Direct3D 11 policy of deferring the destruction of objects can cause problems
-		 *     if you attempt to destroy a flip presentation model swap chain and replace it with another
-		 *     swap chain. For more info about this situation, see Deferred Destruction Issues with Flip
-		 *     Presentation Swap Chains.
-		 */
-		hResult = mP_Factory->CreateSwapChainForHwnd(
-			mP_Device.Get(),
-			m_Window.Impl_HWND(),
-			&desc,
-			&fullscreenDesc,
-			nullptr, /* Don't restrict output to any adapters. */
-			mP_SwapChain.GetAddressOf()
-		);
-
-		if (FAILED(hResult))
-		{
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create swap chain for HWND. Error code: {}", hResult);
-			std::exit(-1);
-		}
-
-		Impl_CreateViews();
-	}
-
-	void Graphics::Impl_InitImGui() noexcept
-	{
-		IMGUI_CHECKVERSION();
-		ImGui::CreateContext();
-		ImGuiIO& io = ImGui::GetIO();
-
-		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-
-		ImGui_ImplWin32_Init(m_Window.Impl_HWND());
-		ImGui_ImplDX11_Init(mP_Device.Get(), mP_Context.Get());
-
-		ImGui::StyleColorsDark();
-	}
-
-	void Graphics::Impl_ShutdownPipeline() noexcept
-	{
-		mP_Context->ClearState();
-		mP_Context->Flush();
-
-		Impl_ReleaseViews();
-
-		mP_Device.Reset();
-		mP_Context.Reset();
-		mP_Factory.Reset();
-		mP_SwapChain.Reset();
-	}
-
-	void Graphics::Impl_ShutdownImGui() noexcept
-	{
-		ImGui_ImplDX11_Shutdown();
-		ImGui_ImplWin32_Shutdown();
-		ImGui::DestroyContext();
 	}
 
 	void Graphics::Impl_CreateViews() noexcept
 	{
-		Microsoft::WRL::ComPtr<ID3D11Texture2D> pBackBuffer;
-		HRESULT hResult = mP_SwapChain->GetBuffer(0, IID_PPV_ARGS(pBackBuffer.GetAddressOf()));
+		ComPtr<ID3D11Resource> pBackBuffer;
+		HRESULT hr = mP_SwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
 
-		if (FAILED(hResult))
-		{
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to retrieve back buffer. Error code: {}", hResult);
-			std::exit(-1);
-		}
+		if (FAILED(hr))
+			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to retrieve back buffer. Error code: {}", hr);
 
-		hResult = mP_Device->CreateRenderTargetView(pBackBuffer.Get(), nullptr, mP_RTV.GetAddressOf());
+		hr = mP_Device->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &mP_RTV);
 
-		if (FAILED(hResult))
-		{
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create render target view. Error code: {}", hResult);
-			std::exit(-1);
-		}
+		if (FAILED(hr))
+			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create render target view. Error code: {}", hr);
+	}
 
-		D3D11_TEXTURE2D_DESC backBufferDesc;
-		pBackBuffer->GetDesc(&backBufferDesc);
-
-		Microsoft::WRL::ComPtr<ID3D11Texture2D> pDSTexture;
-		D3D11_TEXTURE2D_DESC dsTextureDesc = {};
-		dsTextureDesc.Width = backBufferDesc.Width;
-		dsTextureDesc.Height = backBufferDesc.Height;
-		dsTextureDesc.MipLevels = 1;
-		dsTextureDesc.ArraySize = 1;
-		dsTextureDesc.Format = DXGI_FORMAT_R32_TYPELESS;
-		dsTextureDesc.SampleDesc.Count = 1;
-		dsTextureDesc.SampleDesc.Quality = 0;
-		dsTextureDesc.Usage = D3D11_USAGE_DEFAULT;
-		dsTextureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-
-		hResult = mP_Device->CreateTexture2D(&dsTextureDesc, nullptr, pDSTexture.GetAddressOf());
-
-		if (FAILED(hResult))
-		{
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create depth stencil texture. Error code: {}", hResult);
-			std::exit(-1);
-		}
-
-		D3D11_DEPTH_STENCIL_DESC dsDesc = {};
-		dsDesc.DepthEnable = false;
-		dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-		dsDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
-		dsDesc.StencilEnable = false;
-
-		Microsoft::WRL::ComPtr<ID3D11DepthStencilState> pDSState;
-		hResult = mP_Device->CreateDepthStencilState(&dsDesc, pDSState.GetAddressOf());
-
-		if (FAILED(hResult))
-		{
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create depth stencil state. Error code: {}", hResult);
-			std::exit(-1);
-		}
-
-		D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-		dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
-		dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-		dsvDesc.Texture2D.MipSlice = 0u;
-
-		hResult = mP_Device->CreateDepthStencilView(pDSTexture.Get(), &dsvDesc, mP_DSV.GetAddressOf());
-
-		if (FAILED(hResult))
-		{
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create depth stencil view. Error code: {}", hResult);
-			std::exit(-1);
-		}
-
-		/* TODO: Move viewport and topology somewhere else when relevant. */
-		CD3D11_VIEWPORT viewport(
-			0.0f,
-			0.0f,
-			static_cast<float>(backBufferDesc.Width),
-			static_cast<float>(backBufferDesc.Height)
-		);
-
-		mP_Context->RSSetViewports(1, &viewport);
-		mP_Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	void Graphics::Impl_BindViews() noexcept
+	{
+		mP_Context->OMSetRenderTargets(1, mP_RTV.GetAddressOf(), nullptr);
 	}
 
 	void Graphics::Impl_ReleaseViews() noexcept
@@ -723,79 +220,50 @@ namespace CMEngine::Platform::WinImpl
 		mP_DSV.Reset();
 	}
 
-	void Graphics::Impl_BindViews() noexcept
+	void Graphics::Impl_SetViewport() noexcept
 	{
-		mP_Context->OMSetRenderTargets(1u, mP_RTV.GetAddressOf(), mP_DSV.Get());
+		Float2 clientArea = m_Window.Impl_ClientResolution();
+
+		CD3D11_VIEWPORT viewport(
+			0.0f, 0.0f, clientArea.x, clientArea.y
+		);
+
+		mP_Context->RSSetViewports(1, &viewport);
+
+		mP_Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
-	void Graphics::Impl_OnResizeCallback(ScreenResolution resolution) noexcept
+	void Graphics::Impl_OnResizeCallback(Float2 resolution) noexcept
 	{
-		/* Before resizing the swap chain, all views on the swap chain
-		 * and their references should be released. 
-		 * 
-		 * Future note for deferred rendering:
-		 *   
-		 *   If a view is bound to a deferred context, the partially built
-		 *     command list must be discarded as well by calling
-		 *     ID3D11Device::FinishCommandList after ClearState (and releasing it).
-		 * 
-		 * (https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nf-dxgi-idxgiswapchain-resizebuffers) */
 		mP_Context->ClearState();
+		mP_Context->Flush();
 
 		Impl_ReleaseViews();
 
-		DXGI_SWAP_CHAIN_DESC scDesc;
-		HRESULT hResult = mP_SwapChain->GetDesc(&scDesc);
+		DXGI_SWAP_CHAIN_DESC swapDesc;
+		HRESULT hr = mP_SwapChain->GetDesc(&swapDesc);
 
-		if (FAILED(hResult))
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to get swap chain's descriptor.");
+		if (FAILED(hr))
+			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to get swap chain desc.");
+		
+		/* If a view is bound to a deferred context, you must discard
+		 * the partially built command list as well (by calling ID3D11DeviceContext::ClearState,
+		 * then ID3D11DeviceContext::FinishCommandList, then Release on the command list). */
+		hr = mP_SwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, swapDesc.Flags);
 
-		hResult = mP_SwapChain->ResizeBuffers(
-			0, /* Preserve the original amount of buffers. */
-			static_cast<UINT>(resolution.Res.x),
-			static_cast<UINT>(resolution.Res.y),
-			DXGI_FORMAT_UNKNOWN, /* Preserve original format. */
-			scDesc.Flags
-		);
-
-		if (FAILED(hResult))
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to resize swap chain.");
+		if (FAILED(hr))
+			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to resize buffers.");
 
 		Impl_CreateViews();
 		Impl_BindViews();
+
+		Impl_SetViewport();
+
+		m_ShaderLibrary.BindSet(SHADER_SET_TYPE_QUAD, mP_Context);
 	}
 
-	void Graphics::Impl_OnResizeThunk(ScreenResolution resolution, void* pThis) noexcept
+	void Graphics::Impl_OnResizeThunk(Float2 resolution, void* pThis) noexcept
 	{
-		Graphics* pGraphics = reinterpret_cast<Graphics*>(pThis);
-		pGraphics->Impl_OnResizeCallback(resolution);
-	}
-#pragma endregion
-
-	void Graphics::Impl_GetMessages(std::vector<std::wstring>& outMessages) noexcept
-	{
-		outMessages.reserve((size_t)mP_InfoQueue->GetNumStoredMessages());
-
-		HRESULT hResult = S_OK;
-		size_t messageLength = 0;
-
-		for (size_t i = 0; i < mP_InfoQueue->GetNumStoredMessages(); ++i)
-		{
-			// Get size of message.
-			hResult = mP_InfoQueue->GetMessage(i, nullptr, &messageLength);
-
-			if (messageLength == 0)
-				continue;
-
-			std::unique_ptr<std::byte[]> pMessage(new std::byte[messageLength]);
-			D3D11_MESSAGE* pRawMessage = reinterpret_cast<D3D11_MESSAGE*>(pMessage.get());
-
-			hResult = mP_InfoQueue->GetMessage(i, pRawMessage, &messageLength);
-
-			if (FAILED(hResult))
-				spdlog::warn("(WinImpl_Graphics) Internal warning: Failed to retrieve message from info queue.");
-
-			outMessages.emplace_back(pRawMessage->pDescription, pRawMessage->pDescription + pRawMessage->DescriptionByteLength);
-		}
+		reinterpret_cast<Graphics*>(pThis)->Impl_OnResizeCallback(resolution);
 	}
 }

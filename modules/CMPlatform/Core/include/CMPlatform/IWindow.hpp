@@ -7,37 +7,28 @@
 
 namespace CMEngine::Platform
 {
-	struct ScreenResolution
-	{
-		Float2 Res;
-	};
-
 	struct WindowFuncTable
 	{
 		using VoidFunc = void(*)();
 		using BoolFunc = bool(*)();
-		using ResolutionFunc = ScreenResolution(*)();
 
 		VoidFunc Update = nullptr;
 		BoolFunc IsRunning = nullptr;
 		BoolFunc ShouldClose = nullptr;
-		ResolutionFunc Resolution = nullptr;
 
 		inline WindowFuncTable(
 			VoidFunc updateFunc,
 			BoolFunc isRunningFunc,
-			BoolFunc shouldCloseFunc,
-			ResolutionFunc resolutionFunc
+			BoolFunc shouldCloseFunc
 		) noexcept
 			: Update(updateFunc),
 			  IsRunning(isRunningFunc),
-			  ShouldClose(shouldCloseFunc),
-			  Resolution(resolutionFunc)
+			  ShouldClose(shouldCloseFunc)
 		{
 		}
 	};
 
-	using WindowCallbackSignatureOnResize = void (*)(ScreenResolution, void* pUserData);
+	using WindowCallbackSignatureOnResize = void (*)(Float2, void* pUserData);
 
 	template <typename Callback>
 	concept WindowActionCallback = std::is_same_v<Callback, WindowCallbackSignatureOnResize>;
