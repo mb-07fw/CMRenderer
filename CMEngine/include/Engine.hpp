@@ -8,36 +8,48 @@
 	#error An invalid build configuration has been set. This is problematic as code may be modified with the preprocessor depending on configuration. Continuing will result in unpredictable behavior.
 #endif
 
-#include <string_view>
-#include <memory>
-
-#include "CMPlatform/Export.hpp"
-#include "CMPlatform/LoadPlatform.hpp"
+#include "Engine_Export.hpp"
+#include "CMPlatform.hpp"
 
 namespace CMEngine
 {
-	class CM_API CMEngine
-	{
-	#ifdef _WIN32
-		using NativeStringView = std::wstring_view;
-	#else
-		using NativeStringView = std::string_view;
-	#endif
-	public:
-		CMEngine() noexcept;
-		~CMEngine() noexcept;
+	//class CM_API CMEngine
+	//{
+	//#ifdef _WIN32
+	//	using NativeStringView = std::wstring_view;
+	//#else
+	//	using NativeStringView = std::string_view;
+	//#endif
+	//public:
+	//	CMEngine() noexcept;
+	//	~CMEngine() noexcept;
 
-		CMEngine(const CMEngine& other) noexcept = delete;
-		CMEngine& operator=(const CMEngine& other) noexcept = delete;
+	//	CMEngine(const CMEngine& other) noexcept = delete;
+	//	CMEngine& operator=(const CMEngine& other) noexcept = delete;
+	//public:
+	//	void Run() noexcept;
+	//private:
+	//	void Init() noexcept;
+	//	void Shutdown() noexcept;
+	//private:
+	//	//Platform::IPlatform* mP_Platform = nullptr;
+	//	bool m_Initialized = false;
+	//	bool m_Shutdown = false;
+	//};
+
+	class CM_ENGINE_API Engine
+	{
 	public:
-		void Run() noexcept;
+		Engine() noexcept;
+		~Engine() = default;
+	
+		Engine(const Engine&) = delete;
+		Engine(Engine&&) = delete;
+		Engine& operator=(const Engine&) = delete;
+		Engine& operator=(Engine&&) = delete;
 	private:
-		void Init() noexcept;
-		void Shutdown() noexcept;
+		void CreatePlatform() noexcept;
 	private:
-		Platform::IPlatform* mP_Platform = nullptr;
-		bool m_Initialized = false;
-		bool m_Shutdown = false;
 	};
 }
 

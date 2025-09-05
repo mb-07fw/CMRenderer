@@ -1,11 +1,10 @@
-//#include "Core/PCH.hpp"
 #include "Engine.hpp"
-
-#include <iostream>
 
 int main()
 {
-	CMEngine::CMEngine engine;
+	CMEngine::Engine engine;
 
-	engine.Run();
+	CMPlatform::IGraphics* pGraphics = nullptr;
+
+	//engine.Run();
 }

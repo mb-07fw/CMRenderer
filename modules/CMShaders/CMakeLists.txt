@@ -122,12 +122,6 @@ endforeach()
 # Create a buildable target from shader outputs
 add_custom_target(CMShaders ALL DEPENDS ${COMPILED_SHADERS})
 
-set_target_properties(CMShaders PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_DIR}
-    ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_DIR}
-    LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_DIR}
-)
-
 add_library(CMShadersConfig INTERFACE)
 
 target_compile_definitions(CMShadersConfig INTERFACE

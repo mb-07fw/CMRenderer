@@ -36,10 +36,34 @@ function(SetTargetCommonWarnings target)
     target_compile_options(${target} PUBLIC ${WARNINGS})
 endfunction()
 
+function (SetTargetCommon target target_output_dir)
+    target_compile_options(${target} PUBLIC ${WARNINGS})
+
+    target_compile_definitions(${target}
+        PUBLIC UNICODE
+        PUBLIC _UNICODE
+        PUBLIC $<$<CONFIG:Debug>:CM_DEBUG=1>
+        PUBLIC $<$<CONFIG:RelWithDebInfo>:CM_REL_DEBUG=1>
+        PUBLIC $<$<CONFIG:Release>:CM_RELEASE=1>
+        PUBLIC $<$<CONFIG:MinSizeRel>:CM_RELEASE_MIN=1>
+    )
+
+    foreach(cfg Debug Release RelWithDebInfo MinSizeRel)
+        set_target_properties(${target} PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY_${cfg} ${target_output_dir}
+            ARCHIVE_OUTPUT_DIRECTORY_${cfg} ${target_output_dir}
+            LIBRARY_OUTPUT_DIRECTORY_${cfg} ${target_output_dir}
+        )
+    endforeach()
+endfunction()
+
 add_subdirectory("vendor/submodules/spdlog")
 
-add_subdirectory("modules/CMPlatform/Core")
 add_subdirectory("modules/CMImGui")
+add_subdirectory("modules/CMShaders")
+add_subdirectory("modules/CMPlatform/Core")
+add_subdirectory("modules/CMPlatform")
 
 add_subdirectory("CMEngine")
+
 add_subdirectory("CMSandbox")

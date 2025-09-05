@@ -1,11 +1,22 @@
 #include "Engine.hpp"
 
-#include <spdlog/spdlog.h>
+// #include <spdlog/spdlog.h>
 #include <chrono>
 
 namespace CMEngine
 {
-	CMEngine::CMEngine() noexcept
+	Engine::Engine() noexcept
+	{
+	}
+
+	void Engine::CreatePlatform() noexcept
+	{
+#ifdef CM_PLATFORM_IMPL_WIN
+		
+#endif
+	}
+
+	/*CMEngine::CMEngine() noexcept
 	{
 		Init();
 	}
@@ -55,7 +66,7 @@ namespace CMEngine
 
 		m_Initialized = false;
 		m_Shutdown = true;
-	}
+	}*/
 }
 
 
