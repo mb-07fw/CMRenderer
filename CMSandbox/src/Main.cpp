@@ -3,8 +3,7 @@
 int main()
 {
 	CMEngine::Engine engine;
-
-	CMPlatform::IGraphics* pGraphics = nullptr;
+	engine.Run();
 
 	//engine.Run();
 }

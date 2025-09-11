@@ -6,12 +6,12 @@
 
 #ifdef _WIN32
 	#include "imgui/backends/imgui_impl_win32.h"
-	#include "imgui/backends/imgui_impl_dx11.h"
 
-#ifdef CM_IMGUI_BUILD_DX12
-	#include "imgui/backends/imgui_impl_dx12.h"
-#endif
-
+	#ifdef CM_IMGUI_BUILD_DX12
+		#include "imgui/backends/imgui_impl_dx12.h"
+	#else	
+		#include "imgui/backends/imgui_impl_dx11.h"
+	#endif
 #endif
 
 #ifdef CM_IMGUI_BUILD_GLFW

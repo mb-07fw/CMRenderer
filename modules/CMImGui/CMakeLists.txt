@@ -57,3 +57,6 @@ target_include_directories(CMImGui PUBLIC
 )
 
 target_compile_definitions(CMImGui PUBLIC ${DEFINES})
+
+set(OUTPUT_DIR "${CMAKE_BINARY_DIR}/modules/CMImGui/out")
+SetTargetCommon(CMImGui ${OUTPUT_DIR})

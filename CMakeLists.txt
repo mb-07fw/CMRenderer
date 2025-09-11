@@ -32,8 +32,24 @@ else()
     set(WARNINGS -Wall)
 endif()
 
-function(SetTargetCommonWarnings target)
-    target_compile_options(${target} PUBLIC ${WARNINGS})
+function(SetTargetProperties target target_output_dir)
+   set_target_properties(${target} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY_DEBUG ${target_output_dir}
+        ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${target_output_dir}
+        LIBRARY_OUTPUT_DIRECTORY_DEBUG ${target_output_dir}
+
+        RUNTIME_OUTPUT_DIRECTORY_RELEASE ${target_output_dir}
+        ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${target_output_dir}
+        LIBRARY_OUTPUT_DIRECTORY_RELEASE ${target_output_dir}
+
+        RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${target_output_dir}
+        ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO ${target_output_dir}
+        LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO ${target_output_dir}
+
+        RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${target_output_dir}
+        ARCHIVE_OUTPUT_DIRECTORY_MINSIZEREL ${target_output_dir}
+        LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL ${target_output_dir}
+    )
 endfunction()
 
 function (SetTargetCommon target target_output_dir)
@@ -48,21 +64,13 @@ function (SetTargetCommon target target_output_dir)
         PUBLIC $<$<CONFIG:MinSizeRel>:CM_RELEASE_MIN=1>
     )
 
-    foreach(cfg Debug Release RelWithDebInfo MinSizeRel)
-        set_target_properties(${target} PROPERTIES
-            RUNTIME_OUTPUT_DIRECTORY_${cfg} ${target_output_dir}
-            ARCHIVE_OUTPUT_DIRECTORY_${cfg} ${target_output_dir}
-            LIBRARY_OUTPUT_DIRECTORY_${cfg} ${target_output_dir}
-        )
-    endforeach()
+    SetTargetProperties(${target} ${target_output_dir})
 endfunction()
 
 add_subdirectory("vendor/submodules/spdlog")
 
 add_subdirectory("modules/CMImGui")
 add_subdirectory("modules/CMShaders")
-add_subdirectory("modules/CMPlatform/Core")
-add_subdirectory("modules/CMPlatform")
 
 add_subdirectory("CMEngine")
 
