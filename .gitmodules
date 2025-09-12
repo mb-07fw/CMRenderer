@@ -1,6 +1,6 @@
 [submodule "vendor/submodules/DirectXTK"]
 	path = vendor/submodules/DirectXTK
 	url = https://github.com/microsoft/DirectXTK
-[submodule "vendor/spdlog"]
+[submodule "vendor/submodules/spdlog"]
 	path = vendor/submodules/spdlog
 	url = https://github.com/gabime/spdlog.git
