@@ -60,6 +60,7 @@ if (WIN32)
         PRIVATE dxguid
         PRIVATE d2d1
         PRIVATE DWrite
+        # Link to DirectXTK
         PRIVATE DirectXTK
     )
 endif()
