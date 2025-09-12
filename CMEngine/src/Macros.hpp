@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iostream>
+#include <spdlog/spdlog.h>
 
 #define CM_ENGINE_WIDEN_STR2(x) L ## x
 #define CM_ENGINE_WIDEN_STR(x) CM_WIDEN_STR2(x)
@@ -22,12 +22,12 @@
 
 #if defined(CM_DEBUG) || defined(_DEBUG)
 
-#define CM_ENGINE_IF_DEBUG(x)				do { x; } while (false)
+#define CM_ENGINE_IF_DEBUG(x)				x
 #define CM_ENGINE_IF_NDEBUG_REPLACE(x)		x
 #define CM_ENGINE_ASSERT(x) \
     if (!(x)) { \
-        std::cerr << "CM_ASSERT failed. (" << #x << ") | Line : " << __LINE__ << " | File : " << __FILE__ << '\n'; \
-        CM_BREAK_DEBUGGER(); \
+        spdlog::critical("CM_ENGINE_ASSERT failed. (" #x ") | Line : {} | File : {}", __LINE__, __FILE__); \
+        CM_ENGINE_BREAK_DEBUGGER(); \
         exit(-1); \
     } \
 

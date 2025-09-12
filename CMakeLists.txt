@@ -68,6 +68,7 @@ function (SetTargetCommon target target_output_dir)
 endfunction()
 
 add_subdirectory("vendor/submodules/spdlog")
+add_subdirectory("vendor/submodules/DirectXTK")
 
 add_subdirectory("modules/CMImGui")
 add_subdirectory("modules/CMShaders")

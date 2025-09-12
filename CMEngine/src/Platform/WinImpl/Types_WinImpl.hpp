@@ -2,10 +2,15 @@
 
 #include "Types.hpp"
 
+#include <d3d11.h>
+#include <wrl/client.h>
 #include <DirectXMath.h>
 
 namespace CMEngine::Platform::WinImpl
 {
+	template <typename Ty>
+	using ComPtr = Microsoft::WRL::ComPtr<Ty>;
+
 	inline constexpr CM_ENGINE_API [[nodiscard]] DirectX::XMFLOAT3 ToXMFloat3(Float2 float2, float z = 0.0f) noexcept;
 	inline constexpr CM_ENGINE_API [[nodiscard]] DirectX::XMFLOAT3 ToXMFloat3(Float3 float3) noexcept;
 

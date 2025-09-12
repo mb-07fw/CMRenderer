@@ -1,12 +1,8 @@
 #include "PCH.hpp"
 #include "Platform/WinImpl/Graphics_WinImpl.hpp"
 #include "Platform/WinImpl/Types_WinImpl.hpp"
+#include "Platform/WinImpl/GPUBuffer_WinImpl.hpp"
 
-#ifdef CM_DEBUG
-	#define IF_DEBUG(x) x
-#else
-	#define IF_DEBUG(x) (void)0
-#endif
 
 namespace CMEngine::Platform::WinImpl
 {
@@ -25,16 +21,31 @@ namespace CMEngine::Platform::WinImpl
 
 	void Graphics::Update() noexcept
 	{
-		/* TODO: Define an interface for a shader library based on WinImpl_ShaderLibrary in CMPlatform_Core.
-		 *		 Move all clearing, drawing, and presenting to CMEngine side.
-		 *         - Provide an abstraction for creating vertex buffers. (Worry about managing them later)
-		 * 
-		 *       Fix depth testing?
-		 */
+		ImGui_ImplWin32_NewFrame();
+		ImGui_ImplDX11_NewFrame();
+		ImGui::NewFrame();
 
-		ComPtr<ID3D11Buffer> pVBuffer;
-		ComPtr<ID3D11Buffer> pIBuffer;
-		ComPtr<ID3D11Buffer> pCBufferMVP;
+		if (ImGui::Begin("Engine Control"))
+		{
+			if (ImGui::CollapsingHeader("Camera"))
+				ImGui::SliderFloat3("Offset", m_CameraOffset.Underlying(), -20.0f, 20.0f);
+
+			if (ImGui::CollapsingHeader("Mesh"))
+				ImGui::SliderFloat3("Offset##xx", m_MeshOffset.Underlying(), -20.0f, 20.0f);
+
+			if (ImGui::CollapsingHeader("Text"))
+			{
+				ImGui::SliderFloat2("Offset##xx##xx", m_TextOffset.Underlying(), 0.0f, 400.0f);
+				ImGui::SliderFloat2("Resolution", m_TextResolution.Underlying(), 0.0f, 400.0f);
+
+				if (m_ShowTextBounds)
+					ImGui::SliderFloat4("Bounds RGBA", m_TextBoundsRGBA.rgba, 0.0f, 1.0f);
+
+				ImGui::Checkbox("Show Bounds?", &m_ShowTextBounds);
+			}
+		}
+
+		ImGui::End();
 
 		Float3 vertices[] = {
 			{ -0.5f,  0.5f, 1.0f },
@@ -48,60 +59,13 @@ namespace CMEngine::Platform::WinImpl
 			2, 3, 0
 		};
 
-		CD3D11_BUFFER_DESC vbDesc(
-			sizeof(vertices),
-			D3D11_BIND_VERTEX_BUFFER
-		);
+		VertexBuffer vbVertices(sizeof(Float3));
+		vbVertices.Create(vertices, sizeof(vertices), mP_Device);
+		vbVertices.Upload(mP_Context);
 
-		D3D11_SUBRESOURCE_DATA vbSubData = {};
-		vbSubData.pSysMem = vertices;
-
-		CD3D11_BUFFER_DESC ibDesc(
-			sizeof(vertices),
-			D3D11_BIND_INDEX_BUFFER
-		);
-
-		D3D11_SUBRESOURCE_DATA ibSubData = {};
-		ibSubData.pSysMem = indices;
-
-		// Start the Dear ImGui frame
-		ImGui_ImplWin32_NewFrame();
-		ImGui_ImplDX11_NewFrame();
-		ImGui::NewFrame();
-
-		if (ImGui::Begin("Engine Control"))
-		{
-			//ImGui::BeginChild("Camera", ImVec2(0, 50));
-
-			if (ImGui::CollapsingHeader("Camera"))
-				ImGui::SliderFloat3("Offset", m_CameraOffset.Underlying(), -20.0f, 20.0f);
-
-			//ImGui::EndChild();
-
-			//ImGui::BeginChild("Mesh", ImVec2(0, 50));
-
-			if (ImGui::CollapsingHeader("Mesh"))
-				ImGui::SliderFloat3("Offset##xx", m_MeshOffset.Underlying(), -20.0f, 20.0f);
-
-			//ImGui::EndChild();
-
-			//ImGui::BeginChild("Text", ImVec2(0, 50));
-
-			if (ImGui::CollapsingHeader("Text"))
-			{
-				ImGui::SliderFloat2("Offset##xx##xx", m_TextOffset.Underlying(), 0.0f, 400.0f);
-				ImGui::SliderFloat2("Resolution", m_TextResolution.Underlying(), 0.0f, 400.0f);
-
-				if (m_ShowTextBounds)
-					ImGui::SliderFloat4("Bounds RGBA", m_TextBoundsRGBA.rgba, 0.0f, 1.0f);
-
-				ImGui::Checkbox("Show Bounds?", &m_ShowTextBounds);
-			}
-
-			//ImGui::EndChild();
-		}
-
-		ImGui::End();
+		IndexBuffer ibIndices;
+		ibIndices.Create(indices, sizeof(indices), mP_Device);
+		ibIndices.Upload(mP_Context);
 
 		float aspectRatio = m_Window.ClientResolution().Aspect();
 		constexpr float CameraFovDeg = 45.0f;
@@ -117,43 +81,16 @@ namespace CMEngine::Platform::WinImpl
 
 		DirectX::XMMATRIX modelMatrix = DirectX::XMMatrixTranslation(m_MeshOffset.x, m_MeshOffset.y, m_MeshOffset.z);
 		DirectX::XMMATRIX viewMatrix = DirectX::XMMatrixLookAtLH(cameraPosVec, cameraFocusVec, upDirectionVec);
-		DirectX::XMMATRIX projMatrix = DirectX::XMMatrixPerspectiveFovLH(CameraFovRad, aspectRatio, 0.05, 100.0f);
+		DirectX::XMMATRIX projMatrix = DirectX::XMMatrixPerspectiveFovLH(CameraFovRad, aspectRatio, 0.05f, 100.0f);
 
 		DirectX::XMMATRIX mvpMatrix = DirectX::XMMatrixTranspose(modelMatrix * viewMatrix * projMatrix);
 
-		CD3D11_BUFFER_DESC mvpCBDesc(
-			sizeof(DirectX::XMMATRIX),
-			D3D11_BIND_CONSTANT_BUFFER
-		);
-
-		D3D11_SUBRESOURCE_DATA mvpCBSubData = {};
-		mvpCBSubData.pSysMem = &mvpMatrix;
-
-		HRESULT hr = mP_Device->CreateBuffer(&vbDesc, &vbSubData, &pVBuffer);
-
-		if (FAILED(hr))
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create vertex buffer. Error code: {}", hr);
-
-		hr = mP_Device->CreateBuffer(&ibDesc, &ibSubData, &pIBuffer);
-
-		if (FAILED(hr))
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create index buffer. Error code: {}", hr);
-
-		hr = mP_Device->CreateBuffer(&mvpCBDesc, &mvpCBSubData, &pCBufferMVP);
-
-		if (FAILED(hr))
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create constant buffer. Error code: {}", hr);
-
-		UINT stride = sizeof(Float3);
-		UINT offset = 0;
-
-		mP_Context->IASetVertexBuffers(0, 1, pVBuffer.GetAddressOf(), &stride, &offset);
-		mP_Context->IASetIndexBuffer(pIBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
-		mP_Context->VSSetConstantBuffers(0, 1, pCBufferMVP.GetAddressOf());
+		ConstantBuffer cbMvpMatrix(ConstantBufferType::VS);
+		cbMvpMatrix.Create(&mvpMatrix, sizeof(mvpMatrix), mP_Device);
+		cbMvpMatrix.Upload(mP_Context);
 
 		Clear(RGBANorm::Black());
 
-		//mP_Context->Draw(std::size(vertices), 0);
 		mP_Context->DrawIndexed(std::size(indices), 0, 0);
 
 		mP_D2D_RT->BeginDraw();
@@ -175,7 +112,7 @@ namespace CMEngine::Platform::WinImpl
 		);
 
 		if (m_ShowTextBounds)
-			mP_D2D_RT->FillRectangle(layoutRect, mP_SC_Brush.Get());
+			mP_D2D_RT->DrawRectangle(layoutRect, mP_SC_Brush.Get(), 1.0f, nullptr);
 
 		mP_SC_Brush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
 
@@ -197,7 +134,6 @@ namespace CMEngine::Platform::WinImpl
 		ImGuiIO& io = ImGui::GetIO();
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
-			// Update and Render additional Platform Windows
 			ImGui::UpdatePlatformWindows();
 			ImGui::RenderPlatformWindowsDefault();
 		}
@@ -226,7 +162,7 @@ namespace CMEngine::Platform::WinImpl
 		else
 			spdlog::critical("(WinImpl_Graphics) Internal error: Errer occured after presenting. Error code: {}", hr);
 
-		IF_DEBUG(
+		CM_ENGINE_IF_DEBUG(
 			if (mP_InfoQueue->GetNumStoredMessages(DXGI_DEBUG_ALL) == 0)
 				return;
 
@@ -262,7 +198,7 @@ namespace CMEngine::Platform::WinImpl
 
 		/* NOTE: If D3D11_CREATE_DEVICE_DEBUG is not provided, the debug layer will not be able
 		 *		   to be loaded. */
-		IF_DEBUG(flags |= D3D11_CREATE_DEVICE_DEBUG);
+		CM_ENGINE_IF_DEBUG(flags |= D3D11_CREATE_DEVICE_DEBUG);
 
 		HRESULT hr = D3D11CreateDeviceAndSwapChain(
 			nullptr,
@@ -282,7 +218,7 @@ namespace CMEngine::Platform::WinImpl
 		if (FAILED(hr))
 			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create device and swap chain. Error code: {}", hr);
 
-		IF_DEBUG(
+		CM_ENGINE_IF_DEBUG(
 			HMODULE pDxgiDebugModule = GetModuleHandleW(L"Dxgidebug.dll");
 
 		if (pDxgiDebugModule == nullptr)

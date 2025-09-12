@@ -1,10 +1,12 @@
 #pragma once
 
 #include "Export.hpp"
+#include "Macros.hpp"
 #include "Platform/Core/IGraphics.hpp"
 #include "Platform/WinImpl/PlatformOSFwd_WinImpl.hpp"
 #include "Platform/WinImpl/Window_WinImpl.hpp"
 #include "Platform/WinImpl/ShaderLibrary_WinImpl.hpp"
+#include "Platform/WinImpl/Types_WinImpl.hpp"
 
 #include <dxgi.h>
 #include <dxgi1_5.h>
@@ -23,17 +25,8 @@
 #include <vector>
 #include <string_view>
 
-#ifdef CM_DEBUG
-	#define IF_DEBUG(x) x
-#else
-	#define IF_DEBUG(x) (void)0
-#endif
-
 namespace CMEngine::Platform::WinImpl
 {
-	template <typename Ty>
-	using ComPtr = Microsoft::WRL::ComPtr<Ty>;
-
 	class CM_ENGINE_API Graphics : public IGraphics
 	{
 	public:
@@ -83,8 +76,8 @@ namespace CMEngine::Platform::WinImpl
 		ComPtr<IDXGISwapChain> mP_SwapChain;
 		ComPtr<ID3D11RenderTargetView> mP_RTV;
 		ComPtr<ID3D11DepthStencilView> mP_DSV;
-		IF_DEBUG(ComPtr<IDXGIDebug> mP_DebugInterface);
-		IF_DEBUG(ComPtr<IDXGIInfoQueue> mP_InfoQueue);
+		CM_ENGINE_IF_DEBUG(ComPtr<IDXGIDebug> mP_DebugInterface);
+		CM_ENGINE_IF_DEBUG(ComPtr<IDXGIInfoQueue> mP_InfoQueue);
 		ComPtr<ID2D1Factory> mP_FactoryD2D;
 		ComPtr<IDWriteFactory> mP_FactoryDWrite;
 		ComPtr<IDWriteTextFormat> mP_TextFormat;
@@ -98,9 +91,7 @@ namespace CMEngine::Platform::WinImpl
 		Float3 m_MeshOffset;
 		Float2 m_TextOffset;
 		Float2 m_TextResolution = Float2(250.0f, 200.0f);
-		RGBANorm m_TextBoundsRGBA;
+		RGBANorm m_TextBoundsRGBA = RGBANorm(0.15f, 0.15f, 0.15f);
 		bool m_ShowTextBounds = false;
 	};
 }
-
-#undef IF_DEBUG

@@ -9,6 +9,17 @@ namespace CMEngine
 	/* An RGBA value normalized to [-1, 1]. */
 	struct CM_ENGINE_API RGBANorm
 	{
+		inline constexpr RGBANorm(float r, float g, float b, float a = 1.0f) noexcept
+		{
+			rgba[0] = r;
+			rgba[1] = g;
+			rgba[2] = b;
+			rgba[3] = a;
+		}
+
+		RGBANorm() = default;
+		~RGBANorm() = default;
+
 		inline static constexpr [[nodiscard]] RGBANorm Red() noexcept { return { 1.0f, 0.0f, 0.0f, 1.0f }; }
 		inline static constexpr [[nodiscard]] RGBANorm Green() noexcept { return { 1.0f, 0.0f, 0.0f, 1.0f }; }
 		inline static constexpr [[nodiscard]] RGBANorm Blue() noexcept { return { 1.0f, 0.0f, 0.0f, 1.0f }; }

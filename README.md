@@ -28,17 +28,8 @@ Or if the repository has already been cloned:
 git submodule update --init --recursive
 ```
 
-## Building (Premake):
-Assuming Premake5 is installed and added to path (or the Premake5 .exe is present), you can generate
-a project file by going to the root directory of the repository where the project's premake5.lua is
-present and running:
-```
-premake5 [your-generator-here] (ie, vs2022, etc)
-```
-From here you can build the project using your IDE of choice.
-
 ## Building (CMake)
-Alternatively, if you wish to use CMake you can generate a project file by running:
+For CMake, you can generate a project file by running:
 ```
 cmake -S . -B build -G "[your-generator-here]"
 ```
