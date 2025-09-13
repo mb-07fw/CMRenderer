@@ -25,6 +25,8 @@ namespace CMEngine::Platform::WinImpl
 
 			m_Window.Update();
 			m_Graphics.Update();
+
+			return true;
 		}
 
 		inline virtual [[nodiscard]] bool IsRunning() const noexcept override { return !m_Window.ShouldClose(); }

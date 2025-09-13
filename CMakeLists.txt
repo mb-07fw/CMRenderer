@@ -1,7 +1,7 @@
 # Root CMakeLists.txt
 
 # To regenerate CMake caches (from root directory)
-# cmake -S <root_directory> -B <build_directory> -G "Ninja"
+# cmake -S <root_directory> -B <build_directory> -G <your_generator_here>
 
 # Build :
 # cmake --build <out_directory> --config <configuration> [optional](--target <name>)
@@ -69,6 +69,7 @@ endfunction()
 
 add_subdirectory("vendor/submodules/spdlog")
 add_subdirectory("vendor/submodules/DirectXTK")
+add_subdirectory("vendor/submodules/assimp")
 
 add_subdirectory("modules/CMImGui")
 add_subdirectory("modules/CMShaders")

@@ -24,8 +24,6 @@ set(ENGINE_FILES
 )
 
 if (WIN32)
-    set(WINIMPL_PCH "${ROOT_DIR}/src/Platform/WinImpl/PCH_WinImpl.hpp")
-
     list(APPEND ENGINE_FILES
         "src/Platform/WinImpl/Graphics_WinImpl.hpp"
         "src/Platform/WinImpl/PCH_WinImpl.hpp"
@@ -51,7 +49,6 @@ add_library(CMEngine SHARED ${ENGINE_FILES})
 
 if (WIN32)
     target_compile_definitions(CMEngine PUBLIC CM_ENGINE_PLATFORM_WINIMPL)
-    target_precompile_headers(CMEngine PRIVATE ${WINIMPL_PCH})
 
     target_link_libraries(CMEngine
         PRIVATE D3D11
@@ -73,8 +70,12 @@ target_include_directories(CMEngine PUBLIC
 target_compile_definitions(CMEngine PRIVATE 
     CM_ENGINE_CONFIG_STR="$<CONFIG>"
     CM_ENGINE_SOURCE_DIR_STR="${CMAKE_SOURCE_DIR}"
+    CM_ENGINE_RESOURCES_MODEL_DIRECTORY="${ROOT_DIR}/resources/assets/models"
+    CM_ENGINE_RESOURCES_MODEL_DIRECTORYW=L"${ROOT_DIR}/resources/assets/models"
     CM_ENGINE_BUILD
 )
+
+target_precompile_headers(CMEngine PRIVATE "src/PCH.hpp")
 
 set(OUTPUT_DIR "${CMAKE_BINARY_DIR}/CMEngine/out")
 SetTargetCommon(CMEngine ${OUTPUT_DIR})
@@ -83,11 +84,7 @@ add_dependencies(CMEngine CMShaders)
 
 target_link_libraries(CMEngine
     PUBLIC spdlog::spdlog
+    PRIVATE assimp::assimp
     PRIVATE CMImGui
     PRIVATE CMShadersConfig
 )
-
-# PRIVATE D3D11
-# PRIVATE d3dcompiler
-# PRIVATE DXGI
-# PRIVATE dxguid

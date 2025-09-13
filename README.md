@@ -12,10 +12,10 @@ The project also current relies heavily on D3D11, and will terminate at runtime 
 
 ## Note:
 This project may not fully support a wide variety of IDE's, and is not currently guaranteed to be portable.
-You may need to update the project's *premake5.lua* or *CMakeLists.txt* to fit your desired needs.
+You may need to update the project's *CMakeLists.txt* to fit your desired needs.
 
 ## Installing:
-This project relies on various submodules (currently only DirectXTK)
+This project relies on various submodules
 which *must* be cloned alongside the base repository.
 
 To clone the repository:
@@ -33,6 +33,9 @@ For CMake, you can generate a project file by running:
 ```
 cmake -S . -B build -G "[your-generator-here]"
 ```
+
+at the root directory of the project (the directory the project was cloned into).
+
 Note: if you wish to use a generator other than Visual Studio 17 2022 (which is used by default in this project)
 with Visual Studio's CMake integration, I recommend you also update the *"generator"* fields for
 each configuration in *CMakeSettings.json* from *"Visual Studio 17 2022 Win64"* to your desired generator.
@@ -43,7 +46,7 @@ cmake --build build
 ```
 
 Side note: Instead of using CMake to generate a .sln file for Visual Studio, I'd recommend using
-Visual Studio's native CMake integration by right-clicking on the project's folder and clicking *"Open With Visual Studio"*.
+Visual Studio's native CMake integration by right-clicking on the project's root folder and clicking *"Open With Visual Studio"*.
 
 # Latest Screenshot
 ![Latest](https://github.com/mb-07fw/CMRenderer/blob/main/Images/Latest.PNG)

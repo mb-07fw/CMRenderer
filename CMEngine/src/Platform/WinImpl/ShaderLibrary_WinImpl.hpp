@@ -34,6 +34,8 @@ namespace CMEngine::Platform::WinImpl
 		ASSIGNED_SHADER_TYPE_INVALID = -1,
 		ASSIGNED_SHADER_TYPE_QUAD_VS,
 		ASSIGNED_SHADER_TYPE_QUAD_PS,
+		ASSIGNED_SHADER_TYPE_GLTF_VS,
+		ASSIGNED_SHADER_TYPE_GLTF_PS,
 		ASSIGNED_SHADER_TYPE_CUSTOM
 	};
 
@@ -41,14 +43,16 @@ namespace CMEngine::Platform::WinImpl
 	{
 		SHADER_SET_TYPE_INVALID = -1,
 		SHADER_SET_TYPE_QUAD,
+		SHADER_SET_TYPE_GLTF,
 		SHADER_SET_TYPE_TOTAL_SETS
 	};
 
 	inline constexpr ShaderSetType G_IMPLEMENTED_SHADER_SETS[] = {
-		SHADER_SET_TYPE_QUAD
+		SHADER_SET_TYPE_QUAD,
+		SHADER_SET_TYPE_GLTF
 	};
 
-	inline CM_ENGINE_API constexpr [[nodiscard]] bool IsVertexAssignedType(AssignedShaderType assignedType) noexcept;
+	//inline CM_ENGINE_API constexpr [[nodiscard]] bool IsVertexAssignedType(AssignedShaderType assignedType) noexcept;
 	inline CM_ENGINE_API constexpr [[nodiscard]] ShaderType ShaderTypeOfAssigned(AssignedShaderType assignedType) noexcept;
 	inline CM_ENGINE_API constexpr [[nodiscard]] ShaderSetType SetTypeOfAssigned(AssignedShaderType assignedType) noexcept;
 
@@ -128,26 +132,26 @@ namespace CMEngine::Platform::WinImpl
 		inline [[nodiscard]] bool UsesPixelShader() const noexcept { return m_UseID & SHADER_USE_PIXEL; }
 		inline [[nodiscard]] bool UsesComputeShader() const noexcept { return m_UseID & SHADER_USE_COMPUTE; }
 
-		virtual void Create(ComPtr<ID3D11Device> pDevice, const ShaderRegistry& registry) noexcept = 0;
-		virtual void Bind(ComPtr<ID3D11DeviceContext> pContext) noexcept = 0;
+		virtual void Create(const ComPtr<ID3D11Device>& pDevice, const ShaderRegistry& registry) noexcept = 0;
+		virtual void Bind(const ComPtr<ID3D11DeviceContext>& pContext) noexcept = 0;
 		virtual [[nodiscard]] ShaderSetType Type() const noexcept = 0;
 	protected:
 		void CreateVertexShader(
-			ComPtr<ID3D11Device> pDevice,
+			const ComPtr<ID3D11Device>& pDevice,
 			ComPtr<ID3D11VertexShader>& pOutVertexShader,
 			const ShaderRegistry& registry,
 			ShaderID id
 		) noexcept;
 
 		void CreatePixelShader(
-			ComPtr<ID3D11Device> pDevice,
+			const ComPtr<ID3D11Device>& pDevice,
 			ComPtr<ID3D11PixelShader>& pOutPixelShader,
 			const ShaderRegistry& registry,
 			ShaderID id
 		) noexcept;
 
 		void CreateVertexAndPixelShader(
-			ComPtr<ID3D11Device> pDevice,
+			const ComPtr<ID3D11Device>& pDevice,
 			ComPtr<ID3D11VertexShader>& pOutVertexShader,
 			ComPtr<ID3D11PixelShader>& pOutPixelShader,
 			const ShaderRegistry& registry,
@@ -156,16 +160,16 @@ namespace CMEngine::Platform::WinImpl
 		) noexcept;
 
 		void CreateInputLayout(
-			ComPtr<ID3D11Device> pDevice,
+			const ComPtr<ID3D11Device>& pDevice,
 			ComPtr<ID3D11InputLayout>& pOutInputLayout,
 			std::span<const D3D11_INPUT_ELEMENT_DESC> inputDescs,
 			const ShaderRegistry& registry,
 			ShaderID vertexID
 		) noexcept;
 
-		void BindVertexShader(ComPtr<ID3D11DeviceContext> pContext, ComPtr<ID3D11VertexShader> pVertexShader) noexcept;
-		void BindPixelShader(ComPtr<ID3D11DeviceContext> pContext, ComPtr<ID3D11PixelShader> pPixelShader) noexcept;
-		void BindInputLayout(ComPtr<ID3D11DeviceContext> pContext, ComPtr<ID3D11InputLayout> pInputLayout) noexcept;
+		void BindVertexShader(const ComPtr<ID3D11DeviceContext>& pContext, const ComPtr<ID3D11VertexShader>& pVertexShader) noexcept;
+		void BindPixelShader(const ComPtr<ID3D11DeviceContext>& pContext, const ComPtr<ID3D11PixelShader>& pPixelShader) noexcept;
+		void BindInputLayout(const ComPtr<ID3D11DeviceContext>& pContext, const ComPtr<ID3D11InputLayout>& pInputLayout) noexcept;
 	protected:
 		const ShaderUseID m_UseID;
 	};
@@ -180,18 +184,47 @@ namespace CMEngine::Platform::WinImpl
 		{
 		}
 
-		void Create(ComPtr<ID3D11Device> pDevice, const ShaderRegistry& registry) noexcept;
-		void Bind(ComPtr<ID3D11DeviceContext> pContext) noexcept;
+		virtual void Create(const ComPtr<ID3D11Device>& pDevice, const ShaderRegistry& registry) noexcept override;
+		virtual void Bind(const ComPtr<ID3D11DeviceContext>& pContext) noexcept override;
+		virtual inline constexpr [[nodiscard]] ShaderSetType Type() const noexcept override { return SHADER_SET_TYPE_QUAD; };
 
 		inline static constexpr [[nodiscard]] ShaderUseID UseID() noexcept { return S_USE_ID; }
 		inline static constexpr [[nodiscard]] bool SupportsUsage(ShaderUseID useID) noexcept;
 
 		inline [[nodiscard]] ShaderID VertexID() const noexcept { return m_VertexID; }
 		inline [[nodiscard]] ShaderID PixelID() const noexcept { return m_PixelID; }
-		inline [[nodiscard]] ComPtr<ID3D11VertexShader> VertexShader() noexcept { return mP_VertexShader; }
-		inline [[nodiscard]] ComPtr<ID3D11PixelShader> PixelShader() noexcept { return mP_PixelShader; }
+		inline [[nodiscard]] const ComPtr<ID3D11VertexShader>& VertexShader() noexcept { return mP_VertexShader; }
+		inline [[nodiscard]] const ComPtr<ID3D11PixelShader>& PixelShader() noexcept { return mP_PixelShader; }
+	private:
+		static constexpr ShaderUseID S_USE_ID = SHADER_USE_VERTEX | SHADER_USE_PIXEL;
+		ShaderID m_VertexID;
+		ShaderID m_PixelID;
+		ComPtr<ID3D11VertexShader> mP_VertexShader;
+		ComPtr<ID3D11PixelShader> mP_PixelShader;
+		ComPtr<ID3D11InputLayout> mP_InputLayout;
+	};
 
-		inline constexpr virtual [[nodiscard]] ShaderSetType Type() const noexcept override { return SHADER_SET_TYPE_QUAD; };
+	class CM_ENGINE_API ShaderSetGltf : public IShaderSet
+	{
+	public:
+		inline ShaderSetGltf(ShaderID vertexID, ShaderID pixelID) noexcept
+			: IShaderSet(S_USE_ID),
+			  m_VertexID(vertexID),
+			  m_PixelID(pixelID)
+		{
+		}
+
+		virtual void Create(const ComPtr<ID3D11Device>& pDevice, const ShaderRegistry& registry) noexcept override;
+		virtual void Bind(const ComPtr<ID3D11DeviceContext>& pContext) noexcept override;
+		virtual inline constexpr [[nodiscard]] ShaderSetType Type() const noexcept override { return SHADER_SET_TYPE_GLTF; };
+
+		inline static constexpr [[nodiscard]] ShaderUseID UseID() noexcept { return S_USE_ID; }
+		inline static constexpr [[nodiscard]] bool SupportsUsage(ShaderUseID useID) noexcept;
+
+		inline [[nodiscard]] ShaderID VertexID() const noexcept { return m_VertexID; }
+		inline [[nodiscard]] ShaderID PixelID() const noexcept { return m_PixelID; }
+		inline [[nodiscard]] const ComPtr<ID3D11VertexShader>& VertexShader() noexcept { return mP_VertexShader; }
+		inline [[nodiscard]] const ComPtr<ID3D11PixelShader>& PixelShader() noexcept { return mP_PixelShader; }
 	private:
 		static constexpr ShaderUseID S_USE_ID = SHADER_USE_VERTEX | SHADER_USE_PIXEL;
 		ShaderID m_VertexID;
@@ -216,7 +249,7 @@ namespace CMEngine::Platform::WinImpl
 	public:
 		[[nodiscard]] ShaderID QueryID(const std::filesystem::path& fileName) const noexcept;
 
-		void Add(ShaderID id, ComPtr<ID3DBlob> pBytecode, const std::filesystem::path& fileName) noexcept;
+		void Add(ShaderID id, const ComPtr<ID3DBlob>& pBytecode, const std::filesystem::path& fileName) noexcept;
 
 		[[nodiscard]] const ShaderData* Retrieve(ShaderID id) const noexcept;
 
@@ -226,7 +259,9 @@ namespace CMEngine::Platform::WinImpl
 		std::vector<ShaderData> m_ShaderData;
 		std::unordered_map<std::wstring, ShaderID> m_ShaderNames = {
 			{ { L"Quad_VS" }, { m_NextShaderIndex++, SHADER_TYPE_VERTEX, ASSIGNED_SHADER_TYPE_QUAD_VS, SHADER_SET_TYPE_QUAD } },
-			{ { L"Quad_PS" }, { m_NextShaderIndex++, SHADER_TYPE_PIXEL, ASSIGNED_SHADER_TYPE_QUAD_PS, SHADER_SET_TYPE_QUAD } }
+			{ { L"Quad_PS" }, { m_NextShaderIndex++, SHADER_TYPE_PIXEL, ASSIGNED_SHADER_TYPE_QUAD_PS, SHADER_SET_TYPE_QUAD } },
+			{ { L"GLTF_VS" }, { m_NextShaderIndex++, SHADER_TYPE_VERTEX, ASSIGNED_SHADER_TYPE_GLTF_VS, SHADER_SET_TYPE_GLTF } },
+			{ { L"GLTF_PS" }, { m_NextShaderIndex++, SHADER_TYPE_PIXEL, ASSIGNED_SHADER_TYPE_GLTF_PS, SHADER_SET_TYPE_GLTF } }
 		};
 	};
 #pragma endregion
@@ -238,8 +273,8 @@ namespace CMEngine::Platform::WinImpl
 		ShaderLibrary() noexcept;
 		~ShaderLibrary() noexcept;
 	public:
-		void CreateShaderSets(ComPtr<ID3D11Device> pDevice) noexcept;
-		void BindSet(ShaderSetType setType, ComPtr<ID3D11DeviceContext> pContext) noexcept;
+		void CreateShaderSets(const ComPtr<ID3D11Device>& pDevice) noexcept;
+		void BindSet(ShaderSetType setType, const ComPtr<ID3D11DeviceContext>& pContext) noexcept;
 	private:
 		void LoadShaders() noexcept;
 
@@ -250,6 +285,7 @@ namespace CMEngine::Platform::WinImpl
 		ShaderRegistry m_Registry;
 		bool m_CreatedShaderSets = false;
 		std::vector<std::shared_ptr<IShaderSet>> m_ShaderSets;
+		ShaderSetType m_CurrentSet = SHADER_SET_TYPE_INVALID;
 	};
 #pragma endregion
 
@@ -261,8 +297,9 @@ namespace CMEngine::Platform::WinImpl
 		case SHADER_SET_TYPE_TOTAL_SETS: [[fallthrough]];
 		default:
 			return false;
-
 		case SHADER_SET_TYPE_QUAD:
+			return ShaderSetQuad::SupportsUsage(useID);
+		case SHADER_SET_TYPE_GLTF:
 			return ShaderSetQuad::SupportsUsage(useID);
 		}
 	}
@@ -275,9 +312,10 @@ namespace CMEngine::Platform::WinImpl
 		case SHADER_SET_TYPE_TOTAL_SETS: [[fallthrough]];
 		default:
 			return false;
-
 		case SHADER_SET_TYPE_QUAD:
 			return ShaderSetQuad::UseID() == useID;
+		case SHADER_SET_TYPE_GLTF:
+			return ShaderSetGltf::UseID() == useID;
 		}
 	}
 
@@ -305,18 +343,12 @@ namespace CMEngine::Platform::WinImpl
 		return false;
 	}
 
-	inline CM_ENGINE_API constexpr [[nodiscard]] bool IsVertexAssignedType(AssignedShaderType assignedType) noexcept
+	inline constexpr [[nodiscard]] bool ShaderSetGltf::SupportsUsage(ShaderUseID useID) noexcept
 	{
-		switch (assignedType)
-		{
-		case ASSIGNED_SHADER_TYPE_INVALID: [[fallthrough]];
-		case ASSIGNED_SHADER_TYPE_CUSTOM:  [[fallthrough]];
-		case ASSIGNED_SHADER_TYPE_QUAD_PS: [[fallthrough]];
-		default:
-			return false;
-		case ASSIGNED_SHADER_TYPE_QUAD_VS:
+		if (useID == S_USE_ID || (S_USE_ID & useID))
 			return true;
-		}
+
+		return false;
 	}
 
 	inline CM_ENGINE_API constexpr [[nodiscard]] ShaderType ShaderTypeOfAssigned(AssignedShaderType assignedType) noexcept
@@ -327,9 +359,13 @@ namespace CMEngine::Platform::WinImpl
 		case ASSIGNED_SHADER_TYPE_CUSTOM: [[fallthrough]];
 		default:
 			return SHADER_TYPE_INVALID;
-		case ASSIGNED_SHADER_TYPE_QUAD_VS:
+
+		case ASSIGNED_SHADER_TYPE_QUAD_VS: [[fallthrough]];
+		case ASSIGNED_SHADER_TYPE_GLTF_VS:
 			return SHADER_TYPE_VERTEX;
-		case ASSIGNED_SHADER_TYPE_QUAD_PS:
+
+		case ASSIGNED_SHADER_TYPE_QUAD_PS: [[fallthrough]];
+		case ASSIGNED_SHADER_TYPE_GLTF_PS: 
 			return SHADER_TYPE_PIXEL;
 		}
 	}
@@ -342,9 +378,14 @@ namespace CMEngine::Platform::WinImpl
 		case ASSIGNED_SHADER_TYPE_CUSTOM: [[fallthrough]];
 		default:
 			return SHADER_SET_TYPE_INVALID;
+
 		case ASSIGNED_SHADER_TYPE_QUAD_PS: [[fallthrough]];
 		case ASSIGNED_SHADER_TYPE_QUAD_VS:
 			return SHADER_SET_TYPE_QUAD;
+
+		case ASSIGNED_SHADER_TYPE_GLTF_PS: [[fallthrough]];
+		case ASSIGNED_SHADER_TYPE_GLTF_VS:
+			return SHADER_SET_TYPE_GLTF;
 		}
 	}
 }

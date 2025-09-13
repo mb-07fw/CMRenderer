@@ -20,13 +20,14 @@
 #include <wrl/client.h>
 
 #include <cstdint>
-
 #include <array>
 #include <vector>
 #include <string_view>
 
 namespace CMEngine::Platform::WinImpl
 {
+	class ModelImporterImpl;
+
 	class CM_ENGINE_API Graphics : public IGraphics
 	{
 	public:
@@ -92,6 +93,9 @@ namespace CMEngine::Platform::WinImpl
 		Float2 m_TextOffset;
 		Float2 m_TextResolution = Float2(250.0f, 200.0f);
 		RGBANorm m_TextBoundsRGBA = RGBANorm(0.15f, 0.15f, 0.15f);
+
+		std::unique_ptr<ModelImporterImpl> mP_ModelImporter;
+
 		bool m_ShowTextBounds = false;
 	};
 }

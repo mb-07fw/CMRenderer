@@ -70,8 +70,15 @@ endif()
 
 set(ROOT_DIR "${CMAKE_SOURCE_DIR}/modules/CMShaders")
 
-set(VERTEX_SHADERS "${ROOT_DIR}/Quad_VS.hlsl")
-set(PIXEL_SHADERS "${ROOT_DIR}/Quad_PS.hlsl")
+set(VERTEX_SHADERS 
+    "${ROOT_DIR}/Quad_VS.hlsl"
+    "${ROOT_DIR}/GLTF_VS.hlsl"
+)
+
+set(PIXEL_SHADERS 
+    "${ROOT_DIR}/Quad_PS.hlsl"
+    "${ROOT_DIR}/GLTF_PS.hlsl"
+)
 
 set(SHADER_FILES ${VERTEX_SHADERS} ${PIXEL_SHADERS})
 

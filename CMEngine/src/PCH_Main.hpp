@@ -23,3 +23,7 @@
 #include <spdlog/sinks/callback_sink.h>
 
 #include <imgui/CMImGui.hpp>
+
+#include <assimp/Importer.hpp>      // C++ importer interface
+#include <assimp/scene.h>           // Output data structure
+#include <assimp/postprocess.h>     // Post processing flags

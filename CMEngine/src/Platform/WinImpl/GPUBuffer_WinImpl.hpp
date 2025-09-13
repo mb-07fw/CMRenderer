@@ -124,6 +124,6 @@ namespace CMEngine::Platform::WinImpl
 	template <typename Ty>
 	inline void IGPUBuffer::Create(std::span<const Ty> data, const ComPtr<ID3D11Device>& pDevice) noexcept
 	{
-		Create(data.data(), data.size_bytes());
+		Create(data.data(), data.size_bytes(), pDevice);
 	}
 }

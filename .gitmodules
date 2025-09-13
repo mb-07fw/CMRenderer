@@ -4,6 +4,6 @@
 [submodule "vendor/submodules/spdlog"]
 	path = vendor/submodules/spdlog
 	url = https://github.com/gabime/spdlog.git
-[submodule "CMEngine/vendor/submodules/assimp"]
-	path = CMEngine/vendor/submodules/assimp
+[submodule "vendor/submodules/assimp"]
+	path = vendor/submodules/assimp
 	url = https://github.com/assimp/assimp.git

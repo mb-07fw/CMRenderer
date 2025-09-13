@@ -3,11 +3,66 @@
 #include "Platform/WinImpl/Types_WinImpl.hpp"
 #include "Platform/WinImpl/GPUBuffer_WinImpl.hpp"
 
-
 namespace CMEngine::Platform::WinImpl
 {
+	struct Vertex
+	{
+		aiVector3D Pos;
+		aiVector3D Normal;
+		aiVector3D TexCoord;
+	};
+
+	struct alignas(16) TransformCB
+	{
+		static constexpr UINT S_VS_REGISTER_SLOT = 0;
+
+		DirectX::XMMATRIX Model;
+		DirectX::XMMATRIX View;
+		DirectX::XMMATRIX Proj;
+	};
+
+	struct alignas(16) MaterialCB
+	{
+		static constexpr UINT S_PS_REGISTER_SLOT = 0;
+
+		aiColor4D BaseColor;
+		float Metallic = 0.0f;
+		float Roughness = 0.0f;
+		float padding[2] = { 0.0f, 0.0f };
+	};
+
+	struct alignas(16) CameraCB
+	{
+		static constexpr UINT S_PS_REGISTER_SLOT = 1;
+
+		Float3 CameraPos;
+		float padding;
+	};
+
+	static constexpr Float3 S_QUAD_FRONT_VERTICES[] = {
+			{ -0.5f,  0.5f, 1.0f },
+			{  0.5f,  0.5f, 1.0f },
+			{  0.5f, -0.5f, 1.0f },
+			{ -0.5f, -0.5f, 1.0f }
+	};
+
+	static constexpr uint16_t S_QUAD_FRONT_INDICES[] = {
+		0, 1, 2,
+		2, 3, 0
+	};
+
+	class ModelImporterImpl
+	{
+	public:
+		ModelImporterImpl() = default;
+		~ModelImporterImpl() = default;
+
+		Assimp::Importer Assimp;
+	};
+
 	Graphics::Graphics(Window& window) noexcept
-		: m_Window(window)
+		: m_Window(window),
+		  mP_ModelImporter(std::make_unique<ModelImporterImpl>())
 	{
 		Init();
 		m_Window.SetCallbackOnResize(OnResizeThunk, this);
@@ -47,25 +102,93 @@ namespace CMEngine::Platform::WinImpl
 
 		ImGui::End();
 
-		Float3 vertices[] = {
-			{ -0.5f,  0.5f, 1.0f },
-			{  0.5f,  0.5f, 1.0f },
-			{  0.5f, -0.5f, 1.0f },
-			{ -0.5f, -0.5f, 1.0f }
-		};
+		const aiScene* pModel = mP_ModelImporter->Assimp.ReadFile(
+			CM_ENGINE_RESOURCES_MODEL_DIRECTORY "/cube.gltf",
+			aiProcess_Triangulate |
+			aiProcess_JoinIdenticalVertices |
+			aiProcess_ConvertToLeftHanded
+		);
 
-		uint16_t indices[] = {
-			0, 1, 2,
-			2, 3, 0
-		};
+		if (!pModel || !pModel->mMeshes[0])
+		{
+			spdlog::critical(
+				"(WinImpl_Graphics) Internal error: Error occured loading model. "
+				"Error: {}", mP_ModelImporter->Assimp.GetErrorString()
+			);
 
-		VertexBuffer vbVertices(sizeof(Float3));
-		vbVertices.Create(vertices, sizeof(vertices), mP_Device);
+			std::exit(-1);
+		}
+
+		const aiMesh* pMesh = pModel->mMeshes[0];
+
+		std::vector<Vertex> vertices;
+		vertices.reserve(pMesh->mNumVertices);
+
+		for (unsigned int i = 0; i < pMesh->mNumVertices; ++i)
+		{
+			aiVector3D texCoord = pMesh->HasTextureCoords(0)
+				? pMesh->mTextureCoords[0][i]  // UV channel 0
+				: aiVector3D(0.0f, 0.0f, 0.0f); // fallback
+
+			vertices.emplace_back(pMesh->mVertices[i], pMesh->mNormals[i], texCoord);
+		}
+
+		std::vector<uint16_t> indices;
+
+		/* Since we triangulated, each face should be a triangle (i.e., require 3 indices. ex. 0, 1, 2). */
+		UINT numIndices = pMesh->mNumFaces * 3;
+		indices.reserve(numIndices);
+
+		for (unsigned int i = 0; i < pMesh->mNumFaces; ++i)
+		{
+			const auto& face = pMesh->mFaces[i];
+			CM_ENGINE_ASSERT(face.mNumIndices == 3);
+
+			indices.emplace_back(face.mIndices[0]);
+			indices.emplace_back(face.mIndices[1]);
+			indices.emplace_back(face.mIndices[2]);
+		}
+
+		const aiMaterial* pMaterial = pModel->mMaterials[pMesh->mMaterialIndex];
+
+		MaterialCB materialData = {};
+
+		aiColor4D baseColor;
+		if (AI_SUCCESS == aiGetMaterialColor(pMaterial, AI_MATKEY_BASE_COLOR, &baseColor))
+			materialData.BaseColor = { baseColor.r, baseColor.g, baseColor.b, baseColor.a };
+		else
+			materialData.BaseColor = { 1.0f, 1.0f, 1.0f, 1.0f }; // fallback
+
+		float metallic = 1.0f;
+		if (AI_SUCCESS == aiGetMaterialFloat(pMaterial, AI_MATKEY_METALLIC_FACTOR, &metallic))
+			materialData.Metallic = metallic;
+		else
+			materialData.Metallic = 1.0f;
+
+		float roughness = 1.0f;
+		if (AI_SUCCESS == aiGetMaterialFloat(pMaterial, AI_MATKEY_ROUGHNESS_FACTOR, &roughness))
+			materialData.Roughness = roughness;
+		else
+			materialData.Roughness = 1.0f;
+
+		VertexBuffer vbVertices(sizeof(Vertex));
+		vbVertices.Create(vertices.data(), vertices.size() * sizeof(Vertex), mP_Device);
 		vbVertices.Upload(mP_Context);
 
 		IndexBuffer ibIndices;
-		ibIndices.Create(indices, sizeof(indices), mP_Device);
+		ibIndices.Create(indices.data(), indices.size() * sizeof(uint16_t), mP_Device);
 		ibIndices.Upload(mP_Context);
+
+		ConstantBuffer cbMaterial(ConstantBufferType::PS, MaterialCB::S_PS_REGISTER_SLOT);
+		cbMaterial.Create(std::span<const MaterialCB>(&materialData, 1), mP_Device);
+		cbMaterial.Upload(mP_Context);
+
+		CameraCB cameraData = {};
+		cameraData.CameraPos = m_CameraOffset;
+
+		ConstantBuffer cbCamera(ConstantBufferType::PS, CameraCB::S_PS_REGISTER_SLOT);
+		cbCamera.Create(std::span<const CameraCB>(&cameraData, 1), mP_Device);
+		cbCamera.Upload(mP_Context);
 
 		float aspectRatio = m_Window.ClientResolution().Aspect();
 		constexpr float CameraFovDeg = 45.0f;
@@ -79,19 +202,28 @@ namespace CMEngine::Platform::WinImpl
 		DirectX::XMVECTOR cameraFocusVec = DirectX::XMLoadFloat3(&cameraFocus);
 		DirectX::XMVECTOR upDirectionVec = DirectX::XMLoadFloat3(&upDirection);
 
-		DirectX::XMMATRIX modelMatrix = DirectX::XMMatrixTranslation(m_MeshOffset.x, m_MeshOffset.y, m_MeshOffset.z);
-		DirectX::XMMATRIX viewMatrix = DirectX::XMMatrixLookAtLH(cameraPosVec, cameraFocusVec, upDirectionVec);
-		DirectX::XMMATRIX projMatrix = DirectX::XMMatrixPerspectiveFovLH(CameraFovRad, aspectRatio, 0.05f, 100.0f);
+		TransformCB transformData;
 
-		DirectX::XMMATRIX mvpMatrix = DirectX::XMMatrixTranspose(modelMatrix * viewMatrix * projMatrix);
+		transformData.Model = DirectX::XMMatrixTranspose(
+			DirectX::XMMatrixTranslation(m_MeshOffset.x, m_MeshOffset.y, m_MeshOffset.z)
+		);
 
-		ConstantBuffer cbMvpMatrix(ConstantBufferType::VS);
-		cbMvpMatrix.Create(&mvpMatrix, sizeof(mvpMatrix), mP_Device);
-		cbMvpMatrix.Upload(mP_Context);
+		transformData.View = DirectX::XMMatrixTranspose(
+			DirectX::XMMatrixLookAtLH(cameraPosVec, cameraFocusVec, upDirectionVec)
+		);
+
+		transformData.Proj =  DirectX::XMMatrixTranspose(
+			DirectX::XMMatrixPerspectiveFovLH(CameraFovRad, aspectRatio, 0.05f, 100.0f)
+		);
+
+		ConstantBuffer cbTransform(ConstantBufferType::VS, TransformCB::S_VS_REGISTER_SLOT);
+		cbTransform.Create(std::span<const TransformCB>(&transformData, 1), mP_Device);
+		cbTransform.Upload(mP_Context);
 
 		Clear(RGBANorm::Black());
 
-		mP_Context->DrawIndexed(std::size(indices), 0, 0);
+		m_ShaderLibrary.BindSet(SHADER_SET_TYPE_GLTF, mP_Context);
+		mP_Context->DrawIndexed(numIndices, 0, 0);
 
 		mP_D2D_RT->BeginDraw();
 
@@ -160,7 +292,7 @@ namespace CMEngine::Platform::WinImpl
 		if (hr == DXGI_ERROR_DEVICE_REMOVED)
 			spdlog::critical("(WinImpl_Graphics) Internal error: Device removed. Reason: {}", mP_Device->GetDeviceRemovedReason());
 		else
-			spdlog::critical("(WinImpl_Graphics) Internal error: Errer occured after presenting. Error code: {}", hr);
+			spdlog::critical("(WinImpl_Graphics) Internal error: Error occured after presenting. Error code: {}", hr);
 
 		CM_ENGINE_IF_DEBUG(
 			if (mP_InfoQueue->GetNumStoredMessages(DXGI_DEBUG_ALL) == 0)
@@ -249,7 +381,6 @@ namespace CMEngine::Platform::WinImpl
 		SetViewport();
 
 		m_ShaderLibrary.CreateShaderSets(mP_Device);
-		m_ShaderLibrary.BindSet(SHADER_SET_TYPE_QUAD, mP_Context);
 
 		// Setup Dear ImGui context
 		IMGUI_CHECKVERSION();

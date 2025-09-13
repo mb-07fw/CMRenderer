@@ -30,3 +30,15 @@ namespace CMEngine
 		PlatformAlias m_Platform;
 	};
 }
+
+/* <------- Engine Roadmap ------->
+ * 
+ * 1. Create a model using blender.
+ * 
+ *		i)  
+ * 
+ * 2. Load the model in C++ using Assimp. (understand the model format)
+ * 3. Implement a basic scene / scene graph structure.
+ * 4. Use an ECS to implement a Game Entity system.
+ * 
+ */
