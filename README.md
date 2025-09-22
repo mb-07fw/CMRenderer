@@ -5,13 +5,13 @@ This project is a rendering framework I am implementing in C++ to learn graphics
 The project also current relies heavily on D3D11, and will terminate at runtime if not supported.
 
 ## Prerequisites:
-- A compiler supporting C++20.
-- Premake5 (or optionally CMake with a version of 3.31 or higher).
+- A C++ compiler supporting C++20.
+- CMake with a version of 3.31 or higher.
 - Graphics drivers that support DirectX 11. (See *[How to determine the version of DirectX by using the DirectX Diagnostic Tool.](https://support.microsoft.com/en-us/topic/how-to-determine-the-version-of-directx-by-using-the-directx-diagnostic-tool-0c21cbce-55dc-2f9c-d3b1-f966c8339906#:~:text=Click%20Start%2C%20and%20then%20click,information%20for%20each%20DirectX%20file.)*)
 - A *Windows* operating system.
 
 ## Note:
-This project may not fully support a wide variety of IDE's, and is not currently guaranteed to be portable.
+This project may not fully support a wide variety of IDE's, and is not currently guaranteed to be portable across platforms, or compilers other than MSVC.
 You may need to update the project's *CMakeLists.txt* to fit your desired needs.
 
 ## Installing:
