@@ -7,30 +7,37 @@
 
 namespace CMEngine::Platform::WinImpl
 {
+	/* Stores metadata specific to the current platform. */
+	struct PlatformConfig
+	{
+		PlatformConfig() noexcept;
+		~PlatformConfig() = default;
+		
+		bool IsGraphicsDebugging = false;
+	};
+
+	class SpdlogManager
+	{
+	public:
+		SpdlogManager() noexcept;
+		~SpdlogManager() = default;
+	private:
+		void ErrorCallback(const spdlog::details::log_msg& msg) noexcept;
+	private:
+		std::shared_ptr<spdlog::logger> mP_Logger;
+	};
+
 	class CM_ENGINE_API Platform : public IPlatform
 	{
 	public:
-		inline Platform() noexcept
-			: m_Graphics(m_Window)
-		{
-			SetInterfaces(m_Window, m_Graphics);
-		}
-
+		Platform() noexcept;
 		~Platform() = default;
 
-		inline virtual bool Update() noexcept override
-		{
-			if (m_Window.ShouldClose())
-				return false;
-
-			m_Window.Update();
-			m_Graphics.Update();
-
-			return true;
-		}
-
+		virtual bool Update() noexcept override;
 		inline virtual [[nodiscard]] bool IsRunning() const noexcept override { return !m_Window.ShouldClose(); }
 	private:
+		const PlatformConfig m_Config;
+		SpdlogManager m_SpdlogInitializer;
 		Window m_Window;
 		Graphics m_Graphics;
 	};

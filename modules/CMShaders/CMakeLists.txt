@@ -88,7 +88,7 @@ message(STATUS "CMShaders output directory: ${OUTPUT_DIR}")
 
 set_source_files_properties(${VERTEX_SHADERS} PROPERTIES ShaderType "vs")
 set_source_files_properties(${PIXEL_SHADERS} PROPERTIES ShaderType "ps")
-set_source_files_properties(${SHADER_FILES} PROPERTIES ShaderModel "4_0")
+set_source_files_properties(${SHADER_FILES} PROPERTIES ShaderModel "5_0")
 
 # Prepare a list of compiled shader outputss
 set(COMPILED_SHADERS)

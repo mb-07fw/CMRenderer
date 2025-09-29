@@ -43,6 +43,7 @@
 #include <sdkddkver.h>
 
 #include <Windows.h>
+#include <shellapi.h>
 
 #include <dxgi.h>
 #include <dxgi1_5.h>

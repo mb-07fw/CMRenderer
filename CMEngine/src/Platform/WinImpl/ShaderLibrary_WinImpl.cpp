@@ -6,7 +6,7 @@ namespace CMEngine::Platform::WinImpl
 	[[nodiscard]] ShaderID ShaderRegistry::QueryID(const std::filesystem::path& fileName) const noexcept
 	{
 		auto it = m_ShaderNames.find(fileName);
-		
+
 		if (it == m_ShaderNames.end())
 			return ShaderID{};
 
@@ -34,203 +34,6 @@ namespace CMEngine::Platform::WinImpl
 
 		return &m_ShaderData[id.Index];
 	}
-
-#pragma region Shader Sets
-	IShaderSet::IShaderSet(ShaderUseID useFlags) noexcept
-		: m_UseID(useFlags)
-	{
-	}
-
-	void IShaderSet::CreateVertexShader(
-		const ComPtr<ID3D11Device>& pDevice,
-		ComPtr<ID3D11VertexShader>& pOutVertexShader,
-		const ShaderRegistry& registry,
-		ShaderID id
-	) noexcept
-	{
-		if (pDevice.Get() == nullptr)
-			spdlog::critical("(WinImpl_IShaderSet) Internal error: Provided device is nullptr.");
-	
-		const ShaderData* pVSData = registry.Retrieve(id);
-
-		if (pVSData == nullptr)
-		{
-			spdlog::critical("(WinImpl_IShaderSet) Internal error: Failed to retrieve a valid ShaderData from the provided ShaderID.");
-			std::exit(-1);
-		}
-
-		HRESULT hr = pDevice->CreateVertexShader(
-			pVSData->pBytecode->GetBufferPointer(),
-			pVSData->pBytecode->GetBufferSize(),
-			nullptr,
-			&pOutVertexShader
-		);
-
-		if (FAILED(hr))
-			spdlog::critical("(WinImpl_IShaderSet) Internal error: Failed to create vertex shader.");
-	}
-
-	void IShaderSet::CreatePixelShader(
-		const ComPtr<ID3D11Device>& pDevice,
-		ComPtr<ID3D11PixelShader>& pOutPixelShader,
-		const ShaderRegistry& registry,
-		ShaderID id
-	) noexcept
-	{
-		if (pDevice.Get() == nullptr)
-			spdlog::critical("(WinImpl_IShaderSet) Internal error: Provided device is nullptr.");
-
-		const ShaderData* pPSData = registry.Retrieve(id);
-
-		if (pPSData == nullptr)
-		{
-			spdlog::critical("(WinImpl_IShaderSet) Internal error: Failed to retrieve a valid ShaderData from the provided ShaderID.");
-			std::exit(-1);
-		}
-
-		HRESULT hr = pDevice->CreatePixelShader(
-			pPSData->pBytecode->GetBufferPointer(),
-			pPSData->pBytecode->GetBufferSize(),
-			nullptr,
-			&pOutPixelShader
-		);
-
-		if (FAILED(hr))
-			spdlog::critical("(WinImpl_IShaderSet) Internal error: Failed to create pixel shader.");
-	}
-
-	void IShaderSet::CreateVertexAndPixelShader(
-		const ComPtr<ID3D11Device>& pDevice,
-		ComPtr<ID3D11VertexShader>& pOutVertexShader,
-		ComPtr<ID3D11PixelShader>& pOutPixelShader,
-		const ShaderRegistry& registry,
-		ShaderID vertexID,
-		ShaderID pixelID
-	) noexcept
-	{
-		CreateVertexShader(pDevice, pOutVertexShader, registry, vertexID);
-		CreatePixelShader(pDevice, pOutPixelShader, registry, pixelID);
-	}
-
-	void IShaderSet::CreateInputLayout(
-		const ComPtr<ID3D11Device>& pDevice,
-		ComPtr<ID3D11InputLayout>& pOutInputLayout,
-		std::span<const D3D11_INPUT_ELEMENT_DESC> inputDescs,
-		const ShaderRegistry& registry,
-		ShaderID vertexID
-	) noexcept
-	{
-		if (inputDescs.data() == nullptr)
-			spdlog::warn("(WinImpl_IShaderSet) Internal warning: Provided input-element-desc data is nullptr. Input layout creation will likely fail.");
-		else if (inputDescs.size() == 0)
-			spdlog::warn("(WinImpl_IShaderSet) Internal warning: Provided input-element-desc data is empty. Input layout creation will likely fail.");
-
-		const ShaderData* pVSData = registry.Retrieve(vertexID);
-
-		if (pVSData == nullptr)
-		{
-			spdlog::critical("(WinImpl_IShaderSet) Internal error: Failed to retrieve a valid ShaderData from the registry with the provided ID.");
-			std::exit(-1);
-		}
-
-		HRESULT hr = pDevice->CreateInputLayout(
-			inputDescs.data(),
-			static_cast<UINT>(inputDescs.size()),
-			pVSData->pBytecode->GetBufferPointer(),
-			pVSData->pBytecode->GetBufferSize(),
-			&pOutInputLayout
-		);
-
-		if (FAILED(hr))
-			spdlog::critical("(WinImpl_IShaderSet) Internal error: Failed to create input layout. Error code: {}", hr);
-	}
-
-	void IShaderSet::BindVertexShader(const ComPtr<ID3D11DeviceContext>& pContext, const ComPtr<ID3D11VertexShader>& pVertexShader) noexcept
-	{
-		if (pContext.Get() == nullptr)
-			spdlog::critical("(WinImpl_IShaderSet) Internal error: Provided device context is nullptr.");
-
-		pContext->VSSetShader(pVertexShader.Get(), nullptr, 0);
-	}
-
-	void IShaderSet::BindPixelShader(const ComPtr<ID3D11DeviceContext>& pContext, const ComPtr<ID3D11PixelShader>& pPixelShader) noexcept
-	{
-		if (pContext.Get() == nullptr)
-			spdlog::critical("(WinImpl_IShaderSet) Internal error: Provided device context is nullptr.");
-
-		pContext->PSSetShader(pPixelShader.Get(), nullptr, 0);
-	}
-
-	void IShaderSet::BindInputLayout(const ComPtr<ID3D11DeviceContext>& pContext, const ComPtr<ID3D11InputLayout>& pInputLayout) noexcept
-	{
-		pContext->IASetInputLayout(pInputLayout.Get());
-	}
-
-	void ShaderSetQuad::Create(const ComPtr<ID3D11Device>& pDevice, const ShaderRegistry& registry) noexcept
-	{
-		CreateVertexAndPixelShader(
-			pDevice,
-			mP_VertexShader,
-			mP_PixelShader,
-			registry,
-			m_VertexID,
-			m_PixelID
-		);
-
-		constexpr D3D11_INPUT_ELEMENT_DESC InputLayoutDescs[] = {
-			{ "Pos", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-		};
-
-		CreateInputLayout(
-			pDevice,
-			mP_InputLayout,
-			InputLayoutDescs,
-			registry,
-			m_VertexID
-		);
-	}
-
-	void ShaderSetQuad::Bind(const ComPtr<ID3D11DeviceContext>& pContext) noexcept
-	{
-		BindVertexShader(pContext, mP_VertexShader);
-		BindPixelShader(pContext, mP_PixelShader);
-		BindInputLayout(pContext, mP_InputLayout);
-	}
-
-	void ShaderSetGltf::Create(const ComPtr<ID3D11Device>& pDevice, const ShaderRegistry& registry) noexcept
-	{
-		CreateVertexAndPixelShader(
-			pDevice,
-			mP_VertexShader,
-			mP_PixelShader,
-			registry,
-			m_VertexID,
-			m_PixelID
-		);
-
-		constexpr UINT TexCoordSemanticIndex = 0;
-		constexpr D3D11_INPUT_ELEMENT_DESC InputLayoutDescs[] = {
-			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			{ "TEXCOORD", TexCoordSemanticIndex, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_VERTEX_DATA, 0 }
-		};
-
-		CreateInputLayout(
-			pDevice,
-			mP_InputLayout,
-			InputLayoutDescs,
-			registry,
-			m_VertexID
-		);
-	}
-
-	void ShaderSetGltf::Bind(const ComPtr<ID3D11DeviceContext>& pContext) noexcept
-	{
-		BindVertexShader(pContext, mP_VertexShader);
-		BindPixelShader(pContext, mP_PixelShader);
-		BindInputLayout(pContext, mP_InputLayout);
-	}
-#pragma endregion
 
 #pragma region Shader Library
 	ShaderLibrary::ShaderLibrary() noexcept
@@ -263,7 +66,7 @@ namespace CMEngine::Platform::WinImpl
 				bool validData = false;
 				switch (shaderData.ID.Type)
 				{
-				case SHADER_TYPE_INVALID: [[fallthrough]];
+				case ShaderType::INVALID: [[fallthrough]];
 				default:
 					spdlog::warn(
 						"(WinImpl_ShaderLibrary) Internal warning: Collected shader data has an "
@@ -272,8 +75,8 @@ namespace CMEngine::Platform::WinImpl
 					);
 
 					break;
-				case SHADER_TYPE_VERTEX:
-					if (!ValidateSetSupportsUse(setType, shaderData.ID.Type, shaderData.Filename, SHADER_USE_VERTEX))
+				case ShaderType::VERTEX:
+					if (!ValidateSetSupportsUse(setType, shaderData.ID.Type, shaderData.Filename, (ShaderUseID)ShaderUseType::VERTEX))
 						break;
 					else if (pVSData != nullptr)
 					{
@@ -281,7 +84,7 @@ namespace CMEngine::Platform::WinImpl
 							"(WinImpl_ShaderLibrary) Internal warning: Found more than one ShaderData "
 							"of the same ShaderType for the current ShaderSetType. Skipping duplicate data. "
 							"ShaderType: {}, ShaderSetType: {}, Filename: {}",
-							static_cast<int16_t>(SHADER_TYPE_VERTEX),
+							static_cast<int16_t>(ShaderType::VERTEX),
 							static_cast<int16_t>(setType),
 							shaderData.Filename.generic_string()
 						);
@@ -291,10 +94,10 @@ namespace CMEngine::Platform::WinImpl
 
 					pVSData = &shaderData;
 					validData = true;
-					currentUseID |= SHADER_USE_VERTEX;
+					currentUseID |= (ShaderUseID)ShaderUseType::VERTEX;
 					break;
-				case SHADER_TYPE_PIXEL:
-					if (!ValidateSetSupportsUse(setType, shaderData.ID.Type, shaderData.Filename, SHADER_USE_PIXEL))
+				case ShaderType::PIXEL:
+					if (!ValidateSetSupportsUse(setType, shaderData.ID.Type, shaderData.Filename, (ShaderUseID)ShaderUseType::PIXEL))
 						break;
 					else if (pPSData != nullptr)
 					{
@@ -302,7 +105,7 @@ namespace CMEngine::Platform::WinImpl
 							"(WinImpl_ShaderLibrary) Internal warning: Found more than one ShaderData "
 							"of the same ShaderType for the current ShaderSetType. Skipping duplicate data. "
 							"ShaderType: {}, ShaderSetType: {}, Filename: {}",
-							static_cast<int16_t>(SHADER_TYPE_PIXEL),
+							static_cast<int16_t>(ShaderType::PIXEL),
 							static_cast<int16_t>(setType),
 							shaderData.Filename.generic_string()
 						);
@@ -312,10 +115,10 @@ namespace CMEngine::Platform::WinImpl
 
 					pPSData = &shaderData;
 					validData = true;
-					currentUseID |= SHADER_USE_PIXEL;
+					currentUseID |= (ShaderUseID)ShaderUseType::PIXEL;
 					break;
-				case SHADER_TYPE_COMPUTE:
-					if (!ValidateSetSupportsUse(setType, shaderData.ID.Type, shaderData.Filename, SHADER_USE_COMPUTE))
+				case ShaderType::COMPUTE:
+					if (!ValidateSetSupportsUse(setType, shaderData.ID.Type, shaderData.Filename, (ShaderUseID)ShaderUseType::COMPUTE))
 						break;
 					else if (pCSData != nullptr)
 					{
@@ -323,7 +126,7 @@ namespace CMEngine::Platform::WinImpl
 							"(WinImpl_ShaderLibrary) Internal warning: Found more than one ShaderData "
 							"of the same ShaderType for the current ShaderSetType. Skipping duplicate data. "
 							"ShaderType: {}, ShaderSetType: {}, Filename: {}",
-							static_cast<int16_t>(SHADER_TYPE_COMPUTE),
+							static_cast<int16_t>(ShaderType::COMPUTE),
 							static_cast<int16_t>(setType),
 							shaderData.Filename.generic_string()
 						);
@@ -333,7 +136,7 @@ namespace CMEngine::Platform::WinImpl
 
 					pCSData = &shaderData;
 					validData = true;
-					currentUseID |= SHADER_USE_COMPUTE;
+					currentUseID |= (ShaderUseID)ShaderUseType::COMPUTE;
 					break;
 				}
 
@@ -346,17 +149,17 @@ namespace CMEngine::Platform::WinImpl
 
 				switch (setType)
 				{
-				case SHADER_SET_TYPE_INVALID: [[fallthrough]];
-				case SHADER_SET_TYPE_TOTAL_SETS: [[fallthrough]];
+				case ShaderSetType::INVALID: [[fallthrough]];
+				case ShaderSetType::TOTAL_SETS: [[fallthrough]];
 				default:
 					spdlog::warn("(WinImpl_ShaderLibrary) Internal warning: Current ShaderSetType has a non-literal (invalid or sentinel) value. You did something stupid if this happened.");
 					break;
-				case SHADER_SET_TYPE_QUAD:
-					m_ShaderSets.emplace_back(std::make_shared<ShaderSetQuad>(pVSData->ID, pPSData->ID));
+				case ShaderSetType::GLTF:
+					m_ShaderSets.emplace_back(std::make_shared<ShaderSetGltf>(pVSData->ID, pPSData->ID));
 					collectedData = true;
 					break;
-				case SHADER_SET_TYPE_GLTF:
-					m_ShaderSets.emplace_back(std::make_shared<ShaderSetGltf>(pVSData->ID, pPSData->ID));
+				case ShaderSetType::QUAD:
+					m_ShaderSets.emplace_back(std::make_shared<ShaderSetQuad>(pVSData->ID, pPSData->ID));
 					collectedData = true;
 					break;
 				}

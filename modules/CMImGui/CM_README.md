@@ -5,6 +5,7 @@ branch of [the repository.](https://github.com/ocornut/imgui)
 Any modifications will be annotated by my GitHub username, *mb-07fw*.
 
 Ex:
-```
+
+```cpp
 /* mb-07fw: ...modified as follows... */
 ```

@@ -4,6 +4,8 @@
 
 #include <cstdint>
 #include <span>
+#include <vector>
+#include <type_traits>
 
 namespace CMEngine::Platform::WinImpl
 {
@@ -14,8 +16,8 @@ namespace CMEngine::Platform::WinImpl
 		IUploadable() = default;
 		virtual ~IUploadable() = default;
 
-		virtual void Upload(const ComPtr<ID3D11DeviceContext>& pContext) noexcept = 0;
-		virtual void ClearUpload(const ComPtr<ID3D11DeviceContext>& pContext) noexcept = 0;
+		virtual void Upload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept = 0;
+		virtual void ClearUpload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept = 0;
 	};
 
 	/* A pure virtual representation of a buffer that is bindable to the D3D11 pipeline.
@@ -61,8 +63,8 @@ namespace CMEngine::Platform::WinImpl
 
 		~VertexBuffer() = default;
 
-		virtual void Upload(const ComPtr<ID3D11DeviceContext>& pContext) noexcept override;
-		virtual void ClearUpload(const ComPtr<ID3D11DeviceContext>& pContext) noexcept override;
+		virtual void Upload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept override;
+		virtual void ClearUpload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept override;
 
 		/* Use these setters to override previously set properties. Overriden properties are NOT applied 
 		 *   to already created buffers, they should instead be released and re-created. */
@@ -85,8 +87,8 @@ namespace CMEngine::Platform::WinImpl
 
 		~IndexBuffer() = default;
 
-		virtual void Upload(const ComPtr<ID3D11DeviceContext>& pContext) noexcept override;
-		virtual void ClearUpload(const ComPtr<ID3D11DeviceContext>& pContext) noexcept override;
+		virtual void Upload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept override;
+		virtual void ClearUpload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept override;
 
 		/* Use these setters to override previously set properties. Overriden properties are NOT applied
 		 *   to already created buffers, they should instead be released and re-created. */
@@ -111,19 +113,69 @@ namespace CMEngine::Platform::WinImpl
 
 		~ConstantBuffer() = default;
 
-		virtual void Upload(const ComPtr<ID3D11DeviceContext>& pContext) noexcept override;
-		virtual void ClearUpload(const ComPtr<ID3D11DeviceContext>& pContext) noexcept override;
+		virtual void Upload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept override;
+		virtual void ClearUpload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept override;
 	private:
-		void Bind(const ComPtr<ID3D11DeviceContext>& pContext, ID3D11Buffer* pBuffer) noexcept;
+		void Bind(const ComPtr<ID3D11DeviceContext>& pContext, ID3D11Buffer* pBuffer) const noexcept;
 	private:
 		static constexpr UINT S_TOTAL_REGISTERS = D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT;
 		ConstantBufferType m_Type = ConstantBufferType::INVALID;
 		UINT m_RegisterSlot = 0;
 	};
 
+	/* BufferArrayTyped is an array of homogenous buffer types, meaning it is not meant to be used polymorphically. */
+	template <typename Ty>
+		requires std::is_base_of_v<IGPUBuffer, Ty> /* Ty is a derived type of IGPUBuffer. */
+	class BufferArrayTyped
+	{
+	public:
+		inline BufferArrayTyped(size_t capacity) noexcept;
+		~BufferArrayTyped() = default;
+
+		template <typename... Args>
+		inline Ty& EmplaceBack(Args&&... args) noexcept;
+
+		inline void Upload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept;
+
+		inline Ty& operator[](size_t index) noexcept { return m_Buffers[index]; }
+		inline const Ty& operator[](size_t index) const noexcept { return m_Buffers[index]; }
+
+		inline std::vector<Ty>& Array() noexcept { return m_Buffers; }
+	private:
+		static constexpr bool S_IS_VB_ARRAY = std::is_same_v<VertexBuffer, Ty>;
+		static constexpr bool S_IS_IB_ARRAY = std::is_same_v<IndexBuffer, Ty>;
+		static constexpr bool S_IS_CB_ARRAY = std::is_same_v<ConstantBuffer, Ty>;
+		std::vector<Ty> m_Buffers;
+	};
+
+	using VertexBufferArray = BufferArrayTyped<VertexBuffer>;
+
 	template <typename Ty>
 	inline void IGPUBuffer::Create(std::span<const Ty> data, const ComPtr<ID3D11Device>& pDevice) noexcept
 	{
 		Create(data.data(), data.size_bytes(), pDevice);
+	}
+
+	template <typename Ty>
+		requires std::is_base_of_v<IGPUBuffer, Ty>
+	inline BufferArrayTyped<Ty>::BufferArrayTyped(size_t capacity) noexcept
+	{
+		m_Buffers.reserve(capacity);
+	}
+
+	template <typename Ty>
+		requires std::is_base_of_v<IGPUBuffer, Ty>
+	template <typename... Args>
+	inline Ty& BufferArrayTyped<Ty>::EmplaceBack(Args&&... args) noexcept
+	{
+		return m_Buffers.emplace_back(std::forward<Args>(args)...);
+	}
+
+	template <typename Ty>
+		requires std::is_base_of_v<IGPUBuffer, Ty>
+	inline void BufferArrayTyped<Ty>::Upload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept
+	{
+		for (const auto& buffer : m_Buffers)
+			buffer.Upload(pContext);
 	}
 }

@@ -30,10 +30,10 @@ namespace CMEngine
 		Float2() = default;
 		~Float2() = default;
 
-		inline constexpr [[nodiscard]] bool operator==(Float2 other) const noexcept;
+		inline constexpr [[nodiscard]] bool operator==(Float2 other) const noexcept { return IsEqual(other); }
 		inline constexpr [[nodiscard]] bool IsEqual(Float2 other) const noexcept;
-		[[nodiscard]] bool IsNearEqual(Float2 other, float epsilon = G_NEAR_EQUAL_FLOAT_EPSILON) const noexcept;
 		inline constexpr [[nodiscard]] bool IsZero() const noexcept;
+		[[nodiscard]] bool IsNearEqual(Float2 other, float epsilon = G_NEAR_EQUAL_FLOAT_EPSILON) const noexcept;
 
 		/* Returns the aspect ratio of the x and y components. */
 		inline constexpr [[nodiscard]] float Aspect() const noexcept { return x / y; }
@@ -62,10 +62,10 @@ namespace CMEngine
 		Float3() = default;
 		~Float3() = default;
 
-		inline constexpr [[nodiscard]] bool operator==(Float3 other) const noexcept;
+		inline constexpr [[nodiscard]] bool operator==(Float3 other) const noexcept { return IsEqual(other); }
 		inline constexpr [[nodiscard]] bool IsEqual(Float3 other) const noexcept;
-		[[nodiscard]] bool IsNearEqual(Float3 other, float epsilon = G_NEAR_EQUAL_FLOAT_EPSILON) const noexcept;
 		inline constexpr [[nodiscard]] bool IsZero() const noexcept;
+		[[nodiscard]] bool IsNearEqual(Float3 other, float epsilon = G_NEAR_EQUAL_FLOAT_EPSILON) const noexcept;
 
 		inline [[nodiscard]] std::span<const float, 3> Data() const noexcept { return std::span<const float, 3>(Underlying(), 3); }
 
@@ -80,12 +80,66 @@ namespace CMEngine
 		Rect() = default;
 		~Rect() = default;
 
-		inline constexpr [[nodiscard]] bool operator==(Rect other) const noexcept;
+		inline constexpr [[nodiscard]] bool operator==(Rect other) const noexcept { return IsEqual(other); }
 		inline constexpr [[nodiscard]] bool IsEqual(Rect other) const noexcept;
-		[[nodiscard]] bool IsNearEqual(Rect other, float epsilon = G_NEAR_EQUAL_FLOAT_EPSILON) const noexcept;
 		inline constexpr [[nodiscard]] bool IsZero() const noexcept;
+		[[nodiscard]] bool IsNearEqual(Rect other, float epsilon = G_NEAR_EQUAL_FLOAT_EPSILON) const noexcept;
 
 		float left = 0.0f, top = 0.0f, right = 0.0f, bottom = 0.0f;
+	};
+
+	struct Transform
+	{
+		inline Transform(
+			const Float3& scaling,
+			const Float3& rotation,
+			const Float3& translation
+		) noexcept;
+
+		Transform() = default;
+		~Transform() = default;
+
+		static constexpr uint32_t S_NUM_FLOAT3 = 3;
+
+		inline constexpr [[nodiscard]] bool operator==(const Transform& other) const noexcept { return IsEqual(other); }
+		inline constexpr [[nodiscard]] bool IsEqual(const Transform& other) const noexcept;
+		inline constexpr [[nodiscard]] bool IsZero() const noexcept;
+		[[nodiscard]] bool IsNearEqual(const Transform& other, float epsilon = G_NEAR_EQUAL_FLOAT_EPSILON) const noexcept;
+
+		inline [[nodiscard]] const Float3* Underlying() const noexcept { return reinterpret_cast<const Float3*>(this); }
+		inline [[nodiscard]] Float3* Underlying() noexcept { return reinterpret_cast<Float3*>(this); }
+		inline [[nodiscard]] std::span<const Float3, S_NUM_FLOAT3> Data() const noexcept { return std::span<const Float3, S_NUM_FLOAT3>(Underlying(), S_NUM_FLOAT3); }
+		inline [[nodiscard]] std::span<Float3, S_NUM_FLOAT3> Data() noexcept { return std::span<Float3, S_NUM_FLOAT3>(Underlying(), S_NUM_FLOAT3); }
+
+		Float3 Scaling;
+		Float3 Rotation;
+		Float3 Translation;
+	};
+
+	struct RigidTransform
+	{
+		inline RigidTransform(
+			const Float3& rotation,
+			const Float3& translation
+		) noexcept;
+
+		RigidTransform() = default;
+		~RigidTransform() = default;
+
+		static constexpr uint32_t S_NUM_FLOAT3 = 2;
+
+		inline constexpr [[nodiscard]] bool operator==(const RigidTransform& other) const noexcept { return IsEqual(other); }
+		inline constexpr [[nodiscard]] bool IsEqual(const RigidTransform& other) const noexcept;
+		inline constexpr [[nodiscard]] bool IsZero() const noexcept;
+		[[nodiscard]] bool IsNearEqual(const RigidTransform& other, float epsilon = G_NEAR_EQUAL_FLOAT_EPSILON) const noexcept;
+
+		inline [[nodiscard]] const Float3* Underlying() const noexcept { return reinterpret_cast<const Float3*>(this); }
+		inline [[nodiscard]] Float3* Underlying() noexcept { return reinterpret_cast<Float3*>(this); }
+		inline [[nodiscard]] std::span<const Float3, S_NUM_FLOAT3> Data() const noexcept { return std::span<const Float3, S_NUM_FLOAT3>(Underlying(), S_NUM_FLOAT3); }
+		inline [[nodiscard]] std::span<Float3, S_NUM_FLOAT3> Data() noexcept { return std::span<Float3, S_NUM_FLOAT3>(Underlying(), S_NUM_FLOAT3); }
+
+		Float3 Rotation;
+		Float3 Translation;
 	};
 
 	inline constexpr Float2::Float2(float x, float y) noexcept
@@ -96,11 +150,6 @@ namespace CMEngine
 	inline constexpr Float2::Float2(Float3 float3) noexcept
 		: x(float3.x), y(float3.y)
 	{
-	}
-
-	inline constexpr [[nodiscard]] bool Float2::operator==(Float2 other) const noexcept
-	{
-		return IsEqual(other);
 	}
 
 	inline constexpr [[nodiscard]] bool Float2::IsEqual(Float2 other) const noexcept
@@ -125,11 +174,6 @@ namespace CMEngine
 		: Float2(float2),
 		  z(z)
 	{
-	}
-
-	inline constexpr [[nodiscard]] bool Float3::operator==(Float3 other) const noexcept
-	{
-		return IsEqual(other);
 	}
 
 	inline constexpr [[nodiscard]] bool Float3::IsEqual(Float3 other) const noexcept
@@ -162,11 +206,6 @@ namespace CMEngine
 	{
 	}
 
-	inline constexpr [[nodiscard]] bool Rect::operator==(Rect other) const noexcept
-	{
-		return IsEqual(other);
-	}
-
 	inline constexpr [[nodiscard]] bool Rect::IsEqual(Rect other) const noexcept
 	{
 		return left == other.left &&
@@ -181,6 +220,52 @@ namespace CMEngine
 			top == 0.0f &&
 			right == 0.0f &&
 			bottom == 0.0f;
+	}
+
+	inline Transform::Transform(
+		const Float3& scaling,
+		const Float3& rotation,
+		const Float3& translation
+	) noexcept
+		: Scaling(scaling),
+		  Rotation(rotation),
+		  Translation(translation)
+	{
+	}
+
+	inline constexpr [[nodiscard]] bool Transform::IsEqual(const Transform& other) const noexcept
+	{
+		return Translation == other.Translation &&
+			Scaling == other.Scaling &&
+			Rotation == other.Rotation;
+	}
+
+	inline constexpr [[nodiscard]] bool Transform::IsZero() const noexcept
+	{
+		return Translation.IsZero() &&
+			Scaling.IsZero() &&
+			Rotation.IsZero();
+	}
+
+	inline RigidTransform::RigidTransform(
+		const Float3& rotation,
+		const Float3& translation
+	) noexcept
+		: Rotation(rotation),
+		  Translation(translation)
+	{
+	}
+
+	inline constexpr [[nodiscard]] bool RigidTransform::IsEqual(const RigidTransform& other) const noexcept
+	{
+		return Translation == other.Translation &&
+			Rotation == other.Rotation;
+	}
+
+	inline constexpr [[nodiscard]] bool RigidTransform::IsZero() const noexcept
+	{
+		return Translation.IsZero() &&
+			Rotation.IsZero();
 	}
 
 	template <typename Ty>

@@ -60,7 +60,7 @@ namespace CMEngine::Platform::WinImpl
 	{
 	}
 
-	void VertexBuffer::Upload(const ComPtr<ID3D11DeviceContext>& pContext) noexcept
+	void VertexBuffer::Upload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept
 	{
 		CM_ENGINE_ASSERT(IsCreated());
 
@@ -75,7 +75,7 @@ namespace CMEngine::Platform::WinImpl
 		);
 	}
 
-	void VertexBuffer::ClearUpload(const ComPtr<ID3D11DeviceContext>& pContext) noexcept
+	void VertexBuffer::ClearUpload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept
 	{
 		pContext->IASetVertexBuffers(
 			m_RegisterSlot,
@@ -93,14 +93,14 @@ namespace CMEngine::Platform::WinImpl
 	{
 	}
 
-	void IndexBuffer::Upload(const ComPtr<ID3D11DeviceContext>& pContext) noexcept
+	void IndexBuffer::Upload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept
 	{
 		CM_ENGINE_ASSERT(IsCreated());
 
 		pContext->IASetIndexBuffer(mP_Buffer.Get(), m_IndexFormat, m_IndexStartOffset);
 	}
 
-	void IndexBuffer::ClearUpload(const ComPtr<ID3D11DeviceContext>& pContext) noexcept
+	void IndexBuffer::ClearUpload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept
 	{
 		pContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
 	}
@@ -112,17 +112,17 @@ namespace CMEngine::Platform::WinImpl
 	{
 	}
 
-	void ConstantBuffer::Upload(const ComPtr<ID3D11DeviceContext>& pContext) noexcept
+	void ConstantBuffer::Upload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept
 	{
 		Bind(pContext, mP_Buffer.Get());
 	}
 
-	void ConstantBuffer::ClearUpload(const ComPtr<ID3D11DeviceContext>& pContext) noexcept
+	void ConstantBuffer::ClearUpload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept
 	{
 		Bind(pContext, nullptr);
 	}
 
-	void ConstantBuffer::Bind(const ComPtr<ID3D11DeviceContext>& pContext, ID3D11Buffer* pBuffer) noexcept
+	void ConstantBuffer::Bind(const ComPtr<ID3D11DeviceContext>& pContext, ID3D11Buffer* pBuffer) const noexcept
 	{
 		CM_ENGINE_ASSERT(m_RegisterSlot < S_TOTAL_REGISTERS);
 		constexpr UINT NumConstantBuffers = 1;

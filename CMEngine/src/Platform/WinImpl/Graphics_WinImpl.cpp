@@ -1,4 +1,5 @@
 #include "PCH.hpp"
+#include "Platform/WinImpl/Platform_WinImpl.hpp"
 #include "Platform/WinImpl/Graphics_WinImpl.hpp"
 #include "Platform/WinImpl/Types_WinImpl.hpp"
 #include "Platform/WinImpl/GPUBuffer_WinImpl.hpp"
@@ -39,11 +40,19 @@ namespace CMEngine::Platform::WinImpl
 		float padding;
 	};
 
-	static constexpr Float3 S_QUAD_FRONT_VERTICES[] = {
-			{ -0.5f,  0.5f, 1.0f },
-			{  0.5f,  0.5f, 1.0f },
-			{  0.5f, -0.5f, 1.0f },
-			{ -0.5f, -0.5f, 1.0f }
+	struct SphereInstanceVB
+	{
+		static constexpr UINT S_REGISTER_SLOT = 1;
+
+		Float3 Origin;
+		float Radius = 0.0f;
+	};
+
+	static constexpr Float2 S_QUAD_FRONT_VERTICES[] = {
+			{ -0.5f,  0.5f },
+			{  0.5f,  0.5f },
+			{  0.5f, -0.5f },
+			{ -0.5f, -0.5f }
 	};
 
 	static constexpr uint16_t S_QUAD_FRONT_INDICES[] = {
@@ -60,8 +69,9 @@ namespace CMEngine::Platform::WinImpl
 		Assimp::Importer Assimp;
 	};
 
-	Graphics::Graphics(Window& window) noexcept
+	Graphics::Graphics(Window& window, const PlatformConfig& platformConfig) noexcept
 		: m_Window(window),
+		  m_Config(platformConfig),
 		  mP_ModelImporter(std::make_unique<ModelImporterImpl>())
 	{
 		Init();
@@ -133,10 +143,10 @@ namespace CMEngine::Platform::WinImpl
 			vertices.emplace_back(pMesh->mVertices[i], pMesh->mNormals[i], texCoord);
 		}
 
-		std::vector<uint16_t> indices;
-
 		/* Since we triangulated, each face should be a triangle (i.e., require 3 indices. ex. 0, 1, 2). */
 		UINT numIndices = pMesh->mNumFaces * 3;
+
+		std::vector<uint16_t> indices;
 		indices.reserve(numIndices);
 
 		for (unsigned int i = 0; i < pMesh->mNumFaces; ++i)
@@ -150,7 +160,6 @@ namespace CMEngine::Platform::WinImpl
 		}
 
 		const aiMaterial* pMaterial = pModel->mMaterials[pMesh->mMaterialIndex];
-
 		MaterialCB materialData = {};
 
 		aiColor4D baseColor;
@@ -203,7 +212,6 @@ namespace CMEngine::Platform::WinImpl
 		DirectX::XMVECTOR upDirectionVec = DirectX::XMLoadFloat3(&upDirection);
 
 		TransformCB transformData;
-
 		transformData.Model = DirectX::XMMatrixTranspose(
 			DirectX::XMMatrixTranslation(m_MeshOffset.x, m_MeshOffset.y, m_MeshOffset.z)
 		);
@@ -212,7 +220,7 @@ namespace CMEngine::Platform::WinImpl
 			DirectX::XMMatrixLookAtLH(cameraPosVec, cameraFocusVec, upDirectionVec)
 		);
 
-		transformData.Proj =  DirectX::XMMatrixTranspose(
+		transformData.Proj = DirectX::XMMatrixTranspose(
 			DirectX::XMMatrixPerspectiveFovLH(CameraFovRad, aspectRatio, 0.05f, 100.0f)
 		);
 
@@ -222,43 +230,18 @@ namespace CMEngine::Platform::WinImpl
 
 		Clear(RGBANorm::Black());
 
-		m_ShaderLibrary.BindSet(SHADER_SET_TYPE_GLTF, mP_Context);
+		m_ShaderLibrary.BindSet(ShaderSetType::GLTF, mP_Context);
 		mP_Context->DrawIndexed(numIndices, 0, 0);
 
-		mP_D2D_RT->BeginDraw();
-
-		D2D1_RECT_F layoutRect = D2D1::RectF(
-			m_TextOffset.x,
-			m_TextOffset.y,
-			m_TextResolution.x + m_TextOffset.x,
-			m_TextResolution.y + m_TextOffset.y
-		);
-
-		mP_SC_Brush->SetColor(
-			D2D1::ColorF(
-				m_TextBoundsRGBA.r(),
-				m_TextBoundsRGBA.g(),
-				m_TextBoundsRGBA.b(),
-				m_TextBoundsRGBA.a()
-			)
-		);
+		D2DBeginDraw();
 
 		if (m_ShowTextBounds)
-			mP_D2D_RT->DrawRectangle(layoutRect, mP_SC_Brush.Get(), 1.0f, nullptr);
-
-		mP_SC_Brush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
+			D2DDrawRect(m_TextOffset, m_TextResolution, RGBANorm::White());
 
 		constexpr std::wstring_view TestText = L"Hello Direct2D & DirectWrite!";
+		D2DDrawText(TestText, m_TextOffset, m_TextResolution, RGBANorm::White());
 
-		mP_D2D_RT->DrawText(
-			TestText.data(),
-			static_cast<UINT32>(TestText.length()),
-			mP_TextFormat.Get(),
-			layoutRect,
-			mP_SC_Brush.Get()
-		);
-
-		mP_D2D_RT->EndDraw();
+		D2DEndDraw();
 
 		ImGui::Render();
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -294,12 +277,13 @@ namespace CMEngine::Platform::WinImpl
 		else
 			spdlog::critical("(WinImpl_Graphics) Internal error: Error occured after presenting. Error code: {}", hr);
 
-		CM_ENGINE_IF_DEBUG(
+		if (m_LoadedDebugLayer)
+		{
 			if (mP_InfoQueue->GetNumStoredMessages(DXGI_DEBUG_ALL) == 0)
 				return;
 
 			spdlog::warn("(WinImpl_Graphics) Internal warning: Debug messages generated after presenting.");
-			);
+		}
 	}
 
 	void Graphics::Draw(const void* pBuffer, const DrawDescriptor& descriptor) noexcept
@@ -308,6 +292,9 @@ namespace CMEngine::Platform::WinImpl
 
 	void Graphics::Init() noexcept
 	{
+		if (m_Config.IsGraphicsDebugging)
+			spdlog::info("(WinImpl_Graphics) Internal info: Graphics debugger is active, so Direct2D and DirectWrite resources will not be initialized.");
+
 		DXGI_SWAP_CHAIN_DESC scDesc = {};
 		scDesc.BufferDesc.Width = 0;
 		scDesc.BufferDesc.Height = 0;
@@ -331,7 +318,15 @@ namespace CMEngine::Platform::WinImpl
 		/* NOTE: If D3D11_CREATE_DEVICE_DEBUG is not provided, the debug layer will not be able
 		 *		   to be loaded. */
 		CM_ENGINE_IF_DEBUG(flags |= D3D11_CREATE_DEVICE_DEBUG);
+		CM_ENGINE_IF_NDEBUG(
+			if (m_Config.IsGraphicsDebugging)
+			{
+				spdlog::info("(WinImpl_Graphics) Internal info: Creating device with debug layer in non-debug build config since a graphics debugger is active.");
+				flags |= D3D11_CREATE_DEVICE_DEBUG;
+			}
+		);
 
+		spdlog::info("(WinImpl_Graphics) Internal info: Creating device with flags: {}", flags);
 		HRESULT hr = D3D11CreateDeviceAndSwapChain(
 			nullptr,
 			D3D_DRIVER_TYPE_HARDWARE,
@@ -350,28 +345,32 @@ namespace CMEngine::Platform::WinImpl
 		if (FAILED(hr))
 			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create device and swap chain. Error code: {}", hr);
 
-		CM_ENGINE_IF_DEBUG(
+		if (CM_ENGINE_IS_DEBUG || m_Config.IsGraphicsDebugging)
+		{
 			HMODULE pDxgiDebugModule = GetModuleHandleW(L"Dxgidebug.dll");
 
-		if (pDxgiDebugModule == nullptr)
-		{
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to get Dxgidebug.dll module.");
-			std::exit(-1);
+			if (pDxgiDebugModule == nullptr)
+				spdlog::warn("(WinImpl_Graphics) Internal warning: Failed to get Dxgidebug.dll module. Debug info will not be available. (Graphics Debugger interference?)");
+			else
+			{
+				spdlog::info("(WinImpl_Graphics) Internal info: Successfuly loaded Dxgidebug.dll modudle.");
+
+				using GetDXGIInfoQueueFunc = HRESULT(*)(REFIID, void**);
+				GetDXGIInfoQueueFunc pDXGIGetDebugInterfaceFunc = reinterpret_cast<GetDXGIInfoQueueFunc>(GetProcAddress(pDxgiDebugModule, "DXGIGetDebugInterface"));
+
+				hr = pDXGIGetDebugInterfaceFunc(IID_PPV_ARGS(&mP_InfoQueue));
+
+				if (FAILED(hr))
+					spdlog::critical("(WinImpl_Graphics) Internal error: Failed to get DXGI info queue. Error code: {}", hr);
+
+				hr = pDXGIGetDebugInterfaceFunc(IID_PPV_ARGS(&mP_DebugInterface));
+
+				if (FAILED(hr))
+					spdlog::critical("(WinImpl_Graphics) Internal error: Failed to get DXGIDebug interface. Error code: {}", hr);
+
+				m_LoadedDebugLayer = true;
+			}
 		}
-
-		using GetDXGIInfoQueueFunc = HRESULT(*)(REFIID, void**);
-		GetDXGIInfoQueueFunc pDXGIGetDebugInterfaceFunc = reinterpret_cast<GetDXGIInfoQueueFunc>(GetProcAddress(pDxgiDebugModule, "DXGIGetDebugInterface"));
-
-		hr = pDXGIGetDebugInterfaceFunc(IID_PPV_ARGS(&mP_InfoQueue));
-
-		if (FAILED(hr))
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to get DXGI info queue. Error code: {}", hr);
-
-		hr = pDXGIGetDebugInterfaceFunc(IID_PPV_ARGS(&mP_DebugInterface));
-
-		if (FAILED(hr))
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to get DXGIDebug interface. Error code: {}", hr);
-			);
 
 		InitDWrite();
 
@@ -400,54 +399,6 @@ namespace CMEngine::Platform::WinImpl
 		ImGui_ImplDX11_Shutdown();
 		ImGui_ImplWin32_Shutdown();
 		ImGui::DestroyContext();
-	}
-
-	void Graphics::InitDWrite() noexcept
-	{
-		ComPtr<IDXGISurface> pBackBufferSurface;
-		HRESULT hr = mP_SwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBufferSurface));
-
-		if (FAILED(hr))
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to retrieve back buffer. Error code: {}", hr);
-
-		hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, mP_FactoryD2D.GetAddressOf());
-
-		if (FAILED(hr))
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create Direct2D factory. Error code: {}", hr);
-
-		/* TODO: Research the distinction between DWRITE_FACTORY_TYPE_SHARED and DWRITE_FACTORY_TYPE_ISOLATED. */
-		hr = DWriteCreateFactory(
-			DWRITE_FACTORY_TYPE_SHARED,
-			__uuidof(IDWriteFactory),
-			reinterpret_cast<IUnknown**>(mP_FactoryDWrite.GetAddressOf())
-		);
-
-		if (FAILED(hr))
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create DirectWrite factory. Error code: {}", hr);
-
-		hr = mP_FactoryDWrite->CreateTextFormat(
-			L"Gabriola",                // Font family name.
-			NULL,                       // Font collection (NULL sets it to use the system font collection).
-			DWRITE_FONT_WEIGHT_REGULAR,
-			DWRITE_FONT_STYLE_NORMAL,
-			DWRITE_FONT_STRETCH_NORMAL,
-			24.0f,
-			L"en-us",
-			&mP_TextFormat
-		);
-
-		if (FAILED(hr))
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create text format. Error code: {}", hr);
-
-		hr = mP_TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT::DWRITE_TEXT_ALIGNMENT_LEADING);
-
-		if (FAILED(hr))
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to set text alignment. Error code: {}", hr);
-
-		hr = mP_TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
-
-		if (FAILED(hr))
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to set paragraph alignment. Error code: {}", hr);
 	}
 
 	void Graphics::CreateViews() noexcept
@@ -506,31 +457,7 @@ namespace CMEngine::Platform::WinImpl
 		if (FAILED(hr))
 			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create depth stencil view. Error code: {}", hr);
 
-		ComPtr<IDXGISurface> pBackBufferSurface;
-		hr = pBackBuffer.As(&pBackBufferSurface);
-
-		if (FAILED(hr))
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to retrieve back buffer as IDXGISurface. Error code: {}", hr);
-
-		hr = mP_FactoryD2D->CreateDxgiSurfaceRenderTarget(
-			pBackBufferSurface.Get(),
-			D2D1::RenderTargetProperties(
-				D2D1_RENDER_TARGET_TYPE_DEFAULT,
-				D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED)
-			),
-			&mP_D2D_RT
-		);
-
-		if (FAILED(hr))
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create ID2D1RenderTarget from back buffer. Error code: {}", hr);
-
-		hr = mP_D2D_RT->CreateSolidColorBrush(
-			D2D1::ColorF(D2D1::ColorF::White),
-			&mP_SC_Brush
-		);
-
-		if (FAILED(hr))
-			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create ID2D1SolidColorBrush. Error code: {}", hr);
+		CreateD2DViews(pBackBuffer);
 	}
 
 	void Graphics::BindViews() noexcept
@@ -542,8 +469,8 @@ namespace CMEngine::Platform::WinImpl
 	{
 		mP_RTV.Reset();
 		mP_DSV.Reset();
-		mP_SC_Brush.Reset();
-		mP_D2D_RT.Reset();
+
+		ReleaseD2DViews();
 	}
 
 	void Graphics::SetViewport() noexcept
@@ -573,8 +500,8 @@ namespace CMEngine::Platform::WinImpl
 			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to get swap chain desc.");
 		
 		/* If a view is bound to a deferred context, you must discard
-		 * the partially built command list as well (by calling ID3D11DeviceContext::ClearState,
-		 * then ID3D11DeviceContext::FinishCommandList, then Release on the command list). */
+		 *   the partially built command list as well (by calling ID3D11DeviceContext::ClearState,
+		 *   then ID3D11DeviceContext::FinishCommandList, then Release on the command list). */
 		hr = mP_SwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, swapDesc.Flags);
 
 		if (FAILED(hr))
@@ -584,12 +511,156 @@ namespace CMEngine::Platform::WinImpl
 		BindViews();
 
 		SetViewport();
-
-		m_ShaderLibrary.BindSet(SHADER_SET_TYPE_QUAD, mP_Context);
 	}
 
 	void Graphics::OnResizeThunk(Float2 resolution, void* pThis) noexcept
 	{
 		reinterpret_cast<Graphics*>(pThis)->OnResizeCallback(resolution);
+	}
+
+	[[nodiscard]] bool Graphics::IsGraphicsDebugging() const noexcept
+	{
+		/* A graphics debugger can interfere with creation of Direct2D and DWrite resources,
+		 *   so refrain from using such resources while the process is hooked into by a
+		 *   graphics debugger. */
+		return m_Config.IsGraphicsDebugging;
+	}
+
+	void Graphics::InitDWrite() noexcept
+	{
+		if (IsGraphicsDebugging())
+			return;
+
+		ComPtr<IDXGISurface> pBackBufferSurface;
+		HRESULT hr = mP_SwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBufferSurface));
+
+		if (FAILED(hr))
+			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to retrieve back buffer. Error code: {}", hr);
+
+		hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, mP_D2D_Factory.GetAddressOf());
+
+		if (FAILED(hr))
+			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create Direct2D factory. Error code: {}", hr);
+
+		/* TODO: Research the distinction between DWRITE_FACTORY_TYPE_SHARED and DWRITE_FACTORY_TYPE_ISOLATED. */
+		hr = DWriteCreateFactory(
+			DWRITE_FACTORY_TYPE_SHARED,
+			__uuidof(IDWriteFactory),
+			reinterpret_cast<IUnknown**>(mP_DW_Factory.GetAddressOf())
+		);
+
+		if (FAILED(hr))
+			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create DirectWrite factory. Error code: {}", hr);
+
+		hr = mP_DW_Factory->CreateTextFormat(
+			L"Gabriola",                // Font family name.
+			NULL,                       // Font collection (NULL sets it to use the system font collection).
+			DWRITE_FONT_WEIGHT_REGULAR,
+			DWRITE_FONT_STYLE_NORMAL,
+			DWRITE_FONT_STRETCH_NORMAL,
+			24.0f,
+			L"en-us",
+			&mP_DW_TextFormat
+		);
+
+		if (FAILED(hr))
+			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create text format. Error code: {}", hr);
+
+		hr = mP_DW_TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT::DWRITE_TEXT_ALIGNMENT_LEADING);
+
+		if (FAILED(hr))
+			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to set text alignment. Error code: {}", hr);
+
+		hr = mP_DW_TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+
+		if (FAILED(hr))
+			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to set paragraph alignment. Error code: {}", hr);
+	}
+
+	void Graphics::CreateD2DViews(const ComPtr<ID3D11Texture2D>& pBackBuffer) noexcept
+	{
+		if (IsGraphicsDebugging())
+			return;
+
+		ComPtr<IDXGISurface> pBackBufferSurface;
+		HRESULT hr = pBackBuffer.As(&pBackBufferSurface);
+
+		if (FAILED(hr))
+			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to retrieve back buffer as IDXGISurface. Error code: {}", hr);
+
+		hr = mP_D2D_Factory->CreateDxgiSurfaceRenderTarget(
+			pBackBufferSurface.Get(),
+			D2D1::RenderTargetProperties(
+				D2D1_RENDER_TARGET_TYPE_DEFAULT,
+				D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED)
+			),
+			&mP_D2D_RT
+		);
+
+		if (FAILED(hr))
+			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create ID2D1RenderTarget from back buffer. Error code: {}", hr);
+
+		hr = mP_D2D_RT->CreateSolidColorBrush(
+			D2D1::ColorF(D2D1::ColorF::White),
+			&mP_D2D_SC_Brush
+		);
+
+		if (FAILED(hr))
+			spdlog::critical("(WinImpl_Graphics) Internal error: Failed to create ID2D1SolidColorBrush. Error code: {}", hr);
+	}
+
+	void Graphics::ReleaseD2DViews() noexcept
+	{
+		if (IsGraphicsDebugging())
+			return;
+
+		mP_D2D_SC_Brush.Reset();
+		mP_D2D_RT.Reset();
+	}
+
+	void Graphics::D2DBeginDraw() noexcept
+	{
+		if (IsGraphicsDebugging())
+			return;
+
+		mP_D2D_RT->BeginDraw();
+	}
+
+	void Graphics::D2DEndDraw() noexcept
+	{
+		if (IsGraphicsDebugging())
+			return;
+
+		mP_D2D_RT->EndDraw();
+	}
+
+	void Graphics::D2DDrawText(const std::wstring_view& text, const Float2& pos, const Float2& resolution, const RGBANorm& color) noexcept
+	{
+		if (IsGraphicsDebugging())
+			return;
+
+		D2D1_RECT_F layoutRect = ToD2D1RectF(pos, resolution);
+
+		mP_D2D_SC_Brush->SetColor(ToD2D1ColorF(color));
+
+		mP_D2D_RT->DrawText(
+			text.data(),
+			static_cast<UINT32>(text.length()),
+			mP_DW_TextFormat.Get(),
+			layoutRect,
+			mP_D2D_SC_Brush.Get()
+		);
+	}
+
+	void Graphics::D2DDrawRect(const Float2& pos, const Float2& resolution, const RGBANorm& color) noexcept
+	{
+		if (IsGraphicsDebugging())
+			return;
+
+		D2D1_RECT_F layoutRect = ToD2D1RectF(pos, resolution);
+
+		mP_D2D_SC_Brush->SetColor(ToD2D1ColorF(color));
+
+		mP_D2D_RT->DrawRectangle(layoutRect, mP_D2D_SC_Brush.Get());
 	}
 }

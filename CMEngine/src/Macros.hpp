@@ -22,7 +22,9 @@
 
 #if defined(CM_DEBUG) || defined(_DEBUG)
 
+#define CM_ENGINE_IS_DEBUG                  true
 #define CM_ENGINE_IF_DEBUG(x)				x
+#define CM_ENGINE_IF_NDEBUG(x)				(void)0
 #define CM_ENGINE_IF_NDEBUG_REPLACE(x)		x
 #define CM_ENGINE_ASSERT(x) \
     if (!(x)) { \
@@ -33,14 +35,16 @@
 
 #else
 
+#define CM_ENGINE_IS_DEBUG              false
 #define CM_ENGINE_IF_DEBUG(x)			CM_ENGINE_NO_OP
+#define CM_ENGINE_IF_NDEBUG(x)		    x
 #define CM_ENGINE_IF_NDEBUG_REPLACE(x)
 #define CM_ENGINE_ASSERT(x)		        CM_ENGINE_NO_OP
 
 #endif
 
 #if defined(CM_RELEASE)
-    #define CM_ENGINE_IF_RELEASE(x)	x
+    #define CM_ENGINE_IF_RELEASE(x)	    x
 #else
-    #define CM_ENGINE_IF_RELEASE(x) CM_ENGINE_NO_OP
+    #define CM_ENGINE_IF_RELEASE(x)     CM_ENGINE_NO_OP
 #endif

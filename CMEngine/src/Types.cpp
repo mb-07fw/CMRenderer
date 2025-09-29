@@ -22,4 +22,17 @@ namespace CMEngine
 			IsNearEqualFloat(right, other.right, epsilon) &&
 			IsNearEqualFloat(bottom, other.bottom, epsilon);
 	}
+
+	[[nodiscard]] bool Transform::IsNearEqual(const Transform& other, float epsilon) const noexcept
+	{
+		return Translation.IsNearEqual(other.Translation, epsilon) &&
+			Scaling.IsNearEqual(other.Scaling, epsilon) &&
+			Rotation.IsNearEqual(other.Rotation, epsilon);
+	}
+
+	[[nodiscard]] bool RigidTransform::IsNearEqual(const RigidTransform& other, float epsilon) const noexcept
+	{
+		return Translation.IsNearEqual(other.Translation, epsilon) &&
+			Rotation.IsNearEqual(other.Rotation, epsilon);
+	}
 }
