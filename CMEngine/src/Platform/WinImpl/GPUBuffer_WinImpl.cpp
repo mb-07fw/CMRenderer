@@ -82,16 +82,17 @@ namespace CMEngine::Platform::WinImpl
 	}
 
 	GPUBufferBasic::GPUBufferBasic(
-		UINT bindFlags,
-		UINT byteWidth,
+		GPUBufferType type,
 		GPUBufferFlag flags,
+		UINT byteWidth,
 		UINT miscFlags,
 		UINT structureByteStride
 	) noexcept
-		: m_Flags(flags),
+		: m_Type(type),
+		  m_Flags(flags),
 		  m_Desc(
 			byteWidth,
-			bindFlags,
+			0,
 			D3D11_USAGE_DEFAULT,
 			0,
 			miscFlags,
@@ -100,6 +101,7 @@ namespace CMEngine::Platform::WinImpl
 	{
 		VerifyFlags(flags);
 
+		m_Desc.BindFlags = TypeToBindFlags(type);
 		m_Desc.Usage = FlagsToUsage(flags);
 		m_Desc.CPUAccessFlags = FlagsToCPUAccess(flags);
 	}
@@ -130,15 +132,22 @@ namespace CMEngine::Platform::WinImpl
 		m_Desc.StructureByteStride = 0;
 	}
 
-	VertexBuffer::VertexBuffer(
-		UINT vertexByteStride,
-		UINT vertexStartOffset,
-		UINT registerSlot
-	) noexcept
-		: GPUBufferBasic(D3D11_BIND_VERTEX_BUFFER),
-		  m_VertexByteStride(vertexByteStride),
-		  m_RegisterSlot(registerSlot),
-		  m_VertexStartOffset(vertexStartOffset)
+	void GPUBufferBasic::Update(void* pData, size_t numBytes, const ComPtr<ID3D11DeviceContext>& pContext) noexcept
+	{
+		CM_ENGINE_ASSERT(FlagUnderlying(m_Flags & GPUBufferFlag::Dynamic));
+		CM_ENGINE_ASSERT(pContext.Get() != nullptr);
+
+		D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+
+		HRESULT hr = pContext->Map(mP_Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		CM_ENGINE_ASSERT(!FAILED(hr));
+
+		std::memcpy(mappedResource.pData, pData, numBytes);
+		pContext->Unmap(mP_Buffer.Get(), 0);
+	}
+
+	VertexBuffer::VertexBuffer(GPUBufferFlag flags) noexcept
+		: GPUBufferBasic(GPUBufferType::Vertex, flags)
 	{
 	}
 
@@ -149,18 +158,18 @@ namespace CMEngine::Platform::WinImpl
 		constexpr UINT NumVertexBuffers = 1;
 
 		pContext->IASetVertexBuffers(
-			m_RegisterSlot,
+			m_Register,
 			NumVertexBuffers,
 			mP_Buffer.GetAddressOf(),
-			&m_VertexByteStride,
-			&m_VertexStartOffset
+			&m_StrideBytes,
+			&m_OffsetBytes
 		);
 	}
 
 	void VertexBuffer::ClearUpload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept
 	{
 		pContext->IASetVertexBuffers(
-			m_RegisterSlot,
+			m_Register,
 			0,
 			nullptr,
 			0, 
@@ -168,10 +177,8 @@ namespace CMEngine::Platform::WinImpl
 		);
 	}
 
-	IndexBuffer::IndexBuffer(DXGI_FORMAT indexFormat, UINT indexStartOffset) noexcept
-		: GPUBufferBasic(D3D11_BIND_INDEX_BUFFER),
-		  m_IndexFormat(indexFormat),
-		  m_IndexStartOffset(indexStartOffset)
+	IndexBuffer::IndexBuffer(GPUBufferFlag flags) noexcept
+		: GPUBufferBasic(GPUBufferType::Index, flags)
 	{
 	}
 
@@ -187,14 +194,8 @@ namespace CMEngine::Platform::WinImpl
 		pContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
 	}
 
-	ConstantBuffer::ConstantBuffer(
-		ConstantBufferType type,
-		GPUBufferFlag flags,
-		UINT registerSlot
-	) noexcept
-		: GPUBufferBasic(D3D11_BIND_CONSTANT_BUFFER, 0, flags),
-		  m_Type(type),
-		  m_RegisterSlot(registerSlot)
+	ConstantBuffer::ConstantBuffer(GPUBufferFlag flags) noexcept
+		: GPUBufferBasic(GPUBufferType::Constant, flags)
 	{
 	}
 

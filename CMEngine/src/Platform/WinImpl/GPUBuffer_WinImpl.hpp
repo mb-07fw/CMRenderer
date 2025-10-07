@@ -37,11 +37,14 @@ namespace CMEngine::Platform::WinImpl
 		virtual void Create(const void* pData, size_t numBytes, const ComPtr<ID3D11Device>& pDevice) noexcept = 0;
 		virtual void Release() noexcept = 0;
 
+		virtual void Update(void* pData, size_t numBytes, const ComPtr<ID3D11DeviceContext>& pContext) noexcept = 0;
+
 		virtual [[nodiscard]] bool IsCreated() const noexcept = 0;
 		virtual operator bool() const noexcept = 0;
 
 		virtual [[nodiscard]] bool HasFlag(GPUBufferFlag flag) const noexcept = 0;
 
+		inline static constexpr [[nodiscard]] D3D11_BIND_FLAG TypeToBindFlags(GPUBufferType type) noexcept;
 		inline static constexpr [[nodiscard]] D3D11_USAGE FlagsToUsage(GPUBufferFlag flags) noexcept;
 		inline static constexpr [[nodiscard]] UINT FlagsToCPUAccess(GPUBufferFlag flags) noexcept;
 	protected:
@@ -52,9 +55,9 @@ namespace CMEngine::Platform::WinImpl
 	{
 	public:
 		GPUBufferBasic(
-			UINT bindFlags,
-			UINT byteWidth = 0,
+			GPUBufferType type,
 			GPUBufferFlag flags = GPUBufferFlag::Default,
+			UINT byteWidth = 0,
 			UINT miscFlags = 0,
 			UINT structureByteStride = 0
 		) noexcept;
@@ -62,15 +65,18 @@ namespace CMEngine::Platform::WinImpl
 		virtual ~GPUBufferBasic() = default;
 
 		template <typename Ty>
-		inline void Create(std::span<const Ty> data, const ComPtr<ID3D11Device>& pDevice) noexcept;
+		inline void Create(const std::span<Ty>& data, const ComPtr<ID3D11Device>& pDevice) noexcept;
 		virtual void Create(const void* pData, size_t numBytes, const ComPtr<ID3D11Device>& pDevice) noexcept override;
 		virtual void Release() noexcept override;
+
+		virtual void Update(void* pData, size_t numBytes, const ComPtr<ID3D11DeviceContext>& pContext) noexcept override;
 
 		inline virtual [[nodiscard]] bool IsCreated() const noexcept override { return mP_Buffer.Get() != nullptr; }
 		inline virtual operator bool() const noexcept override { return IsCreated(); }
 
 		inline constexpr virtual [[nodiscard]] bool HasFlag(GPUBufferFlag flag) const noexcept override { return FlagUnderlying(m_Flags & flag); }
 	protected:
+		GPUBufferType m_Type = GPUBufferType::Invalid;
 		GPUBufferFlag m_Flags = GPUBufferFlag::Unspecified;
 		CD3D11_BUFFER_DESC m_Desc = {};
 		ComPtr<ID3D11Buffer> mP_Buffer;
@@ -79,12 +85,7 @@ namespace CMEngine::Platform::WinImpl
 	class VertexBuffer : public GPUBufferBasic
 	{
 	public:
-		VertexBuffer(
-			UINT vertexByteStride,
-			UINT vertexStartOffset = 0,
-			UINT registerSlot = 0
-		) noexcept;
-
+		VertexBuffer(GPUBufferFlag flags = GPUBufferFlag::Default) noexcept;
 		~VertexBuffer() = default;
 
 		virtual void Upload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept override;
@@ -92,23 +93,23 @@ namespace CMEngine::Platform::WinImpl
 
 		/* Use these setters to override previously set properties. Overriden properties are NOT applied 
 		 *   to already created buffers, they should instead be released and re-created. */
-		inline void SetVertexStride(UINT vertexByteStride) noexcept { m_VertexByteStride = vertexByteStride; }
-		inline void SetVertexOffset(UINT vertexStartOffset) noexcept { m_VertexStartOffset = vertexStartOffset; }
-		inline void SetRegisterSlot(UINT registerSlot) noexcept { m_RegisterSlot = registerSlot; }
+		inline void SetStride(UINT strideBytes) noexcept { m_StrideBytes = strideBytes; }
+		inline void SetOffset(UINT offsetBytes) noexcept { m_OffsetBytes = offsetBytes; }
+		inline void SetRegister(UINT slot) noexcept { m_Register = slot; }
+
+		inline UINT Stride() const noexcept { return m_StrideBytes; }
+		inline UINT Offset() const noexcept { return m_OffsetBytes; }
+		inline UINT Register() const noexcept { return m_Register; }
 	private:
-		UINT m_VertexByteStride = 0;
-		UINT m_VertexStartOffset = 0;
-		UINT m_RegisterSlot = 0;
+		UINT m_StrideBytes = 0;
+		UINT m_OffsetBytes = 0;
+		UINT m_Register = 0;
 	};
 
 	class IndexBuffer : public GPUBufferBasic
 	{
 	public:
-		IndexBuffer(
-			DXGI_FORMAT indexFormat = DXGI_FORMAT_R16_UINT,
-			UINT indexStartOffset = 0
-		) noexcept;
-
+		IndexBuffer(GPUBufferFlag flags = GPUBufferFlag::Default) noexcept;
 		~IndexBuffer() = default;
 
 		virtual void Upload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept override;
@@ -118,6 +119,9 @@ namespace CMEngine::Platform::WinImpl
 		 *   to already created buffers, they should instead be released and re-created. */
 		inline void SetFormat(DXGI_FORMAT indexFormat) noexcept { m_IndexFormat = indexFormat; }
 		inline void SetOffset(UINT indexStartOffset) noexcept { m_IndexStartOffset = indexStartOffset; }
+
+		inline [[nodiscard]] DXGI_FORMAT Format() const noexcept { return m_IndexFormat; }
+		inline [[nodiscard]] UINT Offset() const noexcept { return m_IndexStartOffset; }
 	private:
 		DXGI_FORMAT m_IndexFormat = DXGI_FORMAT_UNKNOWN;
 		UINT m_IndexStartOffset = 0;
@@ -133,18 +137,16 @@ namespace CMEngine::Platform::WinImpl
 	class ConstantBuffer : public GPUBufferBasic
 	{
 	public:
-		ConstantBuffer(
-			ConstantBufferType type = ConstantBufferType::INVALID,
-			GPUBufferFlag flags = GPUBufferFlag::Default,
-			UINT registerSlot = 0
-		) noexcept;
-
+		ConstantBuffer(GPUBufferFlag flags = GPUBufferFlag::Default) noexcept;
 		~ConstantBuffer() = default;
 
 		virtual void Upload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept override;
 		virtual void ClearUpload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept override;
 
+		/* Use these setters to override previously set properties. Overriden properties are NOT applied
+		 *   to already created buffers, they should instead be released and re-created. */
 		inline void SetType(ConstantBufferType type) noexcept { m_Type = type; }
+		inline void SetRegister(UINT slot) noexcept { m_RegisterSlot = slot; }
 	private:
 		void Bind(const ComPtr<ID3D11DeviceContext>& pContext, ID3D11Buffer* pBuffer) const noexcept;
 	private:
@@ -153,32 +155,21 @@ namespace CMEngine::Platform::WinImpl
 		UINT m_RegisterSlot = 0;
 	};
 
-	/* BufferArrayTyped is an array of homogenous buffer types, meaning it is not meant to be used polymorphically. */
-	template <typename Ty>
-		requires std::is_base_of_v<GPUBufferBasic, Ty> /* Ty is a derived type of GPUBufferBasic. */
-	class BufferArrayTyped
+	inline constexpr [[nodiscard]] D3D11_BIND_FLAG IGPUBuffer::TypeToBindFlags(GPUBufferType type) noexcept
 	{
-	public:
-		inline BufferArrayTyped(size_t capacity) noexcept;
-		~BufferArrayTyped() = default;
-
-		template <typename... Args>
-		inline Ty& EmplaceBack(Args&&... args) noexcept;
-
-		inline void Upload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept;
-
-		inline Ty& operator[](size_t index) noexcept { return m_Buffers[index]; }
-		inline const Ty& operator[](size_t index) const noexcept { return m_Buffers[index]; }
-
-		inline std::vector<Ty>& Array() noexcept { return m_Buffers; }
-	private:
-		static constexpr bool S_IS_VB_ARRAY = std::is_same_v<VertexBuffer, Ty>;
-		static constexpr bool S_IS_IB_ARRAY = std::is_same_v<IndexBuffer, Ty>;
-		static constexpr bool S_IS_CB_ARRAY = std::is_same_v<ConstantBuffer, Ty>;
-		std::vector<Ty> m_Buffers;
-	};
-
-	using VertexBufferArray = BufferArrayTyped<VertexBuffer>;
+		switch (type)
+		{
+		case GPUBufferType::Invalid: [[fallthrough]];
+		default:
+			return static_cast<D3D11_BIND_FLAG>(-1);
+		case GPUBufferType::Vertex:
+			return D3D11_BIND_VERTEX_BUFFER;
+		case GPUBufferType::Index:
+			return D3D11_BIND_INDEX_BUFFER;
+		case GPUBufferType::Constant:
+			return D3D11_BIND_CONSTANT_BUFFER;
+		}
+	}
 
 	inline constexpr [[nodiscard]] D3D11_USAGE IGPUBuffer::FlagsToUsage(GPUBufferFlag flags) noexcept
 	{
@@ -211,31 +202,8 @@ namespace CMEngine::Platform::WinImpl
 	}
 
 	template <typename Ty>
-	inline void GPUBufferBasic::Create(std::span<const Ty> data, const ComPtr<ID3D11Device>& pDevice) noexcept
+	inline void GPUBufferBasic::Create(const std::span<Ty>& data, const ComPtr<ID3D11Device>& pDevice) noexcept
 	{
 		Create(data.data(), data.size_bytes(), pDevice);
-	}
-
-	template <typename Ty>
-		requires std::is_base_of_v<GPUBufferBasic, Ty>
-	inline BufferArrayTyped<Ty>::BufferArrayTyped(size_t capacity) noexcept
-	{
-		m_Buffers.reserve(capacity);
-	}
-
-	template <typename Ty>
-		requires std::is_base_of_v<GPUBufferBasic, Ty>
-	template <typename... Args>
-	inline Ty& BufferArrayTyped<Ty>::EmplaceBack(Args&&... args) noexcept
-	{
-		return m_Buffers.emplace_back(std::forward<Args>(args)...);
-	}
-
-	template <typename Ty>
-		requires std::is_base_of_v<GPUBufferBasic, Ty>
-	inline void BufferArrayTyped<Ty>::Upload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept
-	{
-		for (const auto& buffer : m_Buffers)
-			buffer.Upload(pContext);
 	}
 }

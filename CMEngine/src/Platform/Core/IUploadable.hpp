@@ -13,6 +13,7 @@ namespace CMEngine
 	};
 
 	using GPUBufferFlagUnderlying = uint8_t;
+	using GPUBufferTypeUnderlying = int8_t;
 
 	enum class GPUBufferFlag : GPUBufferFlagUnderlying
 	{
@@ -51,6 +52,14 @@ namespace CMEngine
 
 		/* An alias for GPUBufferFlag::Default. See Default for remarks. */
 		Unspecified = Default
+	};
+
+	enum class GPUBufferType : GPUBufferTypeUnderlying
+	{
+		Invalid = -1,
+		Vertex,
+		Index,
+		Constant
 	};
 
 	inline constexpr GPUBufferFlag operator|(GPUBufferFlag a, GPUBufferFlag b) noexcept

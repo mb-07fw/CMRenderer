@@ -20,7 +20,7 @@ namespace CMEngine
 		AGraphics& graphics = m_Platform.GetGraphics();
 		AWindow& window = m_Platform.GetWindow();
 		
-		mP_CameraCB = graphics.CreateConstantBuffer(GPUBufferFlag::Dynamic);
+		mP_CameraCB = graphics.CreateBuffer(GPUBufferType::Constant, GPUBufferFlag::Dynamic);
 		m_Camera = m_ECS.CreateEntity();
 
 		CameraComponent camera;
@@ -34,8 +34,8 @@ namespace CMEngine
 
 		m_ECS.EmplaceComponent<CameraComponent>(m_Camera, camera);
 
-		graphics.SetConstantBuffer(mP_CameraCB, &camera.Matrices, sizeof(camera.Matrices));
-		graphics.BindConstantBufferVS(mP_CameraCB);
+		graphics.SetBuffer(mP_CameraCB, &camera.Matrices, sizeof(camera.Matrices));
+		graphics.BindConstantBufferVS(mP_CameraCB, 0);
 
 		spdlog::info("(EditorLayer) Attatched.");
 	}
@@ -66,12 +66,15 @@ namespace CMEngine
 
 			/* Recreate the view matrix of the camera if it's origin changed. */
 			if (!pCamera->Origin.IsNearEqual(previousPos))
+			{
 				pCamera->CreateViewMatrix();
+				graphics.SetBuffer(mP_CameraCB, &pCamera->Matrices, sizeof(pCamera->Matrices));
+			}
 		}
 		else
 			spdlog::critical("(EditorLayer) [OnUpdate] Internal error: Failed to retrieve current CameraComponent.");
-
-
+		
+		/* Drawing done here...  */
 
 		graphics.EndFrame();
 	}

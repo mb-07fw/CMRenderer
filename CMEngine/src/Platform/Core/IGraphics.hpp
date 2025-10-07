@@ -34,10 +34,12 @@ namespace CMEngine
 		virtual void EndFrame() noexcept = 0;
 
 		/* TODO: Worry about ABI stability later. */
-		virtual [[nodiscard]] BufferPtr<IUploadable> CreateConstantBuffer(GPUBufferFlag flags = GPUBufferFlag::Default, uint32_t registerSlot = 0) noexcept = 0;
-		virtual [[nodiscard]] void SetConstantBuffer(const BufferPtr<IUploadable>& pCB, void* pData, size_t numBytes) noexcept = 0;
-		virtual [[nodiscard]] void BindConstantBufferVS(const BufferPtr<IUploadable>& pCB) noexcept = 0;
-		virtual [[nodiscard]] void BindConstantBufferPS(const BufferPtr<IUploadable>& pCB) noexcept = 0;
+		virtual [[nodiscard]] BufferPtr<IUploadable> CreateBuffer(GPUBufferType type, GPUBufferFlag flags = GPUBufferFlag::Default) noexcept = 0;
+		virtual void SetBuffer(const BufferPtr<IUploadable>& pBuffer, void* pData, size_t numBytes) noexcept = 0;
+		virtual void BindVertexBuffer(const BufferPtr<IUploadable>& pBuffer, UINT strideBytes, UINT offsetBytes, UINT slot) noexcept = 0;
+		virtual void BindIndexBuffer(const BufferPtr<IUploadable>& pBuffer, DXGI_FORMAT format, UINT startIndex) noexcept = 0;
+		virtual void BindConstantBufferVS(const BufferPtr<IUploadable>& pBuffer, UINT slot) noexcept = 0;
+		virtual void BindConstantBufferPS(const BufferPtr<IUploadable>& pBuffer, UINT slot) noexcept = 0;
 
 		virtual [[nodiscard]] bool IsWithinFrame() const noexcept = 0;
 	};

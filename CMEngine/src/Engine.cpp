@@ -22,6 +22,7 @@ namespace CMEngine
 
 		inline [[nodiscard]] bool IsRunning() const noexcept { return m_Platform.IsRunning(); }
 
+		inline [[nodiscard]] APlatform& GetPlatform() noexcept { return m_Platform; }
 		inline [[nodiscard]] Asset::AssetManager& GetAssetManager() noexcept { return m_AssetManager; }
 		inline [[nodiscard]] ECS::ECS& GetECS() noexcept { return m_ECS; }
 		inline [[nodiscard]] LayerStack& GetLayerStack() noexcept { return m_LayerStack; }

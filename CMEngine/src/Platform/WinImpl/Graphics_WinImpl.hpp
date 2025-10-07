@@ -53,10 +53,13 @@ namespace CMEngine::Platform::WinImpl
 		virtual void StartFrame(const Color4& clearColor) noexcept override;
 		virtual void EndFrame() noexcept override;
 
-		virtual [[nodiscard]] BufferPtr<IUploadable> CreateConstantBuffer(GPUBufferFlag flags = GPUBufferFlag::Default, uint32_t registerSlot = 0) noexcept override;
-		virtual void SetConstantBuffer(const BufferPtr<IUploadable>& pCB, void* pData, size_t numBytes) noexcept override;
-		virtual [[nodiscard]] void BindConstantBufferVS(const BufferPtr<IUploadable>& pCB) noexcept override;
-		virtual [[nodiscard]] void BindConstantBufferPS(const BufferPtr<IUploadable>& pCB) noexcept override;
+		virtual [[nodiscard]] BufferPtr<IUploadable> CreateBuffer(GPUBufferType type, GPUBufferFlag flags = GPUBufferFlag::Default) noexcept override;
+		virtual void SetBuffer(const BufferPtr<IUploadable>& pBuffer, void* pData, size_t numBytes) noexcept override;
+
+		virtual void BindVertexBuffer(const BufferPtr<IUploadable>& pBuffer, UINT strideBytes, UINT offsetBytes, UINT slot) noexcept override;
+		virtual void BindIndexBuffer(const BufferPtr<IUploadable>& pBuffer, DXGI_FORMAT format, UINT startIndex) noexcept override;
+		virtual void BindConstantBufferVS(const BufferPtr<IUploadable>& pBuffer, UINT slot) noexcept override;
+		virtual void BindConstantBufferPS(const BufferPtr<IUploadable>& pBuffer, UINT slot) noexcept override;
 
 		inline virtual [[nodiscard]] bool IsWithinFrame() const noexcept override { return m_IsWithinFrame; }
 	private:

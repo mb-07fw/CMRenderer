@@ -302,32 +302,72 @@ namespace CMEngine::Platform::WinImpl
 		m_IsWithinFrame = false;
 	}
 
-	[[nodiscard]] Graphics::BufferPtr<IUploadable> Graphics::CreateConstantBuffer(GPUBufferFlag flags, uint32_t registerSlot) noexcept
+	[[nodiscard]] IGraphics::BufferPtr<IUploadable> Graphics::CreateBuffer(GPUBufferType type, GPUBufferFlag flags) noexcept
 	{
-		return std::make_unique<ConstantBuffer>(
-			ConstantBufferType::INVALID,
-			flags,
-			registerSlot
-		);
+		switch (type)
+		{
+		case GPUBufferType::Invalid: [[fallthrough]];
+		default:
+			return BufferPtr<IUploadable>(nullptr);
+		case GPUBufferType::Vertex:
+			return BufferPtr<VertexBuffer>(new VertexBuffer(flags));
+		case GPUBufferType::Index:
+			return BufferPtr<IndexBuffer>(new IndexBuffer(flags));
+		case GPUBufferType::Constant:
+			return BufferPtr<ConstantBuffer>(new ConstantBuffer(flags));
+		}
 	}
 
-	void Graphics::SetConstantBuffer(const Graphics::BufferPtr<IUploadable>& pCB, void* pData, size_t numBytes) noexcept
+	void Graphics::SetBuffer(const Graphics::BufferPtr<IUploadable>& pBuffer, void* pData, size_t numBytes) noexcept
 	{
-		ConstantBuffer* pDerivedCB = dynamic_cast<ConstantBuffer*>(pCB.get());
+		IGPUBuffer* pDerived = dynamic_cast<IGPUBuffer*>(pBuffer.get());
 
-		if (!pDerivedCB)
+		if (!pDerived)
 		{
-			spdlog::warn("(WinImpl_Graphics) [SetConstantBuffer] Internal warning: Attempted to set a buffer instance that was either nullptr, or not of type ConstantBuffer.");
+			spdlog::warn("(WinImpl_Graphics) [SetConstantBuffer] Internal warning: Attempted to set an object that was either nullptr, or not of type derived from IGPUBuffer.");
 			return;
 		}
 
-
-		pDerivedCB->Create(pData, numBytes, mP_Device);
+		if (pDerived->IsCreated() && pDerived->HasFlag(GPUBufferFlag::Dynamic))
+			pDerived->Update(pData, numBytes, mP_Context);
+		else
+			pDerived->Create(pData, numBytes, mP_Device);
 	}
 
-	[[nodiscard]] void Graphics::BindConstantBufferVS(const Graphics::BufferPtr<IUploadable>& pCB) noexcept
+	void Graphics::BindVertexBuffer(const Graphics::BufferPtr<IUploadable>& pBuffer, UINT strideBytes, UINT offsetBytes, UINT slot) noexcept
 	{
-		ConstantBuffer* pDerivedCB = dynamic_cast<ConstantBuffer*>(pCB.get());
+		VertexBuffer* pDerivedVB = dynamic_cast<VertexBuffer*>(pBuffer.get());
+
+		if (!pDerivedVB)
+		{
+			spdlog::warn("(WinImpl_Graphics) [BindConstantBufferVS] Internal warning: Attempted to bind a buffer instance that was either nullptr, or not of type VertexBuffer.");
+			return;
+		}
+
+		pDerivedVB->SetStride(strideBytes);
+		pDerivedVB->SetOffset(offsetBytes);
+		pDerivedVB->SetRegister(slot);
+		pDerivedVB->Upload(mP_Context);
+	}
+
+	void Graphics::BindIndexBuffer(const Graphics::BufferPtr<IUploadable>& pBuffer, DXGI_FORMAT format, UINT startIndex) noexcept
+	{
+		IndexBuffer* pDerivedIB = dynamic_cast<IndexBuffer*>(pBuffer.get());
+
+		if (!pDerivedIB)
+		{
+			spdlog::warn("(WinImpl_Graphics) [BindConstantBufferVS] Internal warning: Attempted to bind a buffer instance that was either nullptr, or not of type IndexBuffer.");
+			return;
+		}
+
+		pDerivedIB->SetFormat(format);
+		pDerivedIB->SetOffset(startIndex);
+		pDerivedIB->Upload(mP_Context);
+	}
+
+	[[nodiscard]] void Graphics::BindConstantBufferVS(const Graphics::BufferPtr<IUploadable>& pBuffer, UINT slot) noexcept
+	{
+		ConstantBuffer* pDerivedCB = dynamic_cast<ConstantBuffer*>(pBuffer.get());
 
 		if (!pDerivedCB)
 		{
@@ -336,12 +376,13 @@ namespace CMEngine::Platform::WinImpl
 		}
 
 		pDerivedCB->SetType(ConstantBufferType::VS);
+		pDerivedCB->SetRegister(slot);
 		pDerivedCB->Upload(mP_Context);
 	}
 
-	[[nodiscard]] void Graphics::BindConstantBufferPS(const Graphics::BufferPtr<IUploadable>& pCB) noexcept
+	[[nodiscard]] void Graphics::BindConstantBufferPS(const Graphics::BufferPtr<IUploadable>& pBuffer, UINT slot) noexcept
 	{
-		ConstantBuffer* pDerivedCB = dynamic_cast<ConstantBuffer*>(pCB.get());
+		ConstantBuffer* pDerivedCB = dynamic_cast<ConstantBuffer*>(pBuffer.get());
 
 		if (!pDerivedCB)
 		{
@@ -350,6 +391,7 @@ namespace CMEngine::Platform::WinImpl
 		}
 
 		pDerivedCB->SetType(ConstantBufferType::PS);
+		pDerivedCB->SetRegister(slot);
 		pDerivedCB->Upload(mP_Context);
 	}
 
