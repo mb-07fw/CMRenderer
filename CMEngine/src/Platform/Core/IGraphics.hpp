@@ -1,39 +1,15 @@
 #pragma once
 
 #include "Export.hpp"
+#include "IUploadable.hpp"
+#include "Types.hpp"
 
 #include <cstdint>
+#include <functional>
+#include <memory>
 
 namespace CMEngine
 {
-	/* An RGBA value normalized to [-1, 1]. */
-	struct CM_ENGINE_API RGBANorm
-	{
-		inline constexpr RGBANorm(float r, float g, float b, float a = 1.0f) noexcept
-		{
-			rgba[0] = r;
-			rgba[1] = g;
-			rgba[2] = b;
-			rgba[3] = a;
-		}
-
-		RGBANorm() = default;
-		~RGBANorm() = default;
-
-		inline static constexpr [[nodiscard]] RGBANorm Red() noexcept { return { 1.0f, 0.0f, 0.0f, 1.0f }; }
-		inline static constexpr [[nodiscard]] RGBANorm Green() noexcept { return { 1.0f, 0.0f, 0.0f, 1.0f }; }
-		inline static constexpr [[nodiscard]] RGBANorm Blue() noexcept { return { 1.0f, 0.0f, 0.0f, 1.0f }; }
-		inline static constexpr [[nodiscard]] RGBANorm Black() noexcept { return { 0.0f, 0.0f, 0.0f, 1.0f }; }
-		inline static constexpr [[nodiscard]] RGBANorm White() noexcept { return { 1.0f, 1.0f, 1.0f, 1.0f }; }
-
-		inline constexpr [[nodiscard]] float r() const noexcept { return rgba[0]; }
-		inline constexpr [[nodiscard]] float g() const noexcept { return rgba[1]; }
-		inline constexpr [[nodiscard]] float b() const noexcept { return rgba[2]; }
-		inline constexpr [[nodiscard]] float a() const noexcept { return rgba[3]; }
-
-		float rgba[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	};
-
 	struct CM_ENGINE_API DrawDescriptor
 	{
 		uint32_t TotalVertices = 0;
@@ -43,13 +19,26 @@ namespace CMEngine
 
 	class CM_ENGINE_API IGraphics
 	{
+	protected:
+		template <typename Ty>
+		using BufferPtr = std::unique_ptr<Ty>;
 	public:
 		IGraphics() = default;
 		virtual ~IGraphics() = default;
 	public:
-		virtual void Clear(RGBANorm color) noexcept = 0;
+		virtual void Clear(const Color4& color) noexcept = 0;
 		virtual void Present() noexcept = 0;
-
 		virtual void Draw(const void* pBuffer, const DrawDescriptor& pDescriptor) noexcept = 0;
+
+		virtual void StartFrame(const Color4& clearColor) noexcept = 0;
+		virtual void EndFrame() noexcept = 0;
+
+		/* TODO: Worry about ABI stability later. */
+		virtual [[nodiscard]] BufferPtr<IUploadable> CreateConstantBuffer(GPUBufferFlag flags = GPUBufferFlag::Default, uint32_t registerSlot = 0) noexcept = 0;
+		virtual [[nodiscard]] void SetConstantBuffer(const BufferPtr<IUploadable>& pCB, void* pData, size_t numBytes) noexcept = 0;
+		virtual [[nodiscard]] void BindConstantBufferVS(const BufferPtr<IUploadable>& pCB) noexcept = 0;
+		virtual [[nodiscard]] void BindConstantBufferPS(const BufferPtr<IUploadable>& pCB) noexcept = 0;
+
+		virtual [[nodiscard]] bool IsWithinFrame() const noexcept = 0;
 	};
 }

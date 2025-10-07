@@ -4,31 +4,113 @@
 
 namespace CMEngine::Platform::WinImpl
 {
-	IGPUBuffer::IGPUBuffer(
+	void IGPUBuffer::VerifyFlags(GPUBufferFlag& outFlags) noexcept
+	{
+		/* If the basic no-read-write flags are set, there's no need to continue. */
+		if (outFlags == GPUBufferFlag::Default ||
+			outFlags == GPUBufferFlag::Immutable)
+			return;
+
+		bool containsBasicUsage = false;
+		bool containsMultipleBasicUsage = false;
+
+		if (FlagUnderlying(outFlags & GPUBufferFlag::Default))
+		{
+			containsBasicUsage = true;
+
+			if (FlagUnderlying(outFlags & GPUBufferFlag::Read) ||
+				FlagUnderlying(outFlags & GPUBufferFlag::Write))
+				spdlog::warn(
+					"(IGPUBuffer) internal warning: Provided 'Default' GPUBufferFlag contains Read/Write flags. "
+					"This is invalid since a 'Default' GPUBuffer isn't permitted any CPU access for the best GPU-side "
+					"memory optimization. If only CPU-side writing is required, the Dynamic_Write flag should be used, "
+					"otherwise Staging_Read, Staging_Write, or Staging_ReadWrite are required."
+				);
+		}
+
+		if (FlagUnderlying(outFlags & GPUBufferFlag::Immutable))
+		{
+			containsMultipleBasicUsage = containsBasicUsage;
+			containsBasicUsage = true;
+
+			if (FlagUnderlying(outFlags & GPUBufferFlag::Read) ||
+				FlagUnderlying(outFlags & GPUBufferFlag::Write))
+				spdlog::warn(
+					"(IGPUBuffer) internal warning: Provided 'Immutable' GPUBufferFlag contains Read/Write flags. "
+					"This is invalid since an 'Immutable' GPUBuffer isn't permitted any CPU access for the best GPU-side "
+					"memory optimization. If only CPU-side writing is required, the Dynamic_Write flag should be used, "
+					"otherwise Staging_Read, Staging_Write, or Staging_ReadWrite are required."
+				);
+		}
+
+		if (FlagUnderlying(outFlags & GPUBufferFlag::Dynamic))
+		{
+			containsMultipleBasicUsage = containsBasicUsage;
+			containsBasicUsage = true;
+
+			if (FlagUnderlying(outFlags & GPUBufferFlag::Read))
+				spdlog::warn(
+					"(IGPUBuffer) internal warning: Provided 'Dynamic' GPUBufferFlag contains Read flag. "
+					"This is fine, as it is possible to read data on the CPU from a 'Dynamic' buffer, but is usually bad practice "
+					"due to 'Dynamic' being optimized for high-frequency CPU-Write operations, and will therefore incur an unneccesary performance toll "
+					"compared to a 'Staging' GPUBuffer."
+				);
+			if (!FlagUnderlying(outFlags & GPUBufferFlag::Write))
+			{
+				outFlags |= GPUBufferFlag::Write;
+			}
+		}
+
+		if (FlagUnderlying(outFlags & GPUBufferFlag::Staging))
+		{
+			containsMultipleBasicUsage = containsBasicUsage;
+
+			if (!FlagUnderlying(outFlags & GPUBufferFlag::Read) &&
+				!FlagUnderlying(outFlags & GPUBufferFlag::Write))
+			{
+				spdlog::warn("(IGPUBuffer) internal warning: Provided 'Staging' GPUBufferFlag doesn't specify CPU access. CPU-Read access is assumed.");
+				outFlags |= GPUBufferFlag::Read;
+			}
+		}
+
+		if (containsMultipleBasicUsage)
+			spdlog::warn(
+				"(IGPUBuffer) internal warning: Provided GPUBufferFlag contains multiple basic usage flags (Default, Immutable, etc). "
+				"This is invalid since these flags represent different semantics in the graphics pipeline, "
+				"and will most likely result in failure of buffer creation through the graphics API."
+			);
+	}
+
+	GPUBufferBasic::GPUBufferBasic(
 		UINT bindFlags,
 		UINT byteWidth,
-		D3D11_USAGE usage,
-		UINT cpuAccessFlags,
+		GPUBufferFlag flags,
 		UINT miscFlags,
 		UINT structureByteStride
 	) noexcept
-		: m_Desc(
+		: m_Flags(flags),
+		  m_Desc(
 			byteWidth,
 			bindFlags,
-			usage,
-			cpuAccessFlags,
+			D3D11_USAGE_DEFAULT,
+			0,
 			miscFlags,
 			structureByteStride
 		)
 	{
+		VerifyFlags(flags);
+
+		m_Desc.Usage = FlagsToUsage(flags);
+		m_Desc.CPUAccessFlags = FlagsToCPUAccess(flags);
 	}
 
-	void IGPUBuffer::Create(const void* pData, size_t numBytes, const ComPtr<ID3D11Device>& pDevice) noexcept
+	void GPUBufferBasic::Create(const void* pData, size_t numBytes, const ComPtr<ID3D11Device>& pDevice) noexcept
 	{
 		CM_ENGINE_ASSERT(pData != nullptr);
 		CM_ENGINE_ASSERT(numBytes != 0);
 		CM_ENGINE_ASSERT(pDevice.Get() != nullptr);
-		CM_ENGINE_ASSERT(!IsCreated());
+
+		mP_Buffer.Reset();
 
 		m_Desc.ByteWidth = static_cast<UINT>(numBytes);
 
@@ -40,7 +122,7 @@ namespace CMEngine::Platform::WinImpl
 		CM_ENGINE_ASSERT(!FAILED(hr));
 	}
 
-	void IGPUBuffer::Release() noexcept
+	void GPUBufferBasic::Release() noexcept
 	{
 		mP_Buffer.Reset();
 
@@ -53,7 +135,7 @@ namespace CMEngine::Platform::WinImpl
 		UINT vertexStartOffset,
 		UINT registerSlot
 	) noexcept
-		: IGPUBuffer(D3D11_BIND_VERTEX_BUFFER),
+		: GPUBufferBasic(D3D11_BIND_VERTEX_BUFFER),
 		  m_VertexByteStride(vertexByteStride),
 		  m_RegisterSlot(registerSlot),
 		  m_VertexStartOffset(vertexStartOffset)
@@ -87,7 +169,7 @@ namespace CMEngine::Platform::WinImpl
 	}
 
 	IndexBuffer::IndexBuffer(DXGI_FORMAT indexFormat, UINT indexStartOffset) noexcept
-		: IGPUBuffer(D3D11_BIND_INDEX_BUFFER),
+		: GPUBufferBasic(D3D11_BIND_INDEX_BUFFER),
 		  m_IndexFormat(indexFormat),
 		  m_IndexStartOffset(indexStartOffset)
 	{
@@ -105,8 +187,12 @@ namespace CMEngine::Platform::WinImpl
 		pContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
 	}
 
-	ConstantBuffer::ConstantBuffer(ConstantBufferType type, UINT registerSlot) noexcept
-		: IGPUBuffer(D3D11_BIND_CONSTANT_BUFFER),
+	ConstantBuffer::ConstantBuffer(
+		ConstantBufferType type,
+		GPUBufferFlag flags,
+		UINT registerSlot
+	) noexcept
+		: GPUBufferBasic(D3D11_BIND_CONSTANT_BUFFER, 0, flags),
 		  m_Type(type),
 		  m_RegisterSlot(registerSlot)
 	{

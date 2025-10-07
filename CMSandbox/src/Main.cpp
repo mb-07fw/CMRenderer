@@ -1,9 +1,10 @@
 #include "Engine.hpp"
+#include <chrono>
 
 int main()
 {
-	CMEngine::Engine engine;
-	engine.Run();
+	using namespace CMEngine;
 
-	//engine.Run();
+	Engine engine;
+	engine.Run();
 }

@@ -1,5 +1,10 @@
 #pragma once
 
+#include "Export.hpp"
+#include "Platform/WinImpl/ShaderSet_WinImpl.hpp"
+
+#include <d3d11.h>
+
 #include <string_view>
 #include <string>
 #include <array>
@@ -8,16 +13,10 @@
 #include <memory>
 #include <span>
 
-#include <wrl/client.h>
-#include <d3d11.h>
-
-#include "Export.hpp"
-#include "Platform/WinImpl/ShaderSet_WinImpl.hpp"
-
 namespace CMEngine::Platform::WinImpl
 {
 #pragma region Shader Registry
-	class CM_ENGINE_API ShaderRegistry
+	class ShaderRegistry
 	{
 	public:
 		ShaderRegistry() = default;
@@ -48,7 +47,7 @@ namespace CMEngine::Platform::WinImpl
 #pragma endregion
 
 #pragma region Shader Library
-	class CM_ENGINE_API ShaderLibrary
+	class ShaderLibrary
 	{
 	public:
 		ShaderLibrary() noexcept;

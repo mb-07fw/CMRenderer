@@ -27,7 +27,7 @@ namespace CMEngine::Platform::WinImpl
 		std::shared_ptr<spdlog::logger> mP_Logger;
 	};
 
-	class CM_ENGINE_API Platform : public IPlatform
+	class Platform : public IPlatform
 	{
 	public:
 		Platform() noexcept;
@@ -35,6 +35,9 @@ namespace CMEngine::Platform::WinImpl
 
 		virtual bool Update() noexcept override;
 		inline virtual [[nodiscard]] bool IsRunning() const noexcept override { return !m_Window.ShouldClose(); }
+
+		inline [[nodiscard]] Window& GetWindow() noexcept { return m_Window; }
+		inline [[nodiscard]] Graphics& GetGraphics() noexcept { return m_Graphics; }
 	private:
 		const PlatformConfig m_Config;
 		SpdlogManager m_SpdlogInitializer;

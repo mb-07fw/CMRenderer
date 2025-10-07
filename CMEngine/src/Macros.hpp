@@ -28,8 +28,8 @@
 #define CM_ENGINE_IF_NDEBUG_REPLACE(x)		x
 #define CM_ENGINE_ASSERT(x) \
     if (!(x)) { \
-        spdlog::critical("CM_ENGINE_ASSERT failed. (" #x ") | Line : {} | File : {}", __LINE__, __FILE__); \
         CM_ENGINE_BREAK_DEBUGGER(); \
+        spdlog::critical("CM_ENGINE_ASSERT failed. (" #x ") | Line : {} | File : {}", __LINE__, __FILE__); \
         exit(-1); \
     } \
 

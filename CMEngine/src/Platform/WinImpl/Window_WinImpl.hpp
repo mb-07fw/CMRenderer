@@ -23,7 +23,7 @@ namespace CMEngine::Platform::WinImpl
 		};
 	};
 
-	class CM_ENGINE_API Window : public IWindow
+	class Window : public IWindow
 	{
 	public:
 		Window() noexcept;

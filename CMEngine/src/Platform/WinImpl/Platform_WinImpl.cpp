@@ -66,7 +66,6 @@ namespace CMEngine::Platform::WinImpl
 			return false;
 
 		m_Window.Update();
-		m_Graphics.Update();
 
 		return true;
 	}

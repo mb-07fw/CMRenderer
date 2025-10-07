@@ -60,19 +60,9 @@ namespace CMEngine::Platform::WinImpl
 		2, 3, 0
 	};
 
-	class ModelImporterImpl
-	{
-	public:
-		ModelImporterImpl() = default;
-		~ModelImporterImpl() = default;
-
-		Assimp::Importer Assimp;
-	};
-
 	Graphics::Graphics(Window& window, const PlatformConfig& platformConfig) noexcept
 		: m_Window(window),
-		  m_Config(platformConfig),
-		  mP_ModelImporter(std::make_unique<ModelImporterImpl>())
+		  m_Config(platformConfig)
 	{
 		Init();
 		m_Window.SetCallbackOnResize(OnResizeThunk, this);
@@ -84,179 +74,173 @@ namespace CMEngine::Platform::WinImpl
 		Shutdown();
 	}
 
-	void Graphics::Update() noexcept
-	{
-		ImGui_ImplWin32_NewFrame();
-		ImGui_ImplDX11_NewFrame();
-		ImGui::NewFrame();
+	//void Graphics::Update() noexcept
+	//{
+	//	ImGui_ImplWin32_NewFrame();
+	//	ImGui_ImplDX11_NewFrame();
+	//	ImGui::NewFrame();
 
-		if (ImGui::Begin("Engine Control"))
-		{
-			if (ImGui::CollapsingHeader("Camera"))
-				ImGui::SliderFloat3("Offset", m_CameraOffset.Underlying(), -20.0f, 20.0f);
+	//	if (ImGui::Begin("Engine Control"))
+	//	{
+	//		if (ImGui::CollapsingHeader("Camera"))
+	//			ImGui::SliderFloat3("Offset", m_CameraOffset.Underlying(), -20.0f, 20.0f);
 
-			if (ImGui::CollapsingHeader("Mesh"))
-				ImGui::SliderFloat3("Offset##xx", m_MeshOffset.Underlying(), -20.0f, 20.0f);
+	//		if (ImGui::CollapsingHeader("Mesh"))
+	//			ImGui::SliderFloat3("Offset##xx", m_MeshOffset.Underlying(), -20.0f, 20.0f);
 
-			if (ImGui::CollapsingHeader("Text"))
-			{
-				ImGui::SliderFloat2("Offset##xx##xx", m_TextOffset.Underlying(), 0.0f, 400.0f);
-				ImGui::SliderFloat2("Resolution", m_TextResolution.Underlying(), 0.0f, 400.0f);
+	//		if (ImGui::CollapsingHeader("Text"))
+	//		{
+	//			ImGui::SliderFloat2("Offset##xx##xx", m_TextOffset.Underlying(), 0.0f, 400.0f);
+	//			ImGui::SliderFloat2("Resolution", m_TextResolution.Underlying(), 0.0f, 400.0f);
 
-				if (m_ShowTextBounds)
-					ImGui::SliderFloat4("Bounds RGBA", m_TextBoundsRGBA.rgba, 0.0f, 1.0f);
+	//			if (m_ShowTextBounds)
+	//				ImGui::SliderFloat4("Bounds RGBA", m_TextBoundsRGBA.rgba, 0.0f, 1.0f);
 
-				ImGui::Checkbox("Show Bounds?", &m_ShowTextBounds);
-			}
-		}
+	//			ImGui::Checkbox("Show Bounds?", &m_ShowTextBounds);
+	//		}
+	//	}
 
-		ImGui::End();
+	//	ImGui::End();
 
-		const aiScene* pModel = mP_ModelImporter->Assimp.ReadFile(
-			CM_ENGINE_RESOURCES_MODEL_DIRECTORY "/cube.gltf",
-			aiProcess_Triangulate |
-			aiProcess_JoinIdenticalVertices |
-			aiProcess_ConvertToLeftHanded
-		);
+	//	const aiScene* pModel = mP_ModelImporter->Assimp.ReadFile(
+	//		CM_ENGINE_RESOURCES_MODEL_DIRECTORY "/cube.gltf",
+	//		aiProcess_Triangulate |
+	//		aiProcess_JoinIdenticalVertices |
+	//		aiProcess_ConvertToLeftHanded
+	//	);
 
-		if (!pModel || !pModel->mMeshes[0])
-		{
-			spdlog::critical(
-				"(WinImpl_Graphics) Internal error: Error occured loading model. "
-				"Error: {}", mP_ModelImporter->Assimp.GetErrorString()
-			);
+	//	if (!pModel || !pModel->mMeshes[0])
+	//	{
+	//		spdlog::critical(
+	//			"(WinImpl_Graphics) Internal error: Error occured loading model. "
+	//			"Error: {}", mP_ModelImporter->Assimp.GetErrorString()
+	//		);
 
-			std::exit(-1);
-		}
+	//		std::exit(-1);
+	//	}
 
-		const aiMesh* pMesh = pModel->mMeshes[0];
+	//	const aiMesh* pMesh = pModel->mMeshes[0];
 
-		std::vector<Vertex> vertices;
-		vertices.reserve(pMesh->mNumVertices);
+	//	std::vector<Vertex> vertices;
+	//	vertices.reserve(pMesh->mNumVertices);
 
-		for (unsigned int i = 0; i < pMesh->mNumVertices; ++i)
-		{
-			aiVector3D texCoord = pMesh->HasTextureCoords(0)
-				? pMesh->mTextureCoords[0][i]  // UV channel 0
-				: aiVector3D(0.0f, 0.0f, 0.0f); // fallback
+	//	for (unsigned int i = 0; i < pMesh->mNumVertices; ++i)
+	//	{
+	//		aiVector3D texCoord = pMesh->HasTextureCoords(0)
+	//			? pMesh->mTextureCoords[0][i]  // UV channel 0
+	//			: aiVector3D(0.0f, 0.0f, 0.0f); // fallback
 
-			vertices.emplace_back(pMesh->mVertices[i], pMesh->mNormals[i], texCoord);
-		}
+	//		vertices.emplace_back(pMesh->mVertices[i], pMesh->mNormals[i], texCoord);
+	//	}
 
-		/* Since we triangulated, each face should be a triangle (i.e., require 3 indices. ex. 0, 1, 2). */
-		UINT numIndices = pMesh->mNumFaces * 3;
+	//	/* Since we triangulated, each face should be a triangle (i.e., require 3 indices. ex. 0, 1, 2). */
+	//	UINT numIndices = pMesh->mNumFaces * 3;
 
-		std::vector<uint16_t> indices;
-		indices.reserve(numIndices);
+	//	std::vector<uint16_t> indices;
+	//	indices.reserve(numIndices);
 
-		for (unsigned int i = 0; i < pMesh->mNumFaces; ++i)
-		{
-			const auto& face = pMesh->mFaces[i];
-			CM_ENGINE_ASSERT(face.mNumIndices == 3);
+	//	for (unsigned int i = 0; i < pMesh->mNumFaces; ++i)
+	//	{
+	//		const auto& face = pMesh->mFaces[i];
+	//		CM_ENGINE_ASSERT(face.mNumIndices == 3);
 
-			indices.emplace_back(face.mIndices[0]);
-			indices.emplace_back(face.mIndices[1]);
-			indices.emplace_back(face.mIndices[2]);
-		}
+	//		indices.emplace_back(face.mIndices[0]);
+	//		indices.emplace_back(face.mIndices[1]);
+	//		indices.emplace_back(face.mIndices[2]);
+	//	}
 
-		const aiMaterial* pMaterial = pModel->mMaterials[pMesh->mMaterialIndex];
-		MaterialCB materialData = {};
+	//	const aiMaterial* pMaterial = pModel->mMaterials[pMesh->mMaterialIndex];
+	//	MaterialCB materialData = {};
 
-		aiColor4D baseColor;
-		if (AI_SUCCESS == aiGetMaterialColor(pMaterial, AI_MATKEY_BASE_COLOR, &baseColor))
-			materialData.BaseColor = { baseColor.r, baseColor.g, baseColor.b, baseColor.a };
-		else
-			materialData.BaseColor = { 1.0f, 1.0f, 1.0f, 1.0f }; // fallback
+	//	aiColor4D baseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+	//	if (AI_SUCCESS == aiGetMaterialColor(pMaterial, AI_MATKEY_BASE_COLOR, &baseColor))
+	//		materialData.BaseColor = { baseColor.r, baseColor.g, baseColor.b, baseColor.a };
 
-		float metallic = 1.0f;
-		if (AI_SUCCESS == aiGetMaterialFloat(pMaterial, AI_MATKEY_METALLIC_FACTOR, &metallic))
-			materialData.Metallic = metallic;
-		else
-			materialData.Metallic = 1.0f;
+	//	float metallic = 0.0f;
+	//	if (AI_SUCCESS == aiGetMaterialFloat(pMaterial, AI_MATKEY_METALLIC_FACTOR, &metallic))
+	//		materialData.Metallic = metallic;
 
-		float roughness = 1.0f;
-		if (AI_SUCCESS == aiGetMaterialFloat(pMaterial, AI_MATKEY_ROUGHNESS_FACTOR, &roughness))
-			materialData.Roughness = roughness;
-		else
-			materialData.Roughness = 1.0f;
+	//	float roughness = 0.0f;
+	//	if (AI_SUCCESS == aiGetMaterialFloat(pMaterial, AI_MATKEY_ROUGHNESS_FACTOR, &roughness))
+	//		materialData.Roughness = roughness;
 
-		VertexBuffer vbVertices(sizeof(Vertex));
-		vbVertices.Create(vertices.data(), vertices.size() * sizeof(Vertex), mP_Device);
-		vbVertices.Upload(mP_Context);
+	//	VertexBuffer vbVertices(sizeof(Vertex));
+	//	vbVertices.Create(vertices.data(), vertices.size() * sizeof(Vertex), mP_Device);
+	//	vbVertices.Upload(mP_Context);
 
-		IndexBuffer ibIndices;
-		ibIndices.Create(indices.data(), indices.size() * sizeof(uint16_t), mP_Device);
-		ibIndices.Upload(mP_Context);
+	//	IndexBuffer ibIndices;
+	//	ibIndices.Create(indices.data(), indices.size() * sizeof(uint16_t), mP_Device);
+	//	ibIndices.Upload(mP_Context);
 
-		ConstantBuffer cbMaterial(ConstantBufferType::PS, MaterialCB::S_PS_REGISTER_SLOT);
-		cbMaterial.Create(std::span<const MaterialCB>(&materialData, 1), mP_Device);
-		cbMaterial.Upload(mP_Context);
+	//	ConstantBuffer cbMaterial(ConstantBufferType::PS, MaterialCB::S_PS_REGISTER_SLOT);
+	//	cbMaterial.Create(std::span<const MaterialCB>(&materialData, 1), mP_Device);
+	//	cbMaterial.Upload(mP_Context);
 
-		CameraCB cameraData = {};
-		cameraData.CameraPos = m_CameraOffset;
+	//	CameraCB cameraData = {};
+	//	cameraData.CameraPos = m_CameraOffset;
 
-		ConstantBuffer cbCamera(ConstantBufferType::PS, CameraCB::S_PS_REGISTER_SLOT);
-		cbCamera.Create(std::span<const CameraCB>(&cameraData, 1), mP_Device);
-		cbCamera.Upload(mP_Context);
+	//	ConstantBuffer cbCamera(ConstantBufferType::PS, CameraCB::S_PS_REGISTER_SLOT);
+	//	cbCamera.Create(std::span<const CameraCB>(&cameraData, 1), mP_Device);
+	//	cbCamera.Upload(mP_Context);
 
-		float aspectRatio = m_Window.ClientResolution().Aspect();
-		constexpr float CameraFovDeg = 45.0f;
-		constexpr float CameraFovRad = DirectX::XMConvertToRadians(CameraFovDeg);
+	//	float aspectRatio = m_Window.ClientResolution().Aspect();
+	//	constexpr float CameraFovDeg = 45.0f;
+	//	constexpr float CameraFovRad = DirectX::XMConvertToRadians(CameraFovDeg);
 
-		DirectX::XMFLOAT3 cameraPos = ToXMFloat3(m_CameraOffset);
-		DirectX::XMFLOAT3 cameraFocus = {};
-		DirectX::XMFLOAT3 upDirection = { 0.0f, 1.0f, 0.0f };
+	//	DirectX::XMFLOAT3 cameraPos = ToXMFloat3(m_CameraOffset);
+	//	DirectX::XMFLOAT3 cameraFocus = {};
+	//	DirectX::XMFLOAT3 upDirection = { 0.0f, 1.0f, 0.0f };
 
-		DirectX::XMVECTOR cameraPosVec = DirectX::XMLoadFloat3(&cameraPos);
-		DirectX::XMVECTOR cameraFocusVec = DirectX::XMLoadFloat3(&cameraFocus);
-		DirectX::XMVECTOR upDirectionVec = DirectX::XMLoadFloat3(&upDirection);
+	//	DirectX::XMVECTOR cameraPosVec = DirectX::XMLoadFloat3(&cameraPos);
+	//	DirectX::XMVECTOR cameraFocusVec = DirectX::XMLoadFloat3(&cameraFocus);
+	//	DirectX::XMVECTOR upDirectionVec = DirectX::XMLoadFloat3(&upDirection);
 
-		TransformCB transformData;
-		transformData.Model = DirectX::XMMatrixTranspose(
-			DirectX::XMMatrixTranslation(m_MeshOffset.x, m_MeshOffset.y, m_MeshOffset.z)
-		);
+	//	TransformCB transformData;
+	//	transformData.Model = DirectX::XMMatrixTranspose(
+	//		DirectX::XMMatrixTranslation(m_MeshOffset.x, m_MeshOffset.y, m_MeshOffset.z)
+	//	);
 
-		transformData.View = DirectX::XMMatrixTranspose(
-			DirectX::XMMatrixLookAtLH(cameraPosVec, cameraFocusVec, upDirectionVec)
-		);
+	//	transformData.View = DirectX::XMMatrixTranspose(
+	//		DirectX::XMMatrixLookAtLH(cameraPosVec, cameraFocusVec, upDirectionVec)
+	//	);
 
-		transformData.Proj = DirectX::XMMatrixTranspose(
-			DirectX::XMMatrixPerspectiveFovLH(CameraFovRad, aspectRatio, 0.05f, 100.0f)
-		);
+	//	transformData.Proj = DirectX::XMMatrixTranspose(
+	//		DirectX::XMMatrixPerspectiveFovLH(CameraFovRad, aspectRatio, 0.05f, 100.0f)
+	//	);
 
-		ConstantBuffer cbTransform(ConstantBufferType::VS, TransformCB::S_VS_REGISTER_SLOT);
-		cbTransform.Create(std::span<const TransformCB>(&transformData, 1), mP_Device);
-		cbTransform.Upload(mP_Context);
+	//	ConstantBuffer cbTransform(ConstantBufferType::VS, TransformCB::S_VS_REGISTER_SLOT);
+	//	cbTransform.Create(std::span<const TransformCB>(&transformData, 1), mP_Device);
+	//	cbTransform.Upload(mP_Context);
 
-		Clear(RGBANorm::Black());
+	//	Clear(Color::Black());
 
-		m_ShaderLibrary.BindSet(ShaderSetType::GLTF, mP_Context);
-		mP_Context->DrawIndexed(numIndices, 0, 0);
+	//	m_ShaderLibrary.BindSet(ShaderSetType::GLTF, mP_Context);
+	//	mP_Context->DrawIndexed(numIndices, 0, 0);
 
-		D2DBeginDraw();
+	//	D2DBeginDraw();
 
-		if (m_ShowTextBounds)
-			D2DDrawRect(m_TextOffset, m_TextResolution, RGBANorm::White());
+	//	if (m_ShowTextBounds)
+	//		D2DDrawRect(m_TextOffset, m_TextResolution, Color::White());
 
-		constexpr std::wstring_view TestText = L"Hello Direct2D & DirectWrite!";
-		D2DDrawText(TestText, m_TextOffset, m_TextResolution, RGBANorm::White());
+	//	constexpr std::wstring_view TestText = L"Hello Direct2D & DirectWrite!";
+	//	D2DDrawText(TestText, m_TextOffset, m_TextResolution, Color::White());
 
-		D2DEndDraw();
+	//	D2DEndDraw();
 
-		ImGui::Render();
-		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+	//	ImGui::Render();
+	//	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-		ImGuiIO& io = ImGui::GetIO();
-		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-		{
-			ImGui::UpdatePlatformWindows();
-			ImGui::RenderPlatformWindowsDefault();
-		}
+	//	ImGuiIO& io = ImGui::GetIO();
+	//	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+	//	{
+	//		ImGui::UpdatePlatformWindows();
+	//		ImGui::RenderPlatformWindowsDefault();
+	//	}
 
-		Present();
-	}
+	//	Present();
+	//}
 
-	void Graphics::Clear(RGBANorm color) noexcept
+	void Graphics::Clear(const Color4& color) noexcept
 	{
 		mP_Context->ClearRenderTargetView(mP_RTV.Get(), color.rgba);
 		mP_Context->ClearDepthStencilView(mP_DSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
@@ -288,6 +272,85 @@ namespace CMEngine::Platform::WinImpl
 
 	void Graphics::Draw(const void* pBuffer, const DrawDescriptor& descriptor) noexcept
 	{
+	}
+
+	void Graphics::StartFrame(const Color4& clearColor) noexcept
+	{
+		ImGui_ImplWin32_NewFrame();
+		ImGui_ImplDX11_NewFrame();
+		ImGui::NewFrame();
+
+		Clear(clearColor);
+
+		m_IsWithinFrame = true;
+	}
+
+	void Graphics::EndFrame() noexcept
+	{
+		ImGui::Render();
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+		ImGuiIO& io = ImGui::GetIO();
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+		}
+
+		Present();
+
+		m_IsWithinFrame = false;
+	}
+
+	[[nodiscard]] Graphics::BufferPtr<IUploadable> Graphics::CreateConstantBuffer(GPUBufferFlag flags, uint32_t registerSlot) noexcept
+	{
+		return std::make_unique<ConstantBuffer>(
+			ConstantBufferType::INVALID,
+			flags,
+			registerSlot
+		);
+	}
+
+	void Graphics::SetConstantBuffer(const Graphics::BufferPtr<IUploadable>& pCB, void* pData, size_t numBytes) noexcept
+	{
+		ConstantBuffer* pDerivedCB = dynamic_cast<ConstantBuffer*>(pCB.get());
+
+		if (!pDerivedCB)
+		{
+			spdlog::warn("(WinImpl_Graphics) [SetConstantBuffer] Internal warning: Attempted to set a buffer instance that was either nullptr, or not of type ConstantBuffer.");
+			return;
+		}
+
+
+		pDerivedCB->Create(pData, numBytes, mP_Device);
+	}
+
+	[[nodiscard]] void Graphics::BindConstantBufferVS(const Graphics::BufferPtr<IUploadable>& pCB) noexcept
+	{
+		ConstantBuffer* pDerivedCB = dynamic_cast<ConstantBuffer*>(pCB.get());
+
+		if (!pDerivedCB)
+		{
+			spdlog::warn("(WinImpl_Graphics) [BindConstantBufferVS] Internal warning: Attempted to bind a buffer instance that was either nullptr, or not of type ConstantBuffer.");
+			return;
+		}
+
+		pDerivedCB->SetType(ConstantBufferType::VS);
+		pDerivedCB->Upload(mP_Context);
+	}
+
+	[[nodiscard]] void Graphics::BindConstantBufferPS(const Graphics::BufferPtr<IUploadable>& pCB) noexcept
+	{
+		ConstantBuffer* pDerivedCB = dynamic_cast<ConstantBuffer*>(pCB.get());
+
+		if (!pDerivedCB)
+		{
+			spdlog::warn("(WinImpl_Graphics) [BindConstantBufferPS] Internal warning: Attempted to bind a buffer instance that was either nullptr, or not of type ConstantBuffer.");
+			return;
+		}
+
+		pDerivedCB->SetType(ConstantBufferType::PS);
+		pDerivedCB->Upload(mP_Context);
 	}
 
 	void Graphics::Init() noexcept
@@ -377,7 +440,14 @@ namespace CMEngine::Platform::WinImpl
 		CreateViews();
 		BindViews();
 
-		SetViewport();
+		mP_SwapChain->GetDesc(&scDesc);
+
+		Float2 resolution(
+			static_cast<float>(scDesc.BufferDesc.Width),
+			static_cast<float>(scDesc.BufferDesc.Height)
+		);
+
+		SetViewport(resolution);
 
 		m_ShaderLibrary.CreateShaderSets(mP_Device);
 
@@ -473,12 +543,10 @@ namespace CMEngine::Platform::WinImpl
 		ReleaseD2DViews();
 	}
 
-	void Graphics::SetViewport() noexcept
+	void Graphics::SetViewport(Float2 resolution) noexcept
 	{
-		Float2 clientArea = m_Window.ClientResolution();
-
 		CD3D11_VIEWPORT viewport(
-			0.0f, 0.0f, clientArea.x, clientArea.y
+			0.0f, 0.0f, resolution.x, resolution.y
 		);
 
 		mP_Context->RSSetViewports(1, &viewport);
@@ -510,7 +578,7 @@ namespace CMEngine::Platform::WinImpl
 		CreateViews();
 		BindViews();
 
-		SetViewport();
+		SetViewport(resolution);
 	}
 
 	void Graphics::OnResizeThunk(Float2 resolution, void* pThis) noexcept
@@ -634,7 +702,7 @@ namespace CMEngine::Platform::WinImpl
 		mP_D2D_RT->EndDraw();
 	}
 
-	void Graphics::D2DDrawText(const std::wstring_view& text, const Float2& pos, const Float2& resolution, const RGBANorm& color) noexcept
+	void Graphics::D2DDrawText(const std::wstring_view& text, const Float2& pos, const Float2& resolution, const Color4& color) noexcept
 	{
 		if (IsGraphicsDebugging())
 			return;
@@ -652,7 +720,7 @@ namespace CMEngine::Platform::WinImpl
 		);
 	}
 
-	void Graphics::D2DDrawRect(const Float2& pos, const Float2& resolution, const RGBANorm& color) noexcept
+	void Graphics::D2DDrawRect(const Float2& pos, const Float2& resolution, const Color4& color) noexcept
 	{
 		if (IsGraphicsDebugging())
 			return;

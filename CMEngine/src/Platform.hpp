@@ -9,8 +9,8 @@
 namespace CMEngine
 {
 #ifdef CM_ENGINE_PLATFORM_WINIMPL
-	using PlatformAlias = Platform::WinImpl::Platform;
-	using GraphicsAlias = Platform::WinImpl::Graphics;
-	using WindowAlias = Platform::WinImpl::Window;
+	using APlatform = Platform::WinImpl::Platform;
+	using AGraphics = Platform::WinImpl::Graphics;
+	using AWindow = Platform::WinImpl::Window;
 #endif
 }

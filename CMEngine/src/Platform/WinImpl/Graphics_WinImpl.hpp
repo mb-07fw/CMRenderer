@@ -8,14 +8,14 @@
 #include "Platform/WinImpl/ShaderLibrary_WinImpl.hpp"
 #include "Platform/WinImpl/Types_WinImpl.hpp"
 
-#include <dxgi.h>
-#include <dxgi1_5.h>
-#include <dxgidebug.h>
-
 #include <d3d11.h>
 
 #include <d2d1.h>
 #include <dwrite.h>
+
+#include <dxgi.h>
+#include <dxgi1_5.h>
+#include <dxgidebug.h>
 
 #include <wrl/client.h>
 
@@ -26,10 +26,18 @@
 
 namespace CMEngine::Platform::WinImpl
 {
-	class ModelImporterImpl;
-	class PlatformConfig;
+	struct PlatformConfig;
 
-	class CM_ENGINE_API Graphics : public IGraphics
+	class ModelImporter
+	{
+	public:
+		ModelImporter() = default;
+		~ModelImporter() = default;
+
+		Assimp::Importer Assimp;
+	};
+
+	class Graphics : public IGraphics
 	{
 	public:
 		Graphics(Window& window, const PlatformConfig& platformConfig) noexcept;
@@ -38,11 +46,19 @@ namespace CMEngine::Platform::WinImpl
 		Graphics(const Graphics& other) = delete;
 		Graphics& operator=(const Graphics& other) = delete;
 	public:
-		void Update() noexcept;
-
-		virtual void Clear(RGBANorm color) noexcept override;
+		virtual void Clear(const Color4& color) noexcept override;
 		virtual void Present() noexcept override;
 		virtual void Draw(const void* pBuffer, const DrawDescriptor& descriptor) noexcept override;
+
+		virtual void StartFrame(const Color4& clearColor) noexcept override;
+		virtual void EndFrame() noexcept override;
+
+		virtual [[nodiscard]] BufferPtr<IUploadable> CreateConstantBuffer(GPUBufferFlag flags = GPUBufferFlag::Default, uint32_t registerSlot = 0) noexcept override;
+		virtual void SetConstantBuffer(const BufferPtr<IUploadable>& pCB, void* pData, size_t numBytes) noexcept override;
+		virtual [[nodiscard]] void BindConstantBufferVS(const BufferPtr<IUploadable>& pCB) noexcept override;
+		virtual [[nodiscard]] void BindConstantBufferPS(const BufferPtr<IUploadable>& pCB) noexcept override;
+
+		inline virtual [[nodiscard]] bool IsWithinFrame() const noexcept override { return m_IsWithinFrame; }
 	private:
 		void Init() noexcept;
 		void Shutdown() noexcept;
@@ -54,7 +70,7 @@ namespace CMEngine::Platform::WinImpl
 
 		void ReleaseViews() noexcept;
 
-		void SetViewport() noexcept;
+		void SetViewport(Float2 resolution) noexcept;
 
 		void OnResizeCallback(Float2 res) noexcept;
 
@@ -69,15 +85,16 @@ namespace CMEngine::Platform::WinImpl
 		void D2DBeginDraw() noexcept;
 		void D2DEndDraw() noexcept;
 
-		void D2DDrawText(const std::wstring_view& text, const Float2& pos, const Float2& resolution, const RGBANorm& color) noexcept;
-		void D2DDrawRect(const Float2& pos, const Float2& resolution, const RGBANorm& color) noexcept;
+		void D2DDrawText(const std::wstring_view& text, const Float2& pos, const Float2& resolution, const Color4& color) noexcept;
+		void D2DDrawRect(const Float2& pos, const Float2& resolution, const Color4& color) noexcept;
 
-		inline [[nodiscard]] D2D1::ColorF ToD2D1ColorF(const RGBANorm& color) const noexcept;
+		inline [[nodiscard]] D2D1::ColorF ToD2D1ColorF(const Color4& color) const noexcept;
 		inline [[nodiscard]] D2D1_RECT_F ToD2D1RectF(const Float2& pos, const Float2& resolution) const noexcept;
 	private:
 		Window& m_Window; /* TODO: Come up with a better solution for this dependency... */
 		const PlatformConfig& m_Config;
 		ShaderLibrary m_ShaderLibrary;
+		ModelImporter m_ModelImporter;
 		ComPtr<ID3D11Device> mP_Device;
 		ComPtr<ID3D11DeviceContext> mP_Context;
 		ComPtr<IDXGISwapChain> mP_SwapChain;
@@ -94,18 +111,11 @@ namespace CMEngine::Platform::WinImpl
 		static constexpr UINT S_PRESENT_SYNC_INTERVAL_VSYNC = 1;
 		UINT m_PresentSyncInterval = S_PRESENT_SYNC_INTERVAL_VSYNC;
 		UINT m_PresentFlags = 0;
-		Float3 m_CameraOffset = Float3(0.0f, 0.0f, -10.0f);
-		RigidTransform m_CameraTransform = RigidTransform(Float3{}, Float3{ 0.0f, 0.0f, -10.0f });
-		Float3 m_MeshOffset;
-		Float2 m_TextOffset;
-		Float2 m_TextResolution = Float2(250.0f, 200.0f);
-		RGBANorm m_TextBoundsRGBA = RGBANorm(0.15f, 0.15f, 0.15f);
-		std::unique_ptr<ModelImporterImpl> mP_ModelImporter;
-		bool m_ShowTextBounds = false;
 		bool m_LoadedDebugLayer = false;
+		bool m_IsWithinFrame = false;
 	};
 
-	inline [[nodiscard]] D2D1::ColorF Graphics::ToD2D1ColorF(const RGBANorm& color) const noexcept
+	inline [[nodiscard]] D2D1::ColorF Graphics::ToD2D1ColorF(const Color4& color) const noexcept
 	{
 		return D2D1::ColorF(
 			color.r(),

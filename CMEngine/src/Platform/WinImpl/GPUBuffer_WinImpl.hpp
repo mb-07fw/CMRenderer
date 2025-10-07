@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Platform/Core/IUploadable.hpp"
 #include "Platform/WinImpl/Types_WinImpl.hpp"
 
 #include <cstdint>
@@ -7,52 +8,75 @@
 #include <vector>
 #include <type_traits>
 
+#include <d3d11.h>
+
 namespace CMEngine::Platform::WinImpl
 {
 	/* A pure virtual interface for an object that is bindable to the D3D11 pipeline. */
-	class IUploadable
+	class IDXUploadable : public IUploadable
 	{
 	public:
-		IUploadable() = default;
-		virtual ~IUploadable() = default;
+		IDXUploadable() = default;
+		virtual ~IDXUploadable() = default;
 
 		virtual void Upload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept = 0;
 		virtual void ClearUpload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept = 0;
 	};
 
-	/* A pure virtual representation of a buffer that is bindable to the D3D11 pipeline.
+	/* A pure virtual interface for a buffer that is bindable to the D3D11 pipeline.
 	 * The main distinction between IGPUBuffer and ICPUBuffer is that IGPUBuffer's will never
 	 *   store data, only marshal it to the GPU.
 	 * 
-	 * For an ICPUBuffer derivative to be uploaded to the GPU, it must first be converted to an IGPUBuffer Derivative.
-	 */
-	class IGPUBuffer : public IUploadable
+	 * For an ICPUBuffer derivative to be uploaded to the GPU, it must first be converted to an IGPUBuffer derivative. */
+	class IGPUBuffer : public IDXUploadable
 	{
 	public:
-		IGPUBuffer(
+		IGPUBuffer() = default;
+		virtual ~IGPUBuffer() = default;
+
+		virtual void Create(const void* pData, size_t numBytes, const ComPtr<ID3D11Device>& pDevice) noexcept = 0;
+		virtual void Release() noexcept = 0;
+
+		virtual [[nodiscard]] bool IsCreated() const noexcept = 0;
+		virtual operator bool() const noexcept = 0;
+
+		virtual [[nodiscard]] bool HasFlag(GPUBufferFlag flag) const noexcept = 0;
+
+		inline static constexpr [[nodiscard]] D3D11_USAGE FlagsToUsage(GPUBufferFlag flags) noexcept;
+		inline static constexpr [[nodiscard]] UINT FlagsToCPUAccess(GPUBufferFlag flags) noexcept;
+	protected:
+		void VerifyFlags(GPUBufferFlag& outFlags) noexcept;
+	};
+
+	class GPUBufferBasic : public IGPUBuffer
+	{
+	public:
+		GPUBufferBasic(
 			UINT bindFlags,
 			UINT byteWidth = 0,
-			D3D11_USAGE usage = D3D11_USAGE_DEFAULT,
-			UINT cpuAccessFlags = 0,
+			GPUBufferFlag flags = GPUBufferFlag::Default,
 			UINT miscFlags = 0,
 			UINT structureByteStride = 0
 		) noexcept;
 
-		virtual ~IGPUBuffer() = default;
+		virtual ~GPUBufferBasic() = default;
 
 		template <typename Ty>
 		inline void Create(std::span<const Ty> data, const ComPtr<ID3D11Device>& pDevice) noexcept;
-		void Create(const void* pData, size_t numBytes, const ComPtr<ID3D11Device>& pDevice) noexcept;
-		void Release() noexcept;
+		virtual void Create(const void* pData, size_t numBytes, const ComPtr<ID3D11Device>& pDevice) noexcept override;
+		virtual void Release() noexcept override;
 
-		virtual [[nodiscard]] bool IsCreated() const noexcept { return mP_Buffer.Get() != nullptr; }
-		virtual operator bool() const noexcept { return IsCreated(); }
+		inline virtual [[nodiscard]] bool IsCreated() const noexcept override { return mP_Buffer.Get() != nullptr; }
+		inline virtual operator bool() const noexcept override { return IsCreated(); }
+
+		inline constexpr virtual [[nodiscard]] bool HasFlag(GPUBufferFlag flag) const noexcept override { return FlagUnderlying(m_Flags & flag); }
 	protected:
+		GPUBufferFlag m_Flags = GPUBufferFlag::Unspecified;
 		CD3D11_BUFFER_DESC m_Desc = {};
 		ComPtr<ID3D11Buffer> mP_Buffer;
 	};
 
-	class VertexBuffer : public IGPUBuffer
+	class VertexBuffer : public GPUBufferBasic
 	{
 	public:
 		VertexBuffer(
@@ -77,7 +101,7 @@ namespace CMEngine::Platform::WinImpl
 		UINT m_RegisterSlot = 0;
 	};
 
-	class IndexBuffer : public IGPUBuffer
+	class IndexBuffer : public GPUBufferBasic
 	{
 	public:
 		IndexBuffer(
@@ -106,15 +130,21 @@ namespace CMEngine::Platform::WinImpl
 		PS
 	};
 
-	class ConstantBuffer : public IGPUBuffer
+	class ConstantBuffer : public GPUBufferBasic
 	{
 	public:
-		ConstantBuffer(ConstantBufferType type, UINT registerSlot = 0) noexcept;
+		ConstantBuffer(
+			ConstantBufferType type = ConstantBufferType::INVALID,
+			GPUBufferFlag flags = GPUBufferFlag::Default,
+			UINT registerSlot = 0
+		) noexcept;
 
 		~ConstantBuffer() = default;
 
 		virtual void Upload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept override;
 		virtual void ClearUpload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept override;
+
+		inline void SetType(ConstantBufferType type) noexcept { m_Type = type; }
 	private:
 		void Bind(const ComPtr<ID3D11DeviceContext>& pContext, ID3D11Buffer* pBuffer) const noexcept;
 	private:
@@ -125,7 +155,7 @@ namespace CMEngine::Platform::WinImpl
 
 	/* BufferArrayTyped is an array of homogenous buffer types, meaning it is not meant to be used polymorphically. */
 	template <typename Ty>
-		requires std::is_base_of_v<IGPUBuffer, Ty> /* Ty is a derived type of IGPUBuffer. */
+		requires std::is_base_of_v<GPUBufferBasic, Ty> /* Ty is a derived type of GPUBufferBasic. */
 	class BufferArrayTyped
 	{
 	public:
@@ -150,21 +180,51 @@ namespace CMEngine::Platform::WinImpl
 
 	using VertexBufferArray = BufferArrayTyped<VertexBuffer>;
 
+	inline constexpr [[nodiscard]] D3D11_USAGE IGPUBuffer::FlagsToUsage(GPUBufferFlag flags) noexcept
+	{
+		UINT usage = 0;
+
+		/* NOTE: Multiple basic usage flags are likely to result in buffer creation failure,
+		 *		    but it is not this function's responsibility to respond accordingly. */
+		if (FlagUnderlying(flags & GPUBufferFlag::Default))
+			usage |= D3D11_USAGE_DEFAULT;
+		if (FlagUnderlying(flags & GPUBufferFlag::Immutable))
+			usage |= D3D11_USAGE_IMMUTABLE;
+		if (FlagUnderlying(flags & GPUBufferFlag::Dynamic))
+			usage |= D3D11_USAGE_DYNAMIC;
+		if (FlagUnderlying(flags & GPUBufferFlag::Staging))
+			usage |= D3D11_USAGE_STAGING;
+		
+		return static_cast<D3D11_USAGE>(usage);
+	}
+
+	inline constexpr [[nodiscard]] UINT IGPUBuffer::FlagsToCPUAccess(GPUBufferFlag flags) noexcept
+	{
+		UINT cpuFlags = 0;
+
+		if (FlagUnderlying(flags & GPUBufferFlag::Read))
+			cpuFlags |= D3D11_CPU_ACCESS_READ;
+		if (FlagUnderlying(flags & GPUBufferFlag::Write))
+			cpuFlags |= D3D11_CPU_ACCESS_WRITE;
+		
+		return cpuFlags;
+	}
+
 	template <typename Ty>
-	inline void IGPUBuffer::Create(std::span<const Ty> data, const ComPtr<ID3D11Device>& pDevice) noexcept
+	inline void GPUBufferBasic::Create(std::span<const Ty> data, const ComPtr<ID3D11Device>& pDevice) noexcept
 	{
 		Create(data.data(), data.size_bytes(), pDevice);
 	}
 
 	template <typename Ty>
-		requires std::is_base_of_v<IGPUBuffer, Ty>
+		requires std::is_base_of_v<GPUBufferBasic, Ty>
 	inline BufferArrayTyped<Ty>::BufferArrayTyped(size_t capacity) noexcept
 	{
 		m_Buffers.reserve(capacity);
 	}
 
 	template <typename Ty>
-		requires std::is_base_of_v<IGPUBuffer, Ty>
+		requires std::is_base_of_v<GPUBufferBasic, Ty>
 	template <typename... Args>
 	inline Ty& BufferArrayTyped<Ty>::EmplaceBack(Args&&... args) noexcept
 	{
@@ -172,7 +232,7 @@ namespace CMEngine::Platform::WinImpl
 	}
 
 	template <typename Ty>
-		requires std::is_base_of_v<IGPUBuffer, Ty>
+		requires std::is_base_of_v<GPUBufferBasic, Ty>
 	inline void BufferArrayTyped<Ty>::Upload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept
 	{
 		for (const auto& buffer : m_Buffers)

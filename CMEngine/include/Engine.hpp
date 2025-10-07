@@ -10,15 +10,18 @@
 
 #include "Export.hpp"
 #include "Types.hpp"
-#include "Platform.hpp"
+
+#include <memory>
 
 namespace CMEngine
 {
+	class EngineImpl;
+
 	class CM_ENGINE_API Engine
 	{
 	public:
 		Engine() noexcept;
-		~Engine() = default;
+		~Engine() noexcept;
 	
 		Engine(const Engine&) = delete;
 		Engine(Engine&&) = delete;
@@ -27,18 +30,23 @@ namespace CMEngine
 	public:
 		void Run() noexcept;
 	private:
-		PlatformAlias m_Platform;
+		EngineImpl* mP_Impl = nullptr;
 	};
 }
 
 /* <------- Engine Roadmap ------->
+ *
+ * !! Done !!!
  * 
- * 1. Create a model using blender.
- * 
- *		i)  
- * 
+ * 1. Create a model using blender. 
  * 2. Load the model in C++ using Assimp. (understand the model format)
- * 3. Implement a basic scene / scene graph structure.
- * 4. Use an ECS to implement a Game Entity system.
+ * 3. Implement a basic AssetManager.
+ * 
+ * !!! In Progress !!!
+ * 
+ * 4. Implement a basic layer system. (EditorLayer, RuntimeLayer, etc)
+ * 
+ * ?. Use an ECS to implement a Game Entity system.
+ * ?. Implement a basic scene / scene graph structure.
  * 
  */

@@ -1,19 +1,17 @@
 #pragma once
 
+#include "Export.hpp"
+#include "Platform/WinImpl/Types_WinImpl.hpp"
+
+#include <d3d11.h>
+
 #include <cstdint>
 #include <filesystem>
 
-#include "Export.hpp"
-
-#include <wrl/client.h>
-#include <d3d11.h>
-
 namespace CMEngine::Platform::WinImpl
 {
-	template <typename Ty>
-	using ComPtr = Microsoft::WRL::ComPtr<Ty>;
 
-	enum class CM_ENGINE_API ShaderType : int8_t
+	enum class ShaderType : int8_t
 	{
 		INVALID = -1,
 		VERTEX,
@@ -21,7 +19,7 @@ namespace CMEngine::Platform::WinImpl
 		COMPUTE
 	};
 
-	enum class CM_ENGINE_API AssignedShaderType : int8_t
+	enum class AssignedShaderType : int8_t
 	{
 		INVALID = -1,
 		QUAD_VS,
@@ -31,7 +29,7 @@ namespace CMEngine::Platform::WinImpl
 		CUSTOM
 	};
 
-	enum class CM_ENGINE_API ShaderSetType : int8_t
+	enum class ShaderSetType : int8_t
 	{
 		INVALID = -1,
 		QUAD,
@@ -47,11 +45,11 @@ namespace CMEngine::Platform::WinImpl
 	using ShaderUseID = uint8_t;
 
 	/* Returns true if @useID equals @other or has it set via bitwise-OR'ing. */
-	inline CM_ENGINE_API constexpr [[nodiscard]] bool SupportsUseID(ShaderUseID useID, ShaderUseID other) noexcept;
-	inline CM_ENGINE_API constexpr [[nodiscard]] ShaderType ShaderTypeOfAssigned(AssignedShaderType assignedType) noexcept;
-	inline CM_ENGINE_API constexpr [[nodiscard]] ShaderSetType SetTypeOfAssigned(AssignedShaderType assignedType) noexcept;
+	inline constexpr [[nodiscard]] bool SupportsUseID(ShaderUseID useID, ShaderUseID other) noexcept;
+	inline constexpr [[nodiscard]] ShaderType ShaderTypeOfAssigned(AssignedShaderType assignedType) noexcept;
+	inline constexpr [[nodiscard]] ShaderSetType SetTypeOfAssigned(AssignedShaderType assignedType) noexcept;
 
-	struct CM_ENGINE_API ShaderID
+	struct ShaderID
 	{
 		inline ShaderID(
 			uint32_t index,
@@ -80,7 +78,7 @@ namespace CMEngine::Platform::WinImpl
 		ShaderSetType SetType = ShaderSetType::INVALID;
 	};
 
-	struct CM_ENGINE_API ShaderData
+	struct ShaderData
 	{
 		inline ShaderData(ShaderID id, ComPtr<ID3DBlob> pBytecode, const std::filesystem::path& fileName) noexcept
 			: ID(id),
@@ -107,7 +105,7 @@ namespace CMEngine::Platform::WinImpl
 		COMPUTE = 0b00000001 << 5
 	};
 
-	class CM_ENGINE_API IShaderSet
+	class IShaderSet
 	{
 	public:
 		IShaderSet(ShaderUseID useFlags) noexcept;
@@ -167,7 +165,7 @@ namespace CMEngine::Platform::WinImpl
 		const ShaderUseID m_UseID;
 	};
 
-	class CM_ENGINE_API ShaderSetQuad : public IShaderSet
+	class ShaderSetQuad : public IShaderSet
 	{
 	public:
 		inline ShaderSetQuad(ShaderID vertexID, ShaderID pixelID) noexcept
@@ -197,13 +195,13 @@ namespace CMEngine::Platform::WinImpl
 		ComPtr<ID3D11InputLayout> mP_InputLayout;
 	};
 
-	class CM_ENGINE_API ShaderSetGltf : public IShaderSet
+	class ShaderSetGltf : public IShaderSet
 	{
 	public:
 		inline ShaderSetGltf(ShaderID vertexID, ShaderID pixelID) noexcept
 			: IShaderSet(S_USE_ID),
-			m_VertexID(vertexID),
-			m_PixelID(pixelID)
+			  m_VertexID(vertexID),
+			  m_PixelID(pixelID)
 		{
 		}
 
@@ -274,12 +272,12 @@ namespace CMEngine::Platform::WinImpl
 		}
 	}
 
-	inline CM_ENGINE_API constexpr [[nodiscard]] bool SupportsUseID(ShaderUseID useID, ShaderUseID other) noexcept
+	inline constexpr [[nodiscard]] bool SupportsUseID(ShaderUseID useID, ShaderUseID other) noexcept
 	{
 		return useID == other || (useID & other);
 	}
 
-	inline CM_ENGINE_API constexpr [[nodiscard]] ShaderType ShaderTypeOfAssigned(AssignedShaderType assignedType) noexcept
+	inline constexpr [[nodiscard]] ShaderType ShaderTypeOfAssigned(AssignedShaderType assignedType) noexcept
 	{
 		switch (assignedType)
 		{
@@ -288,15 +286,15 @@ namespace CMEngine::Platform::WinImpl
 		default:
 			return ShaderType::INVALID;
 		case AssignedShaderType::GLTF_VS: [[fallthrough]];
-		case AssignedShaderType::QUAD_VS: [[fallthrough]];
+		case AssignedShaderType::QUAD_VS:
 			return ShaderType::VERTEX;
 		case AssignedShaderType::GLTF_PS: [[fallthrough]];
-		case AssignedShaderType::QUAD_PS: [[fallthrough]];
+		case AssignedShaderType::QUAD_PS:
 			return ShaderType::PIXEL;
 		}
 	}
 
-	inline CM_ENGINE_API constexpr [[nodiscard]] ShaderSetType SetTypeOfAssigned(AssignedShaderType assignedType) noexcept
+	inline constexpr [[nodiscard]] ShaderSetType SetTypeOfAssigned(AssignedShaderType assignedType) noexcept
 	{
 		switch (assignedType)
 		{

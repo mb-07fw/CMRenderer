@@ -6,6 +6,7 @@
 #include <cmath>
 #include <span>
 #include <limits>
+#include <type_traits>
 
 namespace CMEngine
 {
@@ -19,6 +20,64 @@ namespace CMEngine
 	{
 		return std::abs(x - other) <= epsilon;
 	}
+
+	struct CM_ENGINE_API Color4
+	{
+		inline constexpr Color4(float r, float g, float b, float a = 1.0f) noexcept
+		{
+			rgba[0] = r;
+			rgba[1] = g;
+			rgba[2] = b;
+			rgba[3] = a;
+		}
+
+		Color4() = default;
+		~Color4() = default;
+
+		inline static constexpr [[nodiscard]] Color4 Red() noexcept { return { 1.0f, 0.0f, 0.0f, 1.0f }; }
+		inline static constexpr [[nodiscard]] Color4 Green() noexcept { return { 1.0f, 0.0f, 0.0f, 1.0f }; }
+		inline static constexpr [[nodiscard]] Color4 Blue() noexcept { return { 1.0f, 0.0f, 0.0f, 1.0f }; }
+		inline static constexpr [[nodiscard]] Color4 Black() noexcept { return { 0.0f, 0.0f, 0.0f, 1.0f }; }
+		inline static constexpr [[nodiscard]] Color4 White() noexcept { return { 1.0f, 1.0f, 1.0f, 1.0f }; }
+
+		inline constexpr [[nodiscard]] float r() const noexcept { return rgba[0]; }
+		inline constexpr [[nodiscard]] float g() const noexcept { return rgba[1]; }
+		inline constexpr [[nodiscard]] float b() const noexcept { return rgba[2]; }
+		inline constexpr [[nodiscard]] float a() const noexcept { return rgba[3]; }
+
+		float rgba[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	};
+
+	template <typename Ty>
+	class ViewBasic
+	{
+	public:
+		inline ViewBasic(Ty* pData) noexcept
+			: mP_Data(pData)
+		{
+		}
+
+		ViewBasic() = default;
+		~ViewBasic() = default;
+
+		inline operator Ty* () noexcept { return mP_Data; }
+		inline ViewBasic<Ty>& operator=(Ty* pData) noexcept { mP_Data = pData; return*this; }
+		inline Ty* operator->() noexcept { return mP_Data; }
+
+		inline [[nodiscard]] Ty* Raw() noexcept { return mP_Data; }
+	private:
+		Ty* mP_Data = nullptr;
+	};
+
+	/* View represents a non-onwing pointer to a resource that is NOT meant
+	 *   to be deleted by the client. */
+	template <typename Ty>
+	using View = ViewBasic<Ty>;
+
+	/* ConstView represents a non-onwing pointer to a const resource that is NOT meant
+	 *   to be deleted by the client. */
+	template <typename Ty>
+	using ConstView = ViewBasic<const Ty>;
 
 	struct Float3;
 
@@ -88,7 +147,7 @@ namespace CMEngine
 		float left = 0.0f, top = 0.0f, right = 0.0f, bottom = 0.0f;
 	};
 
-	struct Transform
+	struct CM_ENGINE_API Transform
 	{
 		inline Transform(
 			const Float3& scaling,
@@ -116,7 +175,7 @@ namespace CMEngine
 		Float3 Translation;
 	};
 
-	struct RigidTransform
+	struct CM_ENGINE_API RigidTransform
 	{
 		inline RigidTransform(
 			const Float3& rotation,
@@ -269,7 +328,7 @@ namespace CMEngine
 	}
 
 	template <typename Ty>
-	class UniquePtr
+	class CM_ENGINE_API UniquePtr
 	{
 		using Self = UniquePtr<Ty>;
 	public:
