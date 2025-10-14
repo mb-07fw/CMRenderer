@@ -3,6 +3,7 @@
 #include "Platform.hpp"
 #include "Asset/AssetManager.hpp"
 #include "ECS/ECS.hpp"
+#include "Scene/SceneManager.hpp"
 #include "LayerStack.hpp"
 
 namespace CMEngine
@@ -30,19 +31,21 @@ namespace CMEngine
 		APlatform m_Platform;
 		Asset::AssetManager m_AssetManager;
 		ECS::ECS m_ECS;
+		Scene::SceneManager m_SceneManager;
 		LayerStack m_LayerStack;
 	};
 
-	/*[[nodiscard]] Asset::AssetID Engine::LoadMesh(std::string_view modelName) noexcept
+	EngineImpl::EngineImpl() noexcept
+		: m_SceneManager(m_ECS)
 	{
-		std::filesystem::path modelPath = CM_ENGINE_RESOURCES_MODEL_DIRECTORY;
-		modelPath /= modelName;
+		m_LayerStack.AddLayer(std::make_shared<EditorLayer>(m_Platform, m_AssetManager, m_SceneManager, m_ECS));
+	}
 
-		Asset::AssetID id;
-		Asset::Result result = m_AssetManager.LoadMesh(modelPath, id);
-
-		return id;
-	}*/
+	void EngineImpl::Update() noexcept
+	{
+		m_Platform.Update();
+		m_LayerStack.Update();
+	}
 
 	Engine::Engine() noexcept
 		: mP_Impl(new EngineImpl)
@@ -71,16 +74,5 @@ namespace CMEngine
 
 			std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(TargetFrameTime - deltaTime));
 		}
-	}
-
-	EngineImpl::EngineImpl() noexcept
-	{
-		m_LayerStack.AddLayer(std::make_shared<EditorLayer>(m_Platform, m_AssetManager, m_ECS));
-	}
-
-	void EngineImpl::Update() noexcept
-	{
-		m_Platform.Update();
-		m_LayerStack.Update();
 	}
 }

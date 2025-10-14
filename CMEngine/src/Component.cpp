@@ -7,8 +7,8 @@ namespace CMEngine
 	{
 		Math::ViewMatrixLookAtLH(
 			Matrices.View,
-			Origin,
-			LookAtPos
+			Data.Origin,
+			Data.LookAtPos
 		);
 	}
 
@@ -16,10 +16,10 @@ namespace CMEngine
 	{
 		Math::ProjectionMatrixPerspectiveFovLH(
 			Matrices.Proj,
-			FovAngle,
-			Aspect,
-			NearZ,
-			FarZ
+			Data.FovAngle,
+			Data.Aspect,
+			Data.NearZ,
+			Data.FarZ
 		);
 	}
 

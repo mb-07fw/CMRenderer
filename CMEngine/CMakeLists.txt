@@ -6,6 +6,7 @@ set(ENGINE_FILES
 
     "src/Macros.hpp"
     "src/Platform.hpp"
+    "src/PlatformUtil.hpp"
     "src/Export.hpp"
     "src/Types.hpp"
     "src/Layer.hpp"
@@ -19,6 +20,9 @@ set(ENGINE_FILES
     "src/Asset/Asset.hpp"
     "src/Asset/AssetID.hpp"
     "src/Asset/AssetManager.hpp"
+    "src/Scene/Node.hpp"
+    "src/Scene/Scene.hpp"
+    "src/Scene/SceneManager.hpp"
 
     "src/Engine.cpp"
     "src/Types.cpp"
@@ -30,6 +34,9 @@ set(ENGINE_FILES
     "src/ECS/ECS.cpp"
     "src/Asset/AssetID.cpp"
     "src/Asset/AssetManager.cpp"
+    "src/Scene/Node.cpp"
+    "src/Scene/Scene.cpp"
+    "src/Scene/SceneManager.cpp"
 
     "src/PCH.hpp"
     "src/PCH_Main.hpp"
@@ -37,6 +44,8 @@ set(ENGINE_FILES
 
     "src/Platform/Core/IGraphics.hpp"
     "src/Platform/Core/IPlatform.hpp"
+    "src/Platform/Core/IPlatformUUID.hpp"
+    "src/Platform/Core/IPlatformUtil.hpp"
     "src/Platform/Core/IWindow.hpp"
     "src/Platform/Core/IUploadable.hpp"
 
@@ -52,6 +61,7 @@ if (WIN32)
         "src/Platform/WinImpl/PlatformOS_WinImpl.hpp"
         "src/Platform/WinImpl/PlatformOSFwd_WinImpl.hpp"
         "src/Platform/WinImpl/Platform_WinImpl.hpp"
+        "src/Platform/WinImpl/PlatformUtil_WinImpl.hpp"
         "src/Platform/WinImpl/ShaderLibrary_WinImpl.hpp"
         "src/Platform/WinImpl/ShaderSet_WinImpl.hpp"
         "src/Platform/WinImpl/Window_WinImpl.hpp"
@@ -61,6 +71,7 @@ if (WIN32)
 
         "src/Platform/WinImpl/Graphics_WinImpl.cpp"
         "src/Platform/WinImpl/Platform_WinImpl.cpp"
+        "src/Platform/WinImpl/PlatformUtil_WinImpl.cpp"
         "src/Platform/WinImpl/ShaderLibrary_WinImpl.cpp"
         "src/Platform/WinImpl/ShaderSet_WinImpl.cpp"
         "src/Platform/WinImpl/Window_WinImpl.cpp"
@@ -81,8 +92,11 @@ if (WIN32)
         PRIVATE dxguid
         PRIVATE d2d1
         PRIVATE DWrite
-        # Link to DirectXTK
         PRIVATE DirectXTK
+        # (CoCreateGuid -- combaseapi.h)
+        PRIVATE Ole32
+        # (UuidToString -- rpcdce.h)
+        PRIVATE Rpcrt4.lib
     )
 endif()
 

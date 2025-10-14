@@ -6,6 +6,8 @@
 	#error Failed to include proper Platform implementation.
 #endif
 
+#include "PlatformUtil.hpp"
+
 namespace CMEngine
 {
 #ifdef CM_ENGINE_PLATFORM_WINIMPL

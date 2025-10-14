@@ -58,3 +58,9 @@
 /* Other platform specific utilities. */
 #include <wrl/client.h>
 #include <DirectXMath.h>
+
+/* (CoCreateGuid) */
+#include <combaseapi.h>
+
+/* (UuidToString) */
+#include <rpcdce.h>

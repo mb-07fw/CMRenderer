@@ -18,9 +18,9 @@ namespace CMEngine
 		Asset::Material Material;
 	};
 
-	struct CameraComponent : public Component
+	struct CameraData
 	{
-		inline CameraComponent(
+		inline CameraData(
 			const Float3& origin,
 			const Float3& lookAtPos,
 			float aspect,
@@ -29,11 +29,63 @@ namespace CMEngine
 			float farZ
 		) noexcept
 			: Origin(origin),
-			  LookAtPos(lookAtPos),
-			  Aspect(aspect),
-			  FovAngle(fovAngle),
-			  NearZ(nearZ),
-			  FarZ(farZ)
+			LookAtPos(lookAtPos),
+			Aspect(aspect),
+			FovAngle(fovAngle),
+			NearZ(nearZ),
+			FarZ(farZ)
+		{
+		}
+
+		CameraData() = default;
+		~CameraData() = default;
+
+		Float3 Origin;
+		Float3 LookAtPos;
+		float Aspect = 0.0f;
+		float FovAngle = 0.0f;
+		float NearZ = 0.0f;
+		float FarZ = 0.0f;
+	};
+
+	struct CameraMatrices
+	{
+		inline CameraMatrices(const Math::Matrix& view, const Math::Matrix& proj) noexcept
+			: View(view),
+			  Proj(proj)
+		{
+		}
+
+		CameraMatrices() = default;
+		~CameraMatrices() = default;
+
+		Math::Matrix View = {};
+		Math::Matrix Proj = {};
+	};
+
+	struct CameraComponent : public Component
+	{
+		inline CameraComponent(const CameraData& data) noexcept
+			: Data(data)
+		{
+		}
+
+		inline CameraComponent(
+			const Float3& origin,
+			const Float3& lookAtPos,
+			float aspect,
+			float fovAngle,
+			float nearZ,
+			float farZ
+		) noexcept
+			: Data(
+			    origin,
+				lookAtPos,
+				aspect,
+				fovAngle,
+				nearZ,
+				farZ
+			  )
 		{
 		}
 
@@ -47,12 +99,14 @@ namespace CMEngine
 			const Math::Matrix& viewMatrix,
 			const Math::Matrix& projMatrix
 		) noexcept
-			: Origin(origin),
-			  LookAtPos(lookAtPos),
-			  Aspect(aspect),
-			  FovAngle(fovAngle),
-			  NearZ(nearZ),
-			  FarZ(farZ),
+			: Data(
+				origin,
+				lookAtPos,
+				aspect,
+				fovAngle,
+				nearZ,
+				farZ
+			  ),
 			  Matrices(viewMatrix, projMatrix)
 		{
 		}
@@ -68,31 +122,8 @@ namespace CMEngine
 		void CreateViewMatrix() noexcept;
 		void CreateProjectionMatrix() noexcept;
 		void CreateMatrices() noexcept;
-
-		/* Parameters */
-		Float3 Origin;
-		Float3 LookAtPos;
-		float Aspect = 0.0f;
-		float FovAngle = 0.0f;
-		float NearZ = 0.0f;
-		float FarZ = 0.0f;
-
-		/* Derived data (cached) */
-		struct Matrices
-		{
-			inline Matrices(const Math::Matrix& view, const Math::Matrix& proj) noexcept
-				: View(view),
-				  Proj(proj)
-			{
-			}
-
-			Matrices() = default;
-			~Matrices() = default;
-
-			Math::Matrix View = {};
-			Math::Matrix Proj = {};
-		};
 		
-		Matrices Matrices;
+		CameraData Data;
+		CameraMatrices Matrices;
 	};
 }

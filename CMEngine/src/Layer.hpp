@@ -3,6 +3,7 @@
 #include "Export.hpp"
 #include "Platform.hpp"
 #include "Asset/AssetManager.hpp"
+#include "Scene/SceneManager.hpp"
 #include "ECS/ECS.hpp"
 
 #include <memory>
@@ -26,6 +27,7 @@ namespace CMEngine
 		EditorLayer(
 			APlatform& platform,
 			Asset::AssetManager& assetManager,
+			Scene::SceneManager& sceneManager,
 			ECS::ECS& ecs
 		) noexcept;
 
@@ -37,8 +39,9 @@ namespace CMEngine
 	private:
 		APlatform& m_Platform;
 		Asset::AssetManager& m_AssetManager;
+		Scene::SceneManager& m_SceneManager;
 		ECS::ECS& m_ECS;
-		std::unique_ptr<IUploadable> mP_CameraCB;
-		ECS::Entity m_Camera;
+		Scene::SceneID m_EditorScene = {};
+		//std::unique_ptr<IUploadable> mP_CameraCB;
 	};
 }

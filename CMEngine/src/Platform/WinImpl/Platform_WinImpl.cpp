@@ -57,7 +57,6 @@ namespace CMEngine::Platform::WinImpl
 		: m_Config(),
 		  m_Graphics(m_Window, m_Config)
 	{
-		SetInterfaces(m_Window, m_Graphics);
 	}
 
 	bool Platform::Update() noexcept

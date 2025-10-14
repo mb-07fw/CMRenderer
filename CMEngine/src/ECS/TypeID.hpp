@@ -5,7 +5,7 @@
 namespace CMEngine::ECS
 {
 	/* A simple POD that contains an ID.
-	 * Relies on CMTypeWrangler to generate an ID for any given type. */
+	 * Relies on TypeWrangler to generate an ID for any given type. */
 	struct TypeID
 	{
 		inline explicit TypeID(int32_t ID) noexcept
