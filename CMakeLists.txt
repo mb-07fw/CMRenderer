@@ -2,6 +2,7 @@
 
 # To regenerate CMake caches (from root directory)
 # cmake -S <root_directory> -B <build_directory> -G <your_generator_here>
+# cmake -S . -B build -G "Visual Studio 17 2022" /m
 
 # Build :
 # cmake --build <out_directory> --config <configuration> [optional](--target <name>)
@@ -19,7 +20,7 @@ project(CMEngine)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT CMEngine)
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT LibEngineCore)
 
 set (WARNINGS "")
 
@@ -71,11 +72,30 @@ endfunction()
 
 add_subdirectory("vendor/submodules/spdlog")
 add_subdirectory("vendor/submodules/DirectXTK")
+
+set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
+set(ASSIMP_NO_EXPORT ON CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_USE_PCH ON CACHE BOOL "" FORCE)
+
+set(ASSIMP_BUILD_OBJ_IMPORTER ON CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_GLTF_IMPORTER ON CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_FBX_IMPORTER ON CACHE BOOL "" FORCE)
+
+# TODO: Look into single installation to avoid re-configures :
+# cmake -S external/assimp -B build/assimp -DCMAKE_BUILD_TYPE=Release -DASSIMP_BUILD_TESTS=OFF ...
+# cmake --install build/assimp --prefix deps/install
+# find_package(assimp CONFIG REQUIRED PATHS deps/install)
+# target_link_libraries(MyEngine PRIVATE assimp::assimp)
 add_subdirectory("vendor/submodules/assimp")
 
 add_subdirectory("modules/CMImGui")
 add_subdirectory("modules/CMShaders")
 
-add_subdirectory("CMEngine")
+add_subdirectory("LibEngineCore")
 
-add_subdirectory("CMSandbox")
+add_subdirectory("Editor")
