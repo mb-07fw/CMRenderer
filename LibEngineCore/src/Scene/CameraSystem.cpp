@@ -8,7 +8,6 @@ namespace CMEngine::Scene
 	CameraSystem::CameraSystem(ECS::ECS& ecs) noexcept
 		: m_ECS(ecs)
 	{
-
 	}
 
 	void CameraSystem::SetMainCamera(ECS::Entity e) noexcept
@@ -16,8 +15,8 @@ namespace CMEngine::Scene
 		m_MainCamera = e;
 	}
 
-	[[nodiscard]] CameraComponent* CameraSystem::GetCamera(ECS::Entity e) noexcept
+	[[nodiscard]] View<CameraComponent> CameraSystem::GetCamera(ECS::Entity e) noexcept
 	{
-		return m_ECS.GetComponent<CameraComponent>(e);
+		return m_ECS.TryGetComponent<CameraComponent>(e);
 	}
 }

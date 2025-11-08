@@ -23,9 +23,19 @@ namespace CMEngine
 		);
 	}
 
-	void CameraComponent::CreateMatrices() noexcept
+	void CameraComponent::UpdateMatrices() noexcept
 	{
-		CreateViewMatrix();
-		CreateProjectionMatrix();
+		if (ViewDirty)
+			CreateViewMatrix();
+		if (ProjDirty)
+			CreateProjectionMatrix();
+
+		SetClean();
+	}
+
+	void CameraComponent::SetClean() noexcept
+	{
+		ViewDirty = false;
+		ProjDirty = false;
 	}
 }

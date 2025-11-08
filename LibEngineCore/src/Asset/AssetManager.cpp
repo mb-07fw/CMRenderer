@@ -1,6 +1,7 @@
 ﻿#include "PCH.hpp"
 #include "Macros.hpp"
 #include "Asset/AssetManager.hpp"
+#include "Log.hpp"
 
 namespace CMEngine::Asset
 {
@@ -10,8 +11,57 @@ namespace CMEngine::Asset
 		ModelImporterImpl() = default;
 		~ModelImporterImpl() = default;
 
+		void LoadMesh(Mesh& mesh, ConstView<aiMesh> aiMesh, ConstView<aiScene> scene) noexcept;
+
+		void LoadVertices(Mesh& mesh, ConstView<aiMesh> aiMesh) noexcept;
+		void LoadIndices(Mesh& mesh, ConstView<aiMesh> aiMesh) noexcept;
+
 		Assimp::Importer Importer;
 	};
+
+	void ModelImporterImpl::LoadMesh(Mesh& mesh, ConstView<aiMesh> aiMesh, ConstView<aiScene> scene) noexcept
+	{
+		LoadVertices(mesh, aiMesh);
+		LoadIndices(mesh, aiMesh);
+	}
+
+	void ModelImporterImpl::LoadVertices(Mesh& mesh, ConstView<aiMesh> aiMesh) noexcept
+	{
+		mesh.Data.Vertices.reserve(aiMesh->mNumVertices);
+
+		for (unsigned int i = 0; i < aiMesh->mNumVertices; ++i)
+		{
+			aiVector3D texCoord = aiMesh->HasTextureCoords(mesh.Index)
+				? aiMesh->mTextureCoords[0][i]  // UV channel 0
+				: aiVector3D(0.0f, 0.0f, 0.0f); // fallback
+
+			aiVector3D& vertex = aiMesh->mVertices[i];
+			aiVector3D& normal = aiMesh->mNormals[i];
+
+			Float3 vertexF3(vertex.x, vertex.y, vertex.z);
+			Float3 normalF3(normal.x, normal.y, normal.z);
+			Float3 texCoordF3(texCoord.x, texCoord.y, texCoord.z);
+
+			mesh.Data.Vertices.emplace_back(vertexF3, normalF3, texCoordF3);
+		}
+	}
+
+	void ModelImporterImpl::LoadIndices(Mesh& mesh, ConstView<aiMesh> aiMesh) noexcept
+	{
+		/* Since we triangulated, each face should be a triangle (i.e., require 3 indices. ex. 0, 1, 2). */
+		UINT numIndices = aiMesh->mNumFaces * 3;
+		mesh.Data.Indices.reserve(numIndices);
+
+		for (unsigned int i = 0; i < aiMesh->mNumFaces; ++i)
+		{
+			const auto& face = aiMesh->mFaces[i];
+			CM_ENGINE_ASSERT(face.mNumIndices == 3);
+
+			mesh.Data.Indices.emplace_back((uint16_t)(face.mIndices[0]));
+			mesh.Data.Indices.emplace_back((uint16_t)(face.mIndices[1]));
+			mesh.Data.Indices.emplace_back((uint16_t)(face.mIndices[2]));
+		}
+	}
 
 	AssetManager::AssetManager() noexcept
 		: mP_ModelImporter(std::make_unique<ModelImporterImpl>())
@@ -32,112 +82,117 @@ namespace CMEngine::Asset
 	{
 	}
 
-	[[nodiscard]] Result AssetManager::LoadMesh(const std::filesystem::path& modelPath, AssetID& outID) noexcept
+	Result AssetManager::LoadModel(const std::filesystem::path& modelPath, AssetID& outModelID) noexcept
 	{
 		if (!std::filesystem::exists(modelPath))
 		{
 			spdlog::warn(
-				"(AssetManager) Internal warning: Provided model name doesn't exist in model directory. Model: {}",
+				"(AssetManager) Internal warning: Provided model path doesn't exist. Path: {}",
 				modelPath.generic_string()
 			);
 
-			return ResultType::FAILED_FILE_ABSENT;
+			return ResultType::Failed_File_Absent;
 		}
 
-		const aiScene* pModel = mP_ModelImporter->Importer.ReadFile(
-			ENGINE_CORE_RESOURCES_MODEL_DIRECTORY "/cube.gltf",
+		ConstView<aiScene> scene = mP_ModelImporter->Importer.ReadFile(
+			modelPath.generic_string(),
 			aiProcess_Triangulate |
 			aiProcess_JoinIdenticalVertices |
 			aiProcess_ConvertToLeftHanded
 		);
 
-		if (!pModel || !pModel->mMeshes[0])
+		if (!scene)
 		{
-			spdlog::warn(
+			CM_ENGINE_LOG_WARN(
 				"(AssetManager) Internal warning: Error occured loading model. "
 				"Error: {}", mP_ModelImporter->Importer.GetErrorString()
 			);
 
-			return ResultType::FAILED;
+			return ResultType::Failed_File_Import;
 		}
 
-		const aiMesh* pMesh = pModel->mMeshes[0];
+		outModelID = AssetID::Registered(AssetType::Model, NextGlobalID());
+		Model& model = m_ModelMap[outModelID];
 
-		outID = AssetID::Registered(AssetType::MESH, NextGlobalID());
-		uint32_t globalID = outID.GlobalID();
+		model.Meshes.reserve(scene->mNumMeshes);
+		model.Materials.reserve(scene->mNumMaterials);
 
-		if (auto it = m_MeshMap.find(globalID); it != m_MeshMap.end())
-			spdlog::warn("(AssetManager) Internal warning: Mesh data is already present at global id: {}. Data will be overwritten.", globalID);
-
-		Mesh& mesh = m_MeshMap[globalID];
-		mesh.Data.Vertices.reserve(pMesh->mNumVertices);
-
-		for (unsigned int i = 0; i < pMesh->mNumVertices; ++i)
+		for (uint32_t meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex)
 		{
-			aiVector3D texCoord = pMesh->HasTextureCoords(0)
-				? pMesh->mTextureCoords[0][i]  // UV channel 0
-				: aiVector3D(0.0f, 0.0f, 0.0f); // fallback
+			ConstView<aiMesh> aiMesh = scene->mMeshes[meshIndex];
 
-			aiVector3D& vertex = pMesh->mVertices[i];
-			aiVector3D& normal = pMesh->mNormals[i];
+			if (!aiMesh)
+			{
+				CM_ENGINE_LOG_WARN(
+					"(AssetManager) Internal warning: Failed to retrieve mesh at index: {}. File: {}",
+					meshIndex, modelPath.generic_string()
+				);
 
-			Float3 vertexF3(vertex.x, vertex.y, vertex.z);
-			Float3 normalF3(normal.x, normal.y, normal.z);
-			Float3 texCoordF3(texCoord.x, texCoord.y, texCoord.z);
+				continue;
+			}
 
-			mesh.Data.Vertices.emplace_back(vertexF3, normalF3, texCoordF3);
+			AssetID meshID = AssetID::Registered(AssetType::Mesh, NextGlobalID());
+
+			model.Meshes.emplace_back(meshID);
+
+			Mesh& mesh = m_MeshMap[meshID];
+			mesh.ModelID = outModelID;
+			mesh.Index = meshIndex;
+
+			mP_ModelImporter->LoadMesh(mesh, aiMesh, scene);
 		}
 
-		/* Since we triangulated, each face should be a triangle (i.e., require 3 indices. ex. 0, 1, 2). */
-		UINT numIndices = pMesh->mNumFaces * 3;
-		mesh.Data.Indices.reserve(numIndices);
-
-		for (unsigned int i = 0; i < pMesh->mNumFaces; ++i)
+		for (uint32_t materialIndex = 0; materialIndex < scene->mNumMaterials; ++materialIndex)
 		{
-			const auto& face = pMesh->mFaces[i];
-			CM_ENGINE_ASSERT(face.mNumIndices == 3);
+			AssetID materialID = AssetID::Registered(AssetType::Material, NextGlobalID());
+			model.Materials.emplace_back(materialID);
 
-			mesh.Data.Indices.emplace_back(static_cast<uint16_t>(face.mIndices[0]));
-			mesh.Data.Indices.emplace_back(static_cast<uint16_t>(face.mIndices[1]));
-			mesh.Data.Indices.emplace_back(static_cast<uint16_t>(face.mIndices[2]));
+			Material& material = m_MaterialMap[materialID];
+			MaterialData& materialData = material.Data;
+
+			ConstView<aiMaterial> pMaterial = scene->mMaterials[materialIndex];
+
+			/* TODO: handle material.TextureID */
+			material.ModelID = outModelID;
+			material.Index = materialIndex;
+
+			aiColor4D baseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+			aiGetMaterialColor(pMaterial, AI_MATKEY_BASE_COLOR, &baseColor);
+			materialData.BaseColor = { baseColor.r, baseColor.g, baseColor.b, baseColor.a };
+
+			float metallic = 0.0f;
+			aiGetMaterialFloat(pMaterial, AI_MATKEY_METALLIC_FACTOR, &metallic);
+			materialData.Metallic = metallic;
+
+			float roughness = 0.0f;
+			aiGetMaterialFloat(pMaterial, AI_MATKEY_ROUGHNESS_FACTOR, &roughness);
+			materialData.Roughness = roughness;
 		}
 
-		const aiMaterial* pMaterial = pModel->mMaterials[pMesh->mMaterialIndex];
-		Material material = {};
+		CM_ENGINE_LOG_INFO(
+			"(AssetManager) Internal info: Successfully loaded model. Name: {}, GlobalID: {}", 
+			modelPath.generic_string(), outModelID.GlobalID()
+		);
 
-		aiColor4D baseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-		if (AI_SUCCESS == aiGetMaterialColor(pMaterial, AI_MATKEY_BASE_COLOR, &baseColor))
-			material.BaseColor = { baseColor.r, baseColor.g, baseColor.b, baseColor.a };
-
-		float metallic = 0.0f;
-		if (AI_SUCCESS == aiGetMaterialFloat(pMaterial, AI_MATKEY_METALLIC_FACTOR, &metallic))
-			material.Metallic = metallic;
-
-		float roughness = 0.0f;
-		if (AI_SUCCESS == aiGetMaterialFloat(pMaterial, AI_MATKEY_ROUGHNESS_FACTOR, &roughness))
-			material.Roughness = roughness;
-
-		mesh.Data.Material = std::move(material);
-
-		spdlog::info("(AssetManager) Internal info: Successfully loaded model. Name: {}, GlobalID: {}", modelPath.generic_string(), globalID);
-		return ResultType::SUCCEEDED;
+		return ResultType::Succeeded;
 	}
 
-	[[nodiscard]] Result AssetManager::GetMesh(AssetID id, ConstView<Mesh>& pOutMesh) noexcept
+	Result AssetManager::GetModel(AssetID id, ConstView<Model>& outModel) noexcept
 	{
-		pOutMesh = nullptr;
+		using MapTy = decltype(m_ModelMap);
+		return GetAsset<MapTy, Model>(m_ModelMap, AssetType::Model, id, outModel);
+	}
 
-		if (id.Type() != AssetType::MESH)
-			return ResultType::FAILED_HANDLE_MISMATCHING_ASSET_TYPE;
-		else if (!id.IsRegistered())
-			return ResultType::FAILED_HANDLE_NOT_REGISTERED;
+	Result AssetManager::GetMesh(AssetID id, ConstView<Mesh>& outMesh) noexcept
+	{
+		using MapTy = decltype(m_MeshMap);
+		return GetAsset<MapTy, Mesh>(m_MeshMap, AssetType::Mesh, id, outMesh);
+	}
 
-		auto it = m_MeshMap.find(id.GlobalID());
-		if (it == m_MeshMap.end())
-			return ResultType::FAILED_HANDLE_NOT_MAPPED;
-
-		pOutMesh = &it->second;
-		return ResultType::SUCCEEDED;
+	Result AssetManager::GetMaterial(AssetID id, ConstView<Material>& outMaterial) noexcept
+	{
+		using MapTy = decltype(m_MaterialMap);
+		return GetAsset<MapTy, Material>(m_MaterialMap, AssetType::Material, id, outMaterial);
 	}
 
 	bool AssetManager::Unregister(AssetID& outID) noexcept
@@ -153,10 +208,11 @@ namespace CMEngine::Asset
 	{
 		switch (id.Type())
 		{
-		case AssetType::MESH:
-			return m_MeshMap.contains(id.GlobalID());
-		case AssetType::INVALID: [[fallthrough]];
-		case AssetType::TEXTURE: [[fallthrough]];
+		case AssetType::Mesh:
+			return m_MeshMap.contains(id);
+		case AssetType::Invalid: [[fallthrough]];
+		case AssetType::Material: [[fallthrough]];
+		case AssetType::Texture: [[fallthrough]];
 		default:
 			return false;
 		}
@@ -175,19 +231,20 @@ namespace CMEngine::Asset
 
 	void AssetManager::CleanupID(AssetID& outHandle) noexcept
 	{
-		if (!outHandle.IsRegistered() || outHandle.Type() == AssetType::INVALID)
+		if (!outHandle.IsRegistered() || outHandle.Type() == AssetType::Invalid)
 			return;
 
 		outHandle.SetRegistered(false);
 
 		switch (outHandle.Type())
 		{
-		case AssetType::MESH:
-			if (auto it = m_MeshMap.find(outHandle.GlobalID()); it != m_MeshMap.end())
+		case AssetType::Mesh:
+			if (auto it = m_MeshMap.find(outHandle); it != m_MeshMap.end())
 				m_MeshMap.erase(it);
 
 			break;
-		case AssetType::TEXTURE:
+		case AssetType::Material: /* TODO: Implement later... */
+		case AssetType::Texture: /* TODO: Implement later... */
 			break;
 		default:
 			return;

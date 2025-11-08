@@ -2,7 +2,7 @@ struct PSInput
 {
     float3 WorldPos : TEXCOORD0;
     float3 Normal : TEXCOORD1;
-    float2 TexCoord : TEXCOORD2;
+    float3 TexCoord : TEXCOORD2;
 };
 
 /* TODO: Implement texture support. */
@@ -13,27 +13,27 @@ cbuffer MaterialCB : register(b0)
     float Roughness;
 };
 
-cbuffer CameraCB : register(b1)
-{
-    float3 CameraPos;
-}
-
-struct Light
-{
-    float3 Position;
-    float3 Color;
-};
-
-cbuffer LightCB : register(b2)
-{
-    Light Lights[4];
-    uint NumLights;
-};
+// cbuffer CameraCB : register(b1)
+// {
+//     float3 CameraPos;
+// }
+// 
+// struct Light
+// {
+//     float3 Position;
+//     float3 Color;
+// };
+// 
+// cbuffer LightCB : register(b2)
+// {
+//     Light Lights[4];
+//     uint NumLights;
+// };
 
 float4 main( PSInput input ) : SV_Target
 {
-    float3 N = normalize(input.Normal);
-    float3 V = normalize(CameraPos - input.WorldPos);
+    // float3 N = normalize(input.Normal);
+    // float3 V = normalize(CameraPos - input.WorldPos);
 
     float3 color = BaseColor.rgb;
 

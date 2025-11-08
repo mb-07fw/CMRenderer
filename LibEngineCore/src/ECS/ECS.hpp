@@ -3,6 +3,7 @@
 #include "Entity.hpp"
 #include "SparseSet.hpp"
 #include "Macros.hpp"
+#include "Types.hpp"
 
 #include <vector>
 #include <unordered_map>
@@ -23,6 +24,9 @@ namespace std
 
 namespace CMEngine::ECS
 {
+	template <typename ComponentTy>
+	using Storage = SparseSet<ComponentTy, Entity>;
+
 	class ECS
 	{
 	public:
@@ -49,14 +53,27 @@ namespace CMEngine::ECS
 		template <typename ComponentTy>
 		inline [[nodiscard]] bool HasComponent(Entity entity) const noexcept;
 		 
-		/* Returns a raw pointer to a component type from a tied entity.
+		/* Returns a raw pointer to a ComponentTy from a tied entity.
 		 * May return nullptr if the entity is invalid, or the component doesn't exist.
 		 * Note that if the addition of a component, or destruction of a stale component causes a resize of the component vector, any pointers
 		 * retrieved before the resize will become dangling due to the semantics of std::vector. To combat this, copy the component data when
 		 * ownership is needed, or refrain from persisting ComponentTy pointers across instances where components are added.
 		 * A pointer is returned over a reference due to the possibility of misuse where a valid reference to a component may not exist. */
 		template <typename ComponentTy>
-		inline [[nodiscard]] ComponentTy* GetComponent(Entity e) noexcept;
+		inline [[nodiscard]] View<ComponentTy> TryGetComponent(Entity e) noexcept;
+
+		/* Returns a reference to a ComponentTy from a tied entity.
+		 * Due to a reference being returned, this is ONLY safe if it is guaranteed that @e is tied to an instance of ComponentTy.
+		 * Same lifetime semantics apply from TryGetComponent. */
+		template <typename ComponentTy>
+		inline [[nodiscard]] ComponentTy& GetComponent(Entity e) noexcept;
+
+		/* Returns a raw pointer to a Storage of a provided component type.
+		 * May return nullptr if the Storage<ComponentTy> hasn't been created yet. (No components of ComponentTy have been stored yet)
+		 * Pointers to storages are guaranteed to be valid unless the underlying Storage instance is explicity destroyed.
+		 * A pointer is returned over a reference due to the possibility of misuse where a valid reference to a Storage may not exist. */
+		template <typename ComponentTy>
+		inline [[nodiscard]] ConstView<Storage<ComponentTy>> GetStorage() noexcept;
 	private:
 		/* Iterates through all entities in m_ReservedEntities and compares @entity's ID to each reserved entity's ID.
 		 * Returns true if a matching entity ID was found, false otherwise.
@@ -78,33 +95,33 @@ namespace CMEngine::ECS
 		if (!IsEntityCreated(entity))
 			return false;
 
-		using SparseSetTy = SparseSet<ComponentTy, Entity>;
-
 		TypeID componentTypeID = TypeWrangler::GetTypeID<ComponentTy>();
+
+		using StorageTy = Storage<ComponentTy>;
 
 		auto it = m_MappedComponentSets.find(componentTypeID);
 
 		if (it == m_MappedComponentSets.end())
-			m_MappedComponentSets[componentTypeID] = std::make_unique<SparseSetTy>();
+			m_MappedComponentSets[componentTypeID] = std::make_unique<StorageTy>();
 
-		std::unique_ptr<ISparseSet>& pSparseSetBase = m_MappedComponentSets[componentTypeID];
+		std::unique_ptr<ISparseSet>& pStorage = m_MappedComponentSets[componentTypeID];
 
 		// Sanity check...
-		if (componentTypeID != pSparseSetBase->ID())
+		if (componentTypeID != pStorage->ID())
 			return false;
 
 		CM_ENGINE_IF_DEBUG(
-			SparseSetTy * pCasted = dynamic_cast<SparseSetTy*>(pSparseSetBase.get());
+			StorageTy* pDerived = dynamic_cast<StorageTy*>(pStorage.get());
 
-			CM_ENGINE_ASSERT(pCasted != nullptr)
+			CM_ENGINE_ASSERT(pDerived != nullptr)
 		);
 
-		SparseSetTy* pSparseSet = static_cast<SparseSetTy*>(pSparseSetBase.get());
+		StorageTy* pDerivedStorage = static_cast<StorageTy*>(pStorage.get());
 
-		if (pSparseSet->Contains(entity))
+		if (pDerivedStorage->Contains(entity))
 			return false;
 
-		pSparseSet->EmplaceComponent(entity, std::forward<Args>(args)...);
+		pDerivedStorage->EmplaceComponent(entity, std::forward<Args>(args)...);
 		return true;
 	}
 
@@ -114,7 +131,7 @@ namespace CMEngine::ECS
 		if (!IsEntityCreated(entity))
 			return false;
 
-		using SparseSetTy = SparseSet<ComponentTy, Entity>;
+		using StorageTy = Storage<ComponentTy>;
 
 		TypeID componentTypeID = TypeWrangler::GetTypeID<ComponentTy>();
 
@@ -123,21 +140,18 @@ namespace CMEngine::ECS
 		if (it == m_MappedComponentSets.end())
 			return false;
 
-		std::unique_ptr<ISparseSet>& pSparseSetBase = it->second;
+		std::unique_ptr<ISparseSet>& pStorage = it->second;
 
-		CM_ASSERT(dynamic_cast<SparseSetTy*>(pSparseSetBase.get()) != nullptr);
-		const SparseSetTy* pSparseSet = static_cast<const SparseSetTy*>(pSparseSetBase.get());
+		CM_ENGINE_ASSERT(dynamic_cast<Storage*>(pStorage.get()) != nullptr);
+		const Storage* pDerivedStorage = static_cast<const Storage*>(pStorage.get());
 
-		return pSparseSet->Contains(entity);
+		return pDerivedStorage->Contains(entity);
 	}
 
 	template <typename ComponentTy>
-	inline [[nodiscard]] ComponentTy* ECS::GetComponent(Entity entity) noexcept
+	inline [[nodiscard]] View<ComponentTy> ECS::TryGetComponent(Entity entity) noexcept
 	{
-		if (!IsEntityCreated(entity))
-			return nullptr;
-
-		using SparseSetTy = SparseSet<ComponentTy, Entity>;
+		using StorageTy = Storage<ComponentTy>;
 
 		TypeID componentTypeID = TypeWrangler::GetTypeID<ComponentTy>();
 
@@ -146,6 +160,36 @@ namespace CMEngine::ECS
 		if (it == m_MappedComponentSets.end())
 			return nullptr;
 
-		return static_cast<SparseSetTy*>(it->second.get())->GetComponent(entity);
+		const std::unique_ptr<ISparseSet>& pStorage = it->second;
+
+		CM_ENGINE_ASSERT(dynamic_cast<StorageTy*>(pStorage.get()) != nullptr);
+		return static_cast<StorageTy*>(pStorage.get())->GetComponent(entity);
+	}
+
+	template <typename ComponentTy>
+	inline [[nodiscard]] ComponentTy& ECS::GetComponent(Entity entity) noexcept
+	{
+		View<ComponentTy> component = TryGetComponent<ComponentTy>(entity);
+		CM_ENGINE_ASSERT(component.NonNull());
+
+		return *component;
+	}
+
+	template <typename ComponentTy>
+	inline [[nodiscard]] ConstView<Storage<ComponentTy>> ECS::GetStorage() noexcept
+	{
+		using StorageTy = Storage<ComponentTy>;
+
+		TypeID componentTypeID = TypeWrangler::GetTypeID<ComponentTy>();
+
+		auto it = m_MappedComponentSets.find(componentTypeID);
+
+		if (it == m_MappedComponentSets.end())
+			return nullptr;
+
+		const std::unique_ptr<ISparseSet>& pStorage = it->second;
+
+		CM_ENGINE_ASSERT(dynamic_cast<StorageTy*>(pStorage.get()) != nullptr);
+		return static_cast<StorageTy*>(pStorage.get());
 	}
 }

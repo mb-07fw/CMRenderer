@@ -5,11 +5,17 @@ set(ENGINE_FILES
     "include/EngineCore.hpp"
 
     "src/Macros.hpp"
+    "src/Log.hpp"
+    "src/Graphics.hpp"
     "src/Platform.hpp"
     "src/PlatformUtil.hpp"
     "src/Types.hpp"
     "src/Component.hpp"
+    "src/Buffer.hpp"
     "src/Math.hpp"
+    "src/Pass.hpp"
+    "src/BatchRenderer.hpp"
+    "src/Renderer.hpp"
     "src/ECS/TypeID.hpp"
     "src/ECS/SparseSet.hpp"
     "src/ECS/Entity.hpp"
@@ -25,6 +31,9 @@ set(ENGINE_FILES
     "src/EngineCore.cpp"
     "src/Types.cpp"
     "src/Component.cpp"
+    "src/Buffer.cpp"
+    "src/BatchRenderer.cpp"
+    "src/Renderer.cpp"
     "src/ECS/TypeID.cpp"
     "src/ECS/Entity.cpp"
     "src/ECS/ECS.cpp"
@@ -45,6 +54,9 @@ set(ENGINE_FILES
     "src/Platform/Core/IPlatformUtil.hpp"
     "src/Platform/Core/IWindow.hpp"
     "src/Platform/Core/IUploadable.hpp"
+    "src/Platform/Core/InputElement.hpp"
+    "src/Platform/Core/InputLayout.hpp"
+    "src/Platform/Core/Shader.hpp"
 
     "src/Platform/Core/IGraphics.cpp"
     "src/Platform/Core/IPlatform.cpp"
@@ -53,27 +65,26 @@ set(ENGINE_FILES
 
 if (WIN32)
     list(APPEND ENGINE_FILES
+        "src/Platform/WinImpl/IDXUploadable_WinImpl.hpp"
         "src/Platform/WinImpl/Graphics_WinImpl.hpp"
         "src/Platform/WinImpl/PCH_WinImpl.hpp"
         "src/Platform/WinImpl/PlatformOS_WinImpl.hpp"
         "src/Platform/WinImpl/PlatformOSFwd_WinImpl.hpp"
         "src/Platform/WinImpl/Platform_WinImpl.hpp"
         "src/Platform/WinImpl/PlatformUtil_WinImpl.hpp"
-        "src/Platform/WinImpl/ShaderLibrary_WinImpl.hpp"
-        "src/Platform/WinImpl/ShaderSet_WinImpl.hpp"
+        "src/Platform/WinImpl/ShaderRegistry_WinImpl.hpp"
         "src/Platform/WinImpl/Window_WinImpl.hpp"
         "src/Platform/WinImpl/Types_WinImpl.hpp"
         "src/Platform/WinImpl/GPUBuffer_WinImpl.hpp"
-        "src/Platform/WinImpl/CPUBuffer_WinImpl.hpp"
+        "src/Platform/WinImpl/InputLayout_WinImpl.hpp"
 
         "src/Platform/WinImpl/Graphics_WinImpl.cpp"
         "src/Platform/WinImpl/Platform_WinImpl.cpp"
         "src/Platform/WinImpl/PlatformUtil_WinImpl.cpp"
-        "src/Platform/WinImpl/ShaderLibrary_WinImpl.cpp"
-        "src/Platform/WinImpl/ShaderSet_WinImpl.cpp"
+        "src/Platform/WinImpl/ShaderRegistry_WinImpl.cpp"
         "src/Platform/WinImpl/Window_WinImpl.cpp"
         "src/Platform/WinImpl/GPUBuffer_WinImpl.cpp"
-        "src/Platform/WinImpl/CPUBuffer_WinImpl.cpp"
+        "src/Platform/WinImpl/InputLayout_WinImpl.cpp"
     )
 endif()
 
@@ -105,8 +116,6 @@ target_include_directories(LibEngineCore PUBLIC
 target_compile_definitions(LibEngineCore PRIVATE 
     ENGINE_CORE_CONFIG="$<CONFIG>"
     ENGINE_CORE_SOURCE_DIRECTORY="${CMAKE_SOURCE_DIR}"
-    ENGINE_CORE_RESOURCES_MODEL_DIRECTORY="${ROOT_DIR}/resources/assets/models"
-    ENGINE_CORE_RESOURCES_MODEL_DIRECTORYW=L"${ROOT_DIR}/resources/assets/models"
 )
 
 target_precompile_headers(LibEngineCore PRIVATE "src/PCH.hpp")

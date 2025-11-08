@@ -15,7 +15,9 @@ namespace CMEngine::Scene
 	public:
 		void SetMainCamera(ECS::Entity e) noexcept;
 
-		[[nodiscard]] CameraComponent* GetCamera(ECS::Entity e) noexcept;
+		[[nodiscard]] View<CameraComponent> GetCamera(ECS::Entity e) noexcept;
+		inline [[nodiscard]] View<CameraComponent> GetMainCamera() noexcept { return m_ECS.TryGetComponent<CameraComponent>(m_MainCamera); }
+		inline [[nodiscard]] ECS::Entity GetMainCameraEntity() const noexcept { return m_MainCamera; }
 	private:
 		ECS::ECS& m_ECS;
 		ECS::Entity m_MainCamera;

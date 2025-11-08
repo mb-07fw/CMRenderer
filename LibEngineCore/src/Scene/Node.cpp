@@ -11,8 +11,11 @@ namespace CMEngine::Scene::Node
 	[[nodiscard]] void Camera3D::UpdateOrigin(Float3 newOrigin) noexcept
 	{
 		/* Update view matrix is origin changes... */
-		if (!m_Camera.Data.Origin.IsNearEqual(newOrigin))
-			m_Camera.CreateViewMatrix();
+		if (m_Camera.Data.Origin.IsNearEqual(newOrigin))
+			return;
+
+		m_Camera.Data.Origin = newOrigin;
+		m_Camera.ViewDirty = true;
 	}
 
 }

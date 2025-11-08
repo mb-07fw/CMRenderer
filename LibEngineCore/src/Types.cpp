@@ -8,11 +8,24 @@ namespace CMEngine
 			IsNearEqualFloat(y, other.y, epsilon);
 	}
 
+	[[nodiscard]] bool Float2::IsNearEqual(float value, float epsilon) const noexcept
+	{
+		return IsNearEqualFloat(x, value, epsilon) &&
+			IsNearEqualFloat(y, value, epsilon);
+	}
+
 	[[nodiscard]] bool Float3::IsNearEqual(Float3 other, float epsilon) const noexcept
 	{
 		return IsNearEqualFloat(x, other.x, epsilon) &&
 			IsNearEqualFloat(y, other.y, epsilon) &&
 			IsNearEqualFloat(z, other.z, epsilon);
+	}
+
+	[[nodiscard]] bool Float3::IsNearEqual(float value, float epsilon) const noexcept
+	{
+		return IsNearEqualFloat(x, value, epsilon) &&
+			IsNearEqualFloat(y, value, epsilon) &&
+			IsNearEqualFloat(z, value, epsilon);
 	}
 
 	[[nodiscard]] bool Rect::IsNearEqual(Rect other, float epsilon) const noexcept

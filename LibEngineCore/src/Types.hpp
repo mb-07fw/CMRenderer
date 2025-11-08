@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cmath>
+#include <vector>
 #include <span>
 #include <limits>
 #include <type_traits>
@@ -10,6 +11,25 @@ namespace CMEngine
 {
 	template <typename... Args>
 	constexpr bool AllTriviallyCopyable = (std::is_trivially_copyable_v<Args>&&...);
+
+	template <typename Ty>
+	inline [[nodiscard]] std::span<Ty> ToSpan(const std::vector<Ty>& vec) noexcept
+	{
+		return std::span<Ty>(vec.data(), vec.size());
+	}
+
+	template <typename Ty>
+	inline [[nodiscard]] std::span<std::byte> ToBytesSpan(const std::vector<Ty>& vec) noexcept
+	{
+		return std::span<std::byte>((std::byte*)vec.data(), vec.size() * sizeof(Ty));
+	}
+
+	inline constexpr void HashCombine(size_t& outSeed, size_t value) noexcept
+	{
+		constexpr size_t UnholyMagicConstantIDontUnderstandThanksChatGPT = 0x9e3779b97f4a7c15ull; // // aka 2^64...
+
+		outSeed ^= value + UnholyMagicConstantIDontUnderstandThanksChatGPT + (outSeed << 6) + (outSeed >> 2);
+	}
 
 	inline constexpr float G_NEAR_EQUAL_FLOAT_EPSILON = 1e-4f;
 
@@ -63,6 +83,8 @@ namespace CMEngine
 		inline Ty* operator->() noexcept { return mP_Data; }
 
 		inline [[nodiscard]] Ty* Raw() noexcept { return mP_Data; }
+		inline [[nodiscard]] bool NonNull() const noexcept { return mP_Data != nullptr; }
+		inline [[nodiscard]] bool Null() const noexcept { return mP_Data == nullptr; }
 	private:
 		Ty* mP_Data = nullptr;
 	};
@@ -88,18 +110,21 @@ namespace CMEngine
 		~Float2() = default;
 
 		inline constexpr [[nodiscard]] bool operator==(Float2 other) const noexcept { return IsEqual(other); }
+		inline constexpr [[nodiscard]] bool operator==(float value) const noexcept { return IsEqual(value); }
 		inline constexpr [[nodiscard]] bool IsEqual(Float2 other) const noexcept;
+		inline constexpr [[nodiscard]] bool IsEqual(float value) const noexcept;
 		inline constexpr [[nodiscard]] bool IsZero() const noexcept;
 		[[nodiscard]] bool IsNearEqual(Float2 other, float epsilon = G_NEAR_EQUAL_FLOAT_EPSILON) const noexcept;
+		[[nodiscard]] bool IsNearEqual(float value, float epsilon = G_NEAR_EQUAL_FLOAT_EPSILON) const noexcept;
 
 		/* Returns the aspect ratio of the x and y components. */
 		inline constexpr [[nodiscard]] float Aspect() const noexcept { return x / y; }
 
 		/* These sequence of functions take advantage of the fact that Float2's and it's children are just floats
 		 *   packed sequentially in memory, and can therefore be reinterpreted as arrays.
-		 * 
+		 *
 		 * NOTE: This is safe for any derivatives of Float2 only if they're non-virtual, and Float2 is the
-		 *	       only base class, as then 'this' with Float2 as the base is guaranteed to point to the same instance as 
+		 *	       only base class, as then 'this' with Float2 as the base is guaranteed to point to the same instance as
 		 *         'this' for any sub-object that extends Float2.
 		 */
 		inline [[nodiscard]] float* Underlying() noexcept { return reinterpret_cast<float*>(this); }
@@ -120,9 +145,12 @@ namespace CMEngine
 		~Float3() = default;
 
 		inline constexpr [[nodiscard]] bool operator==(Float3 other) const noexcept { return IsEqual(other); }
+		inline constexpr [[nodiscard]] bool operator==(float value) const noexcept { return IsEqual(value); }
 		inline constexpr [[nodiscard]] bool IsEqual(Float3 other) const noexcept;
-		inline constexpr [[nodiscard]] bool IsZero() const noexcept;
+		inline constexpr [[nodiscard]] bool IsEqual(float value) const noexcept;
+		inline constexpr [[nodiscard]] bool IsZero() const noexcept { return IsEqual(0.0f); }
 		[[nodiscard]] bool IsNearEqual(Float3 other, float epsilon = G_NEAR_EQUAL_FLOAT_EPSILON) const noexcept;
+		[[nodiscard]] bool IsNearEqual(float value, float epsilon = G_NEAR_EQUAL_FLOAT_EPSILON) const noexcept;
 
 		inline [[nodiscard]] std::span<const float, 3> Data() const noexcept { return std::span<const float, 3>(Underlying(), 3); }
 
@@ -168,7 +196,7 @@ namespace CMEngine
 		inline [[nodiscard]] std::span<const Float3, S_NUM_FLOAT3> Data() const noexcept { return std::span<const Float3, S_NUM_FLOAT3>(Underlying(), S_NUM_FLOAT3); }
 		inline [[nodiscard]] std::span<Float3, S_NUM_FLOAT3> Data() noexcept { return std::span<Float3, S_NUM_FLOAT3>(Underlying(), S_NUM_FLOAT3); }
 
-		Float3 Scaling;
+		Float3 Scaling = { 1.0f, 1.0f, 1.0f };
 		Float3 Rotation;
 		Float3 Translation;
 	};
@@ -215,6 +243,12 @@ namespace CMEngine
 			y == other.y;
 	}
 
+	inline constexpr [[nodiscard]] bool Float2::IsEqual(float value) const noexcept
+	{
+		return x == value &&
+			y == value;
+	}
+
 	inline constexpr [[nodiscard]] bool Float2::IsZero() const noexcept
 	{
 		return x == 0.0f &&
@@ -240,11 +274,11 @@ namespace CMEngine
 			z == other.z;
 	}
 
-	inline constexpr [[nodiscard]] bool Float3::IsZero() const noexcept
+	inline constexpr [[nodiscard]] bool Float3::IsEqual(float value) const noexcept
 	{
-		return x == 0.0f &&
-			y == 0.0f &&
-			z == 0.0f;
+		return x == value &&
+			y == value &&
+			z == value;
 	}
 
 	inline constexpr Rect::Rect(float left, float top, float right, float bottom) noexcept

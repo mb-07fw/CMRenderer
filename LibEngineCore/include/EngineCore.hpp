@@ -9,6 +9,7 @@
 #endif
 
 #include "Platform.hpp"
+#include "Renderer.hpp"
 #include "Asset/AssetManager.hpp"
 #include "ECS/ECS.hpp"
 #include "Scene/SceneManager.hpp"
@@ -29,27 +30,15 @@ namespace CMEngine
 		void Update() noexcept;
 
 		inline [[nodiscard]] APlatform& Platform() noexcept { return m_Platform; }
-		inline [[nodiscard]] Asset::AssetManager& AssetManager() noexcept { return m_AssetManager; }
 		inline [[nodiscard]] ECS::ECS& ECS() noexcept { return m_ECS; }
+		inline [[nodiscard]] Renderer::Renderer& Renderer() noexcept { return m_Renderer; }
+		inline [[nodiscard]] Asset::AssetManager& AssetManager() noexcept { return m_AssetManager; }
 		inline [[nodiscard]] Scene::SceneManager& SceneManager() noexcept { return m_SceneManager; }
 	private:
 		APlatform m_Platform;
-		Asset::AssetManager m_AssetManager;
 		ECS::ECS m_ECS;
+		Renderer::Renderer m_Renderer;
+		Asset::AssetManager m_AssetManager;
 		Scene::SceneManager m_SceneManager;
 	};
 }
-
-/* <------- Engine Roadmap ------->
- *
- * !! Done !!!
- * 
- * 1. Create a model using blender. 
- * 2. Load the model in C++ using Assimp. (understand the model format)
- * 3. Implement a basic AssetManager.
- * 
- * !!! In Progress !!!
- * 
- * 4. Implement a basic scene / scene graph structure.
- * 
- */

@@ -2,9 +2,7 @@
 
 #include "EngineCore.hpp"
 
-/* TODO: Move resources directory to Editor. (Update macros)
- *
- * Cool Powershell commands I'm gonna forget later --
+/* Cool Powershell commands I'm gonna forget later --
  * 
  * Get-ChildItem "_directory_", "_directory_" -Recurse -File
  * Get-ChildItem "_directory_", "_directory_" -Recurse -File | Group-Object Extension | Sort-Object Count -Descending | Format-Table Count, Name

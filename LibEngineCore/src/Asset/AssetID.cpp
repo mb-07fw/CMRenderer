@@ -15,7 +15,7 @@ namespace CMEngine::Asset
 		/* Mask out the value in the IsRegistered field (bit 63).
 		 * Shift it down from bit 63 to bit 0 to produce a boolean value.
 		 */
-		return static_cast<bool>((Handle & S_IS_REGISTERED_MASK) >> S_IS_REGISTERED_SHIFT);
+		return static_cast<bool>((m_Handle & S_IS_REGISTERED_MASK) >> S_IS_REGISTERED_SHIFT);
 	}
 
 	[[nodiscard]] AssetType AssetID::Type() const noexcept
@@ -23,7 +23,7 @@ namespace CMEngine::Asset
 		/* Mask out the value in the AssetType field (bits 56 - 62).
 		 * Shift it down to get the original enum value.
 		 */
-		return static_cast<AssetType>((Handle & S_ASSET_TYPE_MASK) >> S_ASSET_TYPE_SHIFT);
+		return static_cast<AssetType>((m_Handle & S_ASSET_TYPE_MASK) >> S_ASSET_TYPE_SHIFT);
 	}
 
 	[[nodiscard]] uint32_t AssetID::GlobalID() const noexcept
@@ -31,7 +31,7 @@ namespace CMEngine::Asset
 		/* Mask out the value in the GlobalID field (bits 0 - 31).
 		 * No shift needed, as the GlobalID field is already aligned at bit 0.
 		 */
-		return Handle & S_GLOBAL_ID_MASK;
+		return m_Handle & S_GLOBAL_ID_MASK;
 	}
 
 	[[nodiscard]] AssetIDView AssetID::AsView() const noexcept
@@ -41,7 +41,12 @@ namespace CMEngine::Asset
 
 	[[nodiscard]] bool AssetID::operator==(AssetID other) const noexcept
 	{
-		return Handle == other.Handle;
+		return m_Handle == other.m_Handle;
+	}
+
+	[[nodiscard]] bool AssetID::operator<(AssetID other) const noexcept
+	{
+		return this->m_Handle < other.m_Handle;
 	}
 
 	void AssetID::SetRegistered(bool isRegistered) noexcept
@@ -54,7 +59,7 @@ namespace CMEngine::Asset
 		 * No need to mask the value since it will always be 0 or 1 and will never overflow into other bits.
 		 * Set the new IsRegistered bit by bitwise OR'ing.
 		 */
-		Handle = (Handle & ~S_IS_REGISTERED_MASK) |
+		m_Handle = (m_Handle & ~S_IS_REGISTERED_MASK) |
 			(static_cast<uint32_t>(isRegistered) << S_IS_REGISTERED_SHIFT);
 	}
 
@@ -70,7 +75,7 @@ namespace CMEngine::Asset
 		 * Mask the shifted value so that only the 7 bits that correspond to the type field remain � all higher-order bits are zeroed.
 		 * Set the new AssetType bits by bitwise OR'ing.
 		 */
-		Handle = (Handle & ~S_ASSET_TYPE_MASK) |
+		m_Handle = (m_Handle & ~S_ASSET_TYPE_MASK) |
 			((static_cast<uint32_t>(type) << S_ASSET_TYPE_SHIFT) & S_ASSET_TYPE_MASK);
 	}
 
@@ -85,7 +90,7 @@ namespace CMEngine::Asset
 		 * Mask the value to prevent higher-order bits from being modified.
 		 * Set the new GlobalID bits by bitwise OR'ing.
 		 */
-		Handle = (Handle & ~S_GLOBAL_ID_MASK) |
+		m_Handle = (m_Handle & ~S_GLOBAL_ID_MASK) |
 			(globalID & S_GLOBAL_ID_MASK);
 	}
 

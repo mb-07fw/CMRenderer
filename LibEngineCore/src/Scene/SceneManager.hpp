@@ -3,6 +3,7 @@
 #include "ECS/ECS.hpp"
 #include "Scene/Scene.hpp"
 #include "Scene/CameraSystem.hpp"
+#include "Component.hpp"
 
 namespace CMEngine::Scene
 {
@@ -20,6 +21,10 @@ namespace CMEngine::Scene
 		inline CameraSystem& GetCameraSystem() noexcept { return m_CameraSystem; }
 	private:
 		void SetActiveScene(SceneID index) noexcept;
+
+		void DisplayTransformComponentWidget(TransformComponent& transform) noexcept;
+		void DisplayMeshComponentWidget(const MeshComponent& mesh) noexcept;
+		void DisplayMaterialComponentWidget(const MaterialComponent& material) noexcept;
 	private:
 		static constexpr size_t S_INVALID_SCENE_INDEX = ~static_cast<size_t>(0ull);
 		ECS::ECS& m_ECS;

@@ -72,6 +72,6 @@ namespace CMEngine::ECS
 
 		void IncrementVersion() noexcept;
 
-		EntityID ID = 0u;
+		EntityID ID = 0;
 	};
 }

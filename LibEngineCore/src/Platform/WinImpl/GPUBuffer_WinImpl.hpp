@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Platform/Core/IUploadable.hpp"
-#include "Platform/WinImpl/Types_WinImpl.hpp"
+#include "Platform/WinImpl/IDXUploadable_WinImpl.hpp"
 
 #include <cstdint>
 #include <span>
@@ -12,23 +11,12 @@
 
 namespace CMEngine::Platform::WinImpl
 {
-	/* A pure virtual interface for an object that is bindable to the D3D11 pipeline. */
-	class IDXUploadable : public IUploadable
-	{
-	public:
-		IDXUploadable() = default;
-		virtual ~IDXUploadable() = default;
-
-		virtual void Upload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept = 0;
-		virtual void ClearUpload(const ComPtr<ID3D11DeviceContext>& pContext) const noexcept = 0;
-	};
-
 	/* A pure virtual interface for a buffer that is bindable to the D3D11 pipeline.
 	 * The main distinction between IGPUBuffer and ICPUBuffer is that IGPUBuffer's will never
 	 *   store data, only marshal it to the GPU.
 	 * 
 	 * For an ICPUBuffer derivative to be uploaded to the GPU, it must first be converted to an IGPUBuffer derivative. */
-	class IGPUBuffer : public IDXUploadable
+	class IGPUBuffer : public IDXUploadable, public IBuffer
 	{
 	public:
 		IGPUBuffer() = default;
@@ -37,7 +25,7 @@ namespace CMEngine::Platform::WinImpl
 		virtual void Create(const void* pData, size_t numBytes, const ComPtr<ID3D11Device>& pDevice) noexcept = 0;
 		virtual void Release() noexcept = 0;
 
-		virtual void Update(void* pData, size_t numBytes, const ComPtr<ID3D11DeviceContext>& pContext) noexcept = 0;
+		virtual void Update(const void* pData, size_t numBytes, const ComPtr<ID3D11DeviceContext>& pContext) noexcept = 0;
 
 		virtual [[nodiscard]] bool IsCreated() const noexcept = 0;
 		virtual operator bool() const noexcept = 0;
@@ -69,7 +57,7 @@ namespace CMEngine::Platform::WinImpl
 		virtual void Create(const void* pData, size_t numBytes, const ComPtr<ID3D11Device>& pDevice) noexcept override;
 		virtual void Release() noexcept override;
 
-		virtual void Update(void* pData, size_t numBytes, const ComPtr<ID3D11DeviceContext>& pContext) noexcept override;
+		virtual void Update(const void* pData, size_t numBytes, const ComPtr<ID3D11DeviceContext>& pContext) noexcept override;
 
 		inline virtual [[nodiscard]] bool IsCreated() const noexcept override { return mP_Buffer.Get() != nullptr; }
 		inline virtual operator bool() const noexcept override { return IsCreated(); }

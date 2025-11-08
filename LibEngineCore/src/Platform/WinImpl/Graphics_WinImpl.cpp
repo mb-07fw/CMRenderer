@@ -3,6 +3,7 @@
 #include "Platform/WinImpl/Graphics_WinImpl.hpp"
 #include "Platform/WinImpl/Types_WinImpl.hpp"
 #include "Platform/WinImpl/GPUBuffer_WinImpl.hpp"
+#include "Platform/WinImpl/InputLayout_WinImpl.hpp"
 
 namespace CMEngine::Platform::WinImpl
 {
@@ -13,15 +14,6 @@ namespace CMEngine::Platform::WinImpl
 		aiVector3D TexCoord;
 	};
 
-	struct alignas(16) TransformCB
-	{
-		static constexpr UINT S_VS_REGISTER_SLOT = 0;
-
-		DirectX::XMMATRIX Model;
-		DirectX::XMMATRIX View;
-		DirectX::XMMATRIX Proj;
-	};
-
 	struct alignas(16) MaterialCB
 	{
 		static constexpr UINT S_PS_REGISTER_SLOT = 0;
@@ -30,14 +22,6 @@ namespace CMEngine::Platform::WinImpl
 		float Metallic = 0.0f;
 		float Roughness = 0.0f;
 		float padding[2] = { 0.0f, 0.0f };
-	};
-
-	struct alignas(16) CameraCB
-	{
-		static constexpr UINT S_PS_REGISTER_SLOT = 1;
-
-		Float3 CameraPos;
-		float padding;
 	};
 
 	struct SphereInstanceVB
@@ -74,180 +58,28 @@ namespace CMEngine::Platform::WinImpl
 		Shutdown();
 	}
 
-	//void Graphics::Update() noexcept
-	//{
-	//	ImGui_ImplWin32_NewFrame();
-	//	ImGui_ImplDX11_NewFrame();
-	//	ImGui::NewFrame();
-
-	//	if (ImGui::Begin("Engine Control"))
-	//	{
-	//		if (ImGui::CollapsingHeader("Camera"))
-	//			ImGui::SliderFloat3("Offset", m_CameraOffset.Underlying(), -20.0f, 20.0f);
-
-	//		if (ImGui::CollapsingHeader("Mesh"))
-	//			ImGui::SliderFloat3("Offset##xx", m_MeshOffset.Underlying(), -20.0f, 20.0f);
-
-	//		if (ImGui::CollapsingHeader("Text"))
-	//		{
-	//			ImGui::SliderFloat2("Offset##xx##xx", m_TextOffset.Underlying(), 0.0f, 400.0f);
-	//			ImGui::SliderFloat2("Resolution", m_TextResolution.Underlying(), 0.0f, 400.0f);
-
-	//			if (m_ShowTextBounds)
-	//				ImGui::SliderFloat4("Bounds RGBA", m_TextBoundsRGBA.rgba, 0.0f, 1.0f);
-
-	//			ImGui::Checkbox("Show Bounds?", &m_ShowTextBounds);
-	//		}
-	//	}
-
-	//	ImGui::End();
-
-	//	const aiScene* pModel = mP_ModelImporter->Assimp.ReadFile(
-	//		CM_ENGINE_RESOURCES_MODEL_DIRECTORY "/cube.gltf",
-	//		aiProcess_Triangulate |
-	//		aiProcess_JoinIdenticalVertices |
-	//		aiProcess_ConvertToLeftHanded
-	//	);
-
-	//	if (!pModel || !pModel->mMeshes[0])
-	//	{
-	//		spdlog::critical(
-	//			"(WinImpl_Graphics) Internal error: Error occured loading model. "
-	//			"Error: {}", mP_ModelImporter->Assimp.GetErrorString()
-	//		);
-
-	//		std::exit(-1);
-	//	}
-
-	//	const aiMesh* pMesh = pModel->mMeshes[0];
-
-	//	std::vector<Vertex> vertices;
-	//	vertices.reserve(pMesh->mNumVertices);
-
-	//	for (unsigned int i = 0; i < pMesh->mNumVertices; ++i)
-	//	{
-	//		aiVector3D texCoord = pMesh->HasTextureCoords(0)
-	//			? pMesh->mTextureCoords[0][i]  // UV channel 0
-	//			: aiVector3D(0.0f, 0.0f, 0.0f); // fallback
-
-	//		vertices.emplace_back(pMesh->mVertices[i], pMesh->mNormals[i], texCoord);
-	//	}
-
-	//	/* Since we triangulated, each face should be a triangle (i.e., require 3 indices. ex. 0, 1, 2). */
-	//	UINT numIndices = pMesh->mNumFaces * 3;
-
-	//	std::vector<uint16_t> indices;
-	//	indices.reserve(numIndices);
-
-	//	for (unsigned int i = 0; i < pMesh->mNumFaces; ++i)
-	//	{
-	//		const auto& face = pMesh->mFaces[i];
-	//		CM_ENGINE_ASSERT(face.mNumIndices == 3);
-
-	//		indices.emplace_back(face.mIndices[0]);
-	//		indices.emplace_back(face.mIndices[1]);
-	//		indices.emplace_back(face.mIndices[2]);
-	//	}
-
-	//	const aiMaterial* pMaterial = pModel->mMaterials[pMesh->mMaterialIndex];
-	//	MaterialCB materialData = {};
-
-	//	aiColor4D baseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-	//	if (AI_SUCCESS == aiGetMaterialColor(pMaterial, AI_MATKEY_BASE_COLOR, &baseColor))
-	//		materialData.BaseColor = { baseColor.r, baseColor.g, baseColor.b, baseColor.a };
-
-	//	float metallic = 0.0f;
-	//	if (AI_SUCCESS == aiGetMaterialFloat(pMaterial, AI_MATKEY_METALLIC_FACTOR, &metallic))
-	//		materialData.Metallic = metallic;
-
-	//	float roughness = 0.0f;
-	//	if (AI_SUCCESS == aiGetMaterialFloat(pMaterial, AI_MATKEY_ROUGHNESS_FACTOR, &roughness))
-	//		materialData.Roughness = roughness;
-
-	//	VertexBuffer vbVertices(sizeof(Vertex));
-	//	vbVertices.Create(vertices.data(), vertices.size() * sizeof(Vertex), mP_Device);
-	//	vbVertices.Upload(mP_Context);
-
-	//	IndexBuffer ibIndices;
-	//	ibIndices.Create(indices.data(), indices.size() * sizeof(uint16_t), mP_Device);
-	//	ibIndices.Upload(mP_Context);
-
-	//	ConstantBuffer cbMaterial(ConstantBufferType::PS, MaterialCB::S_PS_REGISTER_SLOT);
-	//	cbMaterial.Create(std::span<const MaterialCB>(&materialData, 1), mP_Device);
-	//	cbMaterial.Upload(mP_Context);
-
-	//	CameraCB cameraData = {};
-	//	cameraData.CameraPos = m_CameraOffset;
-
-	//	ConstantBuffer cbCamera(ConstantBufferType::PS, CameraCB::S_PS_REGISTER_SLOT);
-	//	cbCamera.Create(std::span<const CameraCB>(&cameraData, 1), mP_Device);
-	//	cbCamera.Upload(mP_Context);
-
-	//	float aspectRatio = m_Window.ClientResolution().Aspect();
-	//	constexpr float CameraFovDeg = 45.0f;
-	//	constexpr float CameraFovRad = DirectX::XMConvertToRadians(CameraFovDeg);
-
-	//	DirectX::XMFLOAT3 cameraPos = ToXMFloat3(m_CameraOffset);
-	//	DirectX::XMFLOAT3 cameraFocus = {};
-	//	DirectX::XMFLOAT3 upDirection = { 0.0f, 1.0f, 0.0f };
-
-	//	DirectX::XMVECTOR cameraPosVec = DirectX::XMLoadFloat3(&cameraPos);
-	//	DirectX::XMVECTOR cameraFocusVec = DirectX::XMLoadFloat3(&cameraFocus);
-	//	DirectX::XMVECTOR upDirectionVec = DirectX::XMLoadFloat3(&upDirection);
-
-	//	TransformCB transformData;
-	//	transformData.Model = DirectX::XMMatrixTranspose(
-	//		DirectX::XMMatrixTranslation(m_MeshOffset.x, m_MeshOffset.y, m_MeshOffset.z)
-	//	);
-
-	//	transformData.View = DirectX::XMMatrixTranspose(
-	//		DirectX::XMMatrixLookAtLH(cameraPosVec, cameraFocusVec, upDirectionVec)
-	//	);
-
-	//	transformData.Proj = DirectX::XMMatrixTranspose(
-	//		DirectX::XMMatrixPerspectiveFovLH(CameraFovRad, aspectRatio, 0.05f, 100.0f)
-	//	);
-
-	//	ConstantBuffer cbTransform(ConstantBufferType::VS, TransformCB::S_VS_REGISTER_SLOT);
-	//	cbTransform.Create(std::span<const TransformCB>(&transformData, 1), mP_Device);
-	//	cbTransform.Upload(mP_Context);
-
-	//	Clear(Color::Black());
-
-	//	m_ShaderLibrary.BindSet(ShaderSetType::GLTF, mP_Context);
-	//	mP_Context->DrawIndexed(numIndices, 0, 0);
-
-	//	D2DBeginDraw();
-
-	//	if (m_ShowTextBounds)
-	//		D2DDrawRect(m_TextOffset, m_TextResolution, Color::White());
-
-	//	constexpr std::wstring_view TestText = L"Hello Direct2D & DirectWrite!";
-	//	D2DDrawText(TestText, m_TextOffset, m_TextResolution, Color::White());
-
-	//	D2DEndDraw();
-
-	//	ImGui::Render();
-	//	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-
-	//	ImGuiIO& io = ImGui::GetIO();
-	//	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-	//	{
-	//		ImGui::UpdatePlatformWindows();
-	//		ImGui::RenderPlatformWindowsDefault();
-	//	}
-
-	//	Present();
-	//}
-
 	void Graphics::Clear(const Color4& color) noexcept
 	{
 		mP_Context->ClearRenderTargetView(mP_RTV.Get(), color.rgba);
 		mP_Context->ClearDepthStencilView(mP_DSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+		ImGui_ImplWin32_NewFrame();
+		ImGui_ImplDX11_NewFrame();
+		ImGui::NewFrame();
 	}
 
 	void Graphics::Present() noexcept
 	{
+		ImGui::Render();
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+		ImGuiIO& io = ImGui::GetIO();
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+		}
+
 		HRESULT hr = mP_SwapChain->Present(m_PresentSyncInterval, m_PresentFlags);
 
 		if (!FAILED(hr))
@@ -270,51 +102,142 @@ namespace CMEngine::Platform::WinImpl
 		}
 	}
 
-	void Graphics::StartFrame(const Color4& clearColor) noexcept
+	void Graphics::Draw(uint32_t numVertices, uint32_t startVertexLocation) noexcept
 	{
-		ImGui_ImplWin32_NewFrame();
-		ImGui_ImplDX11_NewFrame();
-		ImGui::NewFrame();
-
-		Clear(clearColor);
-
-		m_IsWithinFrame = true;
+		mP_Context->Draw(numVertices, startVertexLocation);
 	}
 
-	void Graphics::EndFrame() noexcept
+	void Graphics::DrawIndexed(uint32_t numIndices, uint32_t startIndexLocation, int32_t baseVertexLocation) noexcept
 	{
-		ImGui::Render();
-		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+		mP_Context->DrawIndexed(numIndices, startIndexLocation, baseVertexLocation);
+	}
 
-		ImGuiIO& io = ImGui::GetIO();
-		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+	void Graphics::DrawIndexedInstanced(
+		uint32_t indicesPerInstance,
+		uint32_t totalInstances,
+		uint32_t startIndexLocation,
+		int32_t baseVertexLocation,
+		uint32_t startInstanceLocation
+	) noexcept
+	{
+		mP_Context->DrawIndexedInstanced(
+			indicesPerInstance,
+			totalInstances,
+			startIndexLocation,
+			baseVertexLocation,
+			startInstanceLocation
+		);
+	}
+
+	[[nodiscard]] Resource<IInputLayout> Graphics::CreateInputLayout(ShaderID vertexID, std::span<const InputElement> elements) noexcept
+	{
+		Resource<InputLayout> pInputLayout = std::make_unique<InputLayout>(elements);
+
+		const ShaderData* pShaderData = m_ShaderRegistry.Retrieve(vertexID);
+
+		if (!pShaderData)
 		{
-			ImGui::UpdatePlatformWindows();
-			ImGui::RenderPlatformWindowsDefault();
+			spdlog::critical(
+				"(WinImpl_Graphics) Internal error: Failed to retrieve a valid ShaderData from the provided ShaderID. "
+				"Index: {}, ShaderType: {}, AssignedType: {}",
+				vertexID.Index,
+				(uint16_t)vertexID.Type,
+				(uint16_t)vertexID.AssignedType
+			);
+
+			return Resource<InputLayout>(nullptr);
+		}
+			
+		pInputLayout->Create(pShaderData->pBytecode, mP_Device);
+		return pInputLayout;
+	}
+
+	void Graphics::BindInputLayout(const Resource<IInputLayout>& pInputLayout) noexcept
+	{
+		InputLayout* pDerived = dynamic_cast<InputLayout*>(pInputLayout.get());
+
+		if (!pDerived)
+		{
+			spdlog::warn(
+				"(WinImpl_Graphics) [BindInputLayout] Internal warning: Attempted to bind an "
+				"instance that was either nullptr or not of Platform::WinImpl::InputLayout. "
+				"(how tf did you do that?)"
+			);
+			return;
 		}
 
-		Present();
-
-		m_IsWithinFrame = false;
+		pDerived->Upload(mP_Context);
 	}
 
-	[[nodiscard]] IGraphics::BufferPtr<IUploadable> Graphics::CreateBuffer(GPUBufferType type, GPUBufferFlag flags) noexcept
+	void Graphics::DumpInputLayout(const Resource<IInputLayout>& pInputLayout) noexcept
+	{
+		InputLayout* pDerived = dynamic_cast<InputLayout*>(pInputLayout.get());
+
+		if (!pDerived)
+		{
+			spdlog::warn(
+				"(WinImpl_Graphics) [DumpInputLayout] Internal warning: Attempted to utilize an "
+				"instance that was either nullptr or not of Platform::WinImpl::InputLayout. "
+				"(how tf did you do that?)"
+			);
+			return;
+		}
+
+		const auto& elements =  pDerived->Elements();
+		const auto& nativeElements =  pDerived->NativeElements();
+		
+		std::cout << '\n';
+		spdlog::info("(WinImpl_Graphics) [DumpInputLayout] Elements -------");
+
+		for (size_t i = 0; i < elements.size(); ++i)
+		{
+			const auto& e = elements[i];
+
+			spdlog::info("Element: {}", i);
+			spdlog::info("\tName: {}", e.Name);
+			spdlog::info("\tIndex: {}", e.Index);
+			spdlog::info("\tFormat: {}", DataFormatToString(e.Format));
+			spdlog::info("\tInputSlot: {}", e.InputSlot);
+			spdlog::info("\tAllignedByteOffset: {}", e.AlignedByteOffset);
+			spdlog::info("\tInputClass: {}", InputClassToString(e.InputClass));
+			spdlog::info("\tInstanceStepRate: {}", e.InstanceStepRate);
+		}
+
+		spdlog::info("(WinImpl_Graphics) [DumpInputLayout] NativeElements -------");
+		for (size_t i = 0; i < nativeElements.size(); ++i)
+		{
+			const auto& e = nativeElements[i];
+
+			spdlog::info("NativeElement: {}", i);
+			spdlog::info("\tSemanticName: {}", e.SemanticName);
+			spdlog::info("\tSemanticIndex: {}", e.SemanticIndex);
+			spdlog::info("\tFormat: {}", (size_t)e.Format);
+			spdlog::info("\tInputSlot: {}", e.InputSlot);
+			spdlog::info("\tAllignedByteOffset: {}", e.AlignedByteOffset);
+			spdlog::info("\tInputSlotClass: {}", (size_t)e.InputSlotClass);
+			spdlog::info("\tInstanceDataStepRate: {}", e.InstanceDataStepRate);
+		}
+
+		std::cout << '\n';
+	}
+
+	[[nodiscard]] Resource<IBuffer> Graphics::CreateBuffer(GPUBufferType type, GPUBufferFlag flags) noexcept
 	{
 		switch (type)
 		{
 		case GPUBufferType::Invalid: [[fallthrough]];
 		default:
-			return BufferPtr<IUploadable>(nullptr);
+			return Resource<IBuffer>(nullptr);
 		case GPUBufferType::Vertex:
-			return BufferPtr<VertexBuffer>(new VertexBuffer(flags));
+			return Resource<VertexBuffer>(new VertexBuffer(flags));
 		case GPUBufferType::Index:
-			return BufferPtr<IndexBuffer>(new IndexBuffer(flags));
+			return Resource<IndexBuffer>(new IndexBuffer(flags));
 		case GPUBufferType::Constant:
-			return BufferPtr<ConstantBuffer>(new ConstantBuffer(flags));
+			return Resource<ConstantBuffer>(new ConstantBuffer(flags));
 		}
 	}
 
-	void Graphics::SetBuffer(const Graphics::BufferPtr<IUploadable>& pBuffer, void* pData, size_t numBytes) noexcept
+	void Graphics::SetBuffer(const Resource<IBuffer>& pBuffer, const void* pData, size_t numBytes) noexcept
 	{
 		IGPUBuffer* pDerived = dynamic_cast<IGPUBuffer*>(pBuffer.get());
 
@@ -330,7 +253,7 @@ namespace CMEngine::Platform::WinImpl
 			pDerived->Create(pData, numBytes, mP_Device);
 	}
 
-	void Graphics::BindVertexBuffer(const Graphics::BufferPtr<IUploadable>& pBuffer, UINT strideBytes, UINT offsetBytes, UINT slot) noexcept
+	void Graphics::BindVertexBuffer(const Resource<IBuffer>& pBuffer, uint32_t strideBytes, uint32_t offsetBytes, uint32_t slot) noexcept
 	{
 		VertexBuffer* pDerivedVB = dynamic_cast<VertexBuffer*>(pBuffer.get());
 
@@ -346,7 +269,7 @@ namespace CMEngine::Platform::WinImpl
 		pDerivedVB->Upload(mP_Context);
 	}
 
-	void Graphics::BindIndexBuffer(const Graphics::BufferPtr<IUploadable>& pBuffer, DXGI_FORMAT format, UINT startIndex) noexcept
+	void Graphics::BindIndexBuffer(const Resource<IBuffer>& pBuffer, DataFormat indexFormat, uint32_t startIndex) noexcept
 	{
 		IndexBuffer* pDerivedIB = dynamic_cast<IndexBuffer*>(pBuffer.get());
 
@@ -356,12 +279,12 @@ namespace CMEngine::Platform::WinImpl
 			return;
 		}
 
-		pDerivedIB->SetFormat(format);
+		pDerivedIB->SetFormat(DataToDXGI(indexFormat));
 		pDerivedIB->SetOffset(startIndex);
 		pDerivedIB->Upload(mP_Context);
 	}
 
-	[[nodiscard]] void Graphics::BindConstantBufferVS(const Graphics::BufferPtr<IUploadable>& pBuffer, UINT slot) noexcept
+	[[nodiscard]] void Graphics::BindConstantBufferVS(const Resource<IBuffer>& pBuffer, uint32_t slot) noexcept
 	{
 		ConstantBuffer* pDerivedCB = dynamic_cast<ConstantBuffer*>(pBuffer.get());
 
@@ -376,7 +299,7 @@ namespace CMEngine::Platform::WinImpl
 		pDerivedCB->Upload(mP_Context);
 	}
 
-	[[nodiscard]] void Graphics::BindConstantBufferPS(const Graphics::BufferPtr<IUploadable>& pBuffer, UINT slot) noexcept
+	[[nodiscard]] void Graphics::BindConstantBufferPS(const Resource<IBuffer>& pBuffer, uint32_t slot) noexcept
 	{
 		ConstantBuffer* pDerivedCB = dynamic_cast<ConstantBuffer*>(pBuffer.get());
 
@@ -389,6 +312,26 @@ namespace CMEngine::Platform::WinImpl
 		pDerivedCB->SetType(ConstantBufferType::PS);
 		pDerivedCB->SetRegister(slot);
 		pDerivedCB->Upload(mP_Context);
+	}
+
+	[[nodiscard]] ShaderID Graphics::GetShader(std::wstring_view shaderName) noexcept
+	{
+		return m_ShaderRegistry.QueryID(shaderName.data());
+	}
+
+	void Graphics::BindShader(ShaderID id) noexcept
+	{
+		m_ShaderRegistry.BindShader(id, mP_Context);
+	}
+
+	[[nodiscard]] ShaderID Graphics::LastVS() const noexcept
+	{
+		return m_ShaderRegistry.LastVS();
+	}
+
+	[[nodiscard]] ShaderID Graphics::LastPS() const noexcept
+	{
+		return m_ShaderRegistry.LastPS();
 	}
 
 	void Graphics::Init() noexcept
@@ -487,7 +430,7 @@ namespace CMEngine::Platform::WinImpl
 
 		SetViewport(resolution);
 
-		m_ShaderLibrary.CreateShaderSets(mP_Device);
+		m_ShaderRegistry.CreateShaders(mP_Device);
 
 		// Setup Dear ImGui context
 		IMGUI_CHECKVERSION();

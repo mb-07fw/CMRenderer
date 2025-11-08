@@ -12,7 +12,8 @@ namespace CMEngine::Scene::Node
 	enum class NodeType : int8_t
 	{
 		Invalid = -1,
-		Camera3D
+		Camera3D,
+		GameObject
 	};
 
 	struct Node
@@ -66,11 +67,11 @@ namespace CMEngine::Scene::Node
 	{
 		switch (type)
 		{
-		case NodeType::Invalid: [[fallthrough]];
-		default:
-			return false;
-		case NodeType::Camera3D:
-			return false;
+		case NodeType::Invalid:    [[fallthrough]];
+
+		default:				   return false;
+		case NodeType::Camera3D:   return false;
+		case NodeType::GameObject: return false;
 		}
 	}
 
@@ -78,9 +79,11 @@ namespace CMEngine::Scene::Node
 	{
 		switch (type)
 		{
-		case NodeType::Invalid:  [[fallthrough]]; 
-		default:				 return false;
-		case NodeType::Camera3D: return true;
+		case NodeType::Invalid:    [[fallthrough]]; 
+
+		default:				   return false;
+		case NodeType::Camera3D:   return true;
+		case NodeType::GameObject: return true;
 		}
 	}
 
@@ -88,10 +91,11 @@ namespace CMEngine::Scene::Node
 	{
 		switch (type)
 		{
-		case NodeType::Invalid:  [[fallthrough]];
+		case NodeType::Invalid:    [[fallthrough]];
 
-		default:				 return { "Invalid" };
-		case NodeType::Camera3D: return { "Camera3D" };
+		default:				   return { "Invalid" };
+		case NodeType::Camera3D:   return { "Camera3D" };
+		case NodeType::GameObject: return { "GameObject" };
 		}
 	}
 }

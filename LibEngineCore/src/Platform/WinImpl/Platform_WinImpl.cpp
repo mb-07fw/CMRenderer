@@ -23,7 +23,7 @@ namespace CMEngine::Platform::WinImpl
 	SpdlogManager::SpdlogManager() noexcept
 	{
 		std::shared_ptr<spdlog::sinks::stdout_color_sink_st> pConsoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_st>();
-		pConsoleSink->set_level(spdlog::level::warn);
+		pConsoleSink->set_level(spdlog::level::info);
 		pConsoleSink->set_pattern("[CMEngine] [%^%l%$] %v");
 
 		std::shared_ptr<spdlog::sinks::callback_sink_st> pCallbackSink = std::make_shared<spdlog::sinks::callback_sink_st>(

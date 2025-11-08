@@ -5,7 +5,7 @@
 
 namespace CMEngine::Asset
 {
-	template <std::integral Ty, std::integral ReturnTy = Ty>
+	template <std::unsigned_integral Ty, std::unsigned_integral ReturnTy = Ty>
 	inline constexpr [[nodiscard]] ReturnTy ToPower(Ty value, Ty power) noexcept
 	{
 		if (power == 0)
@@ -21,35 +21,27 @@ namespace CMEngine::Asset
 
 	enum class AssetType : uint8_t
 	{
-		INVALID,
-		MESH,
-		TEXTURE
+		Invalid,
+		Model, /* Overarching owner of any subsequent meshes / materials. */
+		Mesh,
+		Material,
+		Texture,
 	};
 
 	inline constexpr [[nodiscard]] bool IsValidAssetType(AssetType type) noexcept
 	{
 		switch (type)
 		{
-		case AssetType::MESH: [[fallthrough]];
-		case AssetType::TEXTURE:
+		case AssetType::Model: [[fallthrough]];
+		case AssetType::Mesh: [[fallthrough]];
+		case AssetType::Material: [[fallthrough]];
+		case AssetType::Texture:
 			return true;
-		case AssetType::INVALID: [[fallthrough]];
+		case AssetType::Invalid: [[fallthrough]];
 		default:
 			return false;
 		}
 	}
-
-	struct Asset
-	{
-		inline Asset(AssetType type) noexcept
-			: Type(type)
-		{
-		}
-
-		virtual ~Asset() = default;
-
-		const AssetType Type = AssetType::INVALID;
-	};
 
 	using RawAssetID = uint32_t;
 
@@ -69,11 +61,12 @@ namespace CMEngine::Asset
 		[[nodiscard]] uint32_t GlobalID() const noexcept;
 		[[nodiscard]] AssetIDView AsView() const noexcept;
 
-		inline [[nodiscard]] RawAssetID RawHandle() const noexcept { return Handle; }
-		inline [[nodiscard]] bool IsValid() const noexcept { return Handle != S_INVALID_HANDLE; }
+		inline [[nodiscard]] RawAssetID RawHandle() const noexcept { return m_Handle; }
+		inline [[nodiscard]] bool IsValid() const noexcept { return m_Handle != S_INVALID_HANDLE; }
 		inline static [[nodiscard]] AssetID Invalid() noexcept { return AssetID{}; }
 
 		[[nodiscard]] bool operator==(AssetID other) const noexcept;
+		[[nodiscard]] bool operator<(AssetID other) const noexcept;
 	private:
 		void SetRegistered(bool isRegistered) noexcept;
 		void SetType(AssetType type) noexcept;
@@ -81,7 +74,7 @@ namespace CMEngine::Asset
 
 		static [[nodiscard]] AssetID Registered(AssetType type, uint32_t globalID) noexcept;
 	private:
-		RawAssetID Handle = 0;
+		RawAssetID m_Handle = 0;
 	public:
 		static constexpr uint32_t S_INVALID_HANDLE = 0;
 
@@ -186,7 +179,19 @@ namespace CMEngine::Asset
 		~AssetIDView() = default;
 
 		bool IsRegistered = false;
-		AssetType Type = AssetType::INVALID;
+		AssetType Type = AssetType::Invalid;
 		uint32_t GlobalID = 0;
+	};
+}
+
+namespace std
+{
+	template <>
+	struct hash<CMEngine::Asset::AssetID>
+	{
+		inline size_t operator()(CMEngine::Asset::AssetID id) const noexcept
+		{
+			return hash<size_t>{}(id.GlobalID());
+		}
 	};
 }

@@ -4,7 +4,7 @@
 #include "Platform/Core/IGraphics.hpp"
 #include "Platform/WinImpl/PlatformOSFwd_WinImpl.hpp"
 #include "Platform/WinImpl/Window_WinImpl.hpp"
-#include "Platform/WinImpl/ShaderLibrary_WinImpl.hpp"
+#include "Platform/WinImpl/ShaderRegistry_WinImpl.hpp"
 #include "Platform/WinImpl/Types_WinImpl.hpp"
 
 #include <assimp/Importer.hpp>
@@ -29,15 +29,6 @@ namespace CMEngine::Platform::WinImpl
 {
 	struct PlatformConfig;
 
-	class ModelImporter
-	{
-	public:
-		ModelImporter() = default;
-		~ModelImporter() = default;
-
-		Assimp::Importer Assimp;
-	};
-
 	class Graphics : public IGraphics
 	{
 	public:
@@ -50,33 +41,47 @@ namespace CMEngine::Platform::WinImpl
 		virtual void Clear(const Color4& color) noexcept override;
 		virtual void Present() noexcept override;
 
-		virtual void StartFrame(const Color4& clearColor) noexcept override;
-		virtual void EndFrame() noexcept override;
+		virtual void Draw(uint32_t numVertices, uint32_t startVertexLocation) noexcept override;
 
-		virtual [[nodiscard]] BufferPtr<IUploadable> CreateBuffer(GPUBufferType type, GPUBufferFlag flags = GPUBufferFlag::Default) noexcept override;
-		virtual void SetBuffer(const BufferPtr<IUploadable>& pBuffer, void* pData, size_t numBytes) noexcept override;
+		void DrawIndexed(uint32_t numIndices, uint32_t startIndexLocation, int32_t baseVertexLocation) noexcept;
 
-		virtual void BindVertexBuffer(const BufferPtr<IUploadable>& pBuffer, UINT strideBytes, UINT offsetBytes, UINT slot) noexcept override;
-		virtual void BindIndexBuffer(const BufferPtr<IUploadable>& pBuffer, DXGI_FORMAT format, UINT startIndex) noexcept override;
-		virtual void BindConstantBufferVS(const BufferPtr<IUploadable>& pBuffer, UINT slot) noexcept override;
-		virtual void BindConstantBufferPS(const BufferPtr<IUploadable>& pBuffer, UINT slot) noexcept override;
+		virtual void DrawIndexedInstanced(
+			uint32_t indicesPerInstance,
+			uint32_t totalInstances,
+			uint32_t startIndexLocation,
+			int32_t baseVertexLocation,
+			uint32_t startInstanceLocation
+		) noexcept override;
 
-		inline virtual [[nodiscard]] bool IsWithinFrame() const noexcept override { return m_IsWithinFrame; }
+		virtual [[nodiscard]] Resource<IInputLayout> CreateInputLayout(ShaderID vertexID, std::span<const InputElement> elements) noexcept override;
+		virtual void BindInputLayout(const Resource<IInputLayout>& pInputLayout) noexcept override;
+		void DumpInputLayout(const Resource<IInputLayout>& pInputLayout) noexcept;
+
+		virtual [[nodiscard]] Resource<IBuffer> CreateBuffer(GPUBufferType type, GPUBufferFlag flags = GPUBufferFlag::Default) noexcept override;
+		virtual void SetBuffer(const Resource<IBuffer>& pBuffer, const void* pData, size_t numBytes) noexcept override;
+
+		virtual void BindVertexBuffer(const Resource<IBuffer>& pBuffer, uint32_t strideBytes, uint32_t offsetBytes, uint32_t slot) noexcept override;
+		virtual void BindIndexBuffer(const Resource<IBuffer>& pBuffer, DataFormat indexFormat, uint32_t startIndex) noexcept override;
+		virtual void BindConstantBufferVS(const Resource<IBuffer>& pBuffer, uint32_t slot) noexcept override;
+		virtual void BindConstantBufferPS(const Resource<IBuffer>& pBuffer, uint32_t slot) noexcept override;
+
+		[[nodiscard]] ShaderID GetShader(std::wstring_view shaderName) noexcept;
+		void BindShader(ShaderID id) noexcept;
+
+		[[nodiscard]] ShaderID LastVS() const noexcept;
+		[[nodiscard]] ShaderID LastPS() const noexcept;
 	private:
 		void Init() noexcept;
 		void Shutdown() noexcept;
 
 		/* (Views in this context refer to RTV's and DSV's on the swap chain) */
 		void CreateViews() noexcept;
-
 		void BindViews() noexcept;
-
 		void ReleaseViews() noexcept;
 
 		void SetViewport(Float2 resolution) noexcept;
 
 		void OnResizeCallback(Float2 res) noexcept;
-
 		static void OnResizeThunk(Float2 res, void* pThis) noexcept;
 
 		[[nodiscard]] bool IsGraphicsDebugging() const noexcept;
@@ -96,8 +101,7 @@ namespace CMEngine::Platform::WinImpl
 	private:
 		Window& m_Window; /* TODO: Come up with a better solution for this dependency... */
 		const PlatformConfig& m_Config;
-		ShaderLibrary m_ShaderLibrary;
-		ModelImporter m_ModelImporter;
+		ShaderRegistry m_ShaderRegistry;
 		ComPtr<ID3D11Device> mP_Device;
 		ComPtr<ID3D11DeviceContext> mP_Context;
 		ComPtr<IDXGISwapChain> mP_SwapChain;
@@ -115,7 +119,6 @@ namespace CMEngine::Platform::WinImpl
 		UINT m_PresentSyncInterval = S_PRESENT_SYNC_INTERVAL_VSYNC;
 		UINT m_PresentFlags = 0;
 		bool m_LoadedDebugLayer = false;
-		bool m_IsWithinFrame = false;
 	};
 
 	inline [[nodiscard]] D2D1::ColorF Graphics::ToD2D1ColorF(const Color4& color) const noexcept

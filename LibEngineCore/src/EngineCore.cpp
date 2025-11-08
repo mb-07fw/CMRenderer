@@ -4,7 +4,8 @@
 namespace CMEngine
 {
 	EngineCore::EngineCore() noexcept
-		: m_SceneManager(m_ECS)
+		: m_Renderer(m_ECS, m_Platform.GetGraphics(), m_AssetManager),
+		  m_SceneManager(m_ECS)
 	{
 	}
 

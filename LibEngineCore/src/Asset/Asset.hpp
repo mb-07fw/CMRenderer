@@ -17,38 +17,106 @@ namespace CMEngine::Asset
 
 	using Index = uint16_t;
 
-	struct Material
-	{
-		/* NOTE: Semantically, it is completely valid for a mesh to not have a texture,
-		 *		   since by default AssetID's are invalid. */
-		AssetID TextureID;
-		Color4 BaseColor;
-		float Metallic = 0.0f;
-		float Roughness = 0.0f;
-	};
-
 	struct MeshData
 	{
 		std::vector<Vertex> Vertices;
 		std::vector<Index> Indices;
-		Material Material;
+	};
+
+	struct MaterialData
+	{
+		inline MaterialData() noexcept
+		{
+		}
+
+		inline MaterialData(
+			const Color4& baseColor,
+			float metallic,
+			float roughness
+		) noexcept
+			: BaseColor(baseColor),
+			Metallic(metallic),
+			Roughness(roughness)
+		{
+		}
+
+		Color4 BaseColor;
+		float Metallic = 0.0f;
+		float Roughness = 0.0f;
+		float Padding[2];
+	};
+
+	struct Asset
+	{
+		inline Asset(AssetType type) noexcept
+			: Type(type)
+		{
+		}
+
+		virtual ~Asset() = default;
+
+		const AssetType Type = AssetType::Invalid;
+	};
+
+	struct Model : public Asset
+	{
+		inline Model() noexcept
+			: Asset(AssetType::Model)
+		{
+		}
+
+		std::vector<AssetID> Meshes;
+		std::vector<AssetID> Materials;
+	};
+
+	struct Material : public Asset
+	{
+		inline Material() noexcept
+			: Asset(AssetType::Material)
+		{
+		}
+
+		inline Material(
+			AssetID modelID,
+			uint32_t index,
+			const Color4& baseColor,
+			float metallic,
+			float roughness
+		) noexcept
+			: Asset(AssetType::Material),
+			  ModelID(modelID),
+			  Index(index),
+			  Data(baseColor, metallic, roughness)
+		{
+		}
+
+		Material(const Material&) = default;
+		Material(Material&&) = default;
+		Material& operator=(const Material&) = default;
+		Material& operator=(Material&&) = default;
+
+		MaterialData Data;
+		AssetID ModelID;
+		uint32_t Index = 0;
 	};
 
 	struct Mesh : public Asset
 	{
 		inline Mesh(const MeshData& data) noexcept
-			: Asset(AssetType::MESH),
-			Data(data)
+			: Asset(AssetType::Mesh),
+			  Data(data)
 		{
 		}
 
 		inline Mesh() noexcept
-			: Asset(AssetType::MESH)
+			: Asset(AssetType::Mesh)
 		{
 		}
 
 		~Mesh() = default;
 
 		MeshData Data;
+		AssetID ModelID;
+		uint32_t Index = 0;
 	};
 }

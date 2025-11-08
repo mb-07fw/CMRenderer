@@ -6,18 +6,6 @@
 
 namespace CMEngine
 {
-	struct Component {};
-
-	struct MeshComponent : public Component
-	{
-		Asset::AssetID ID;
-	};
-
-	struct SpriteComponent
-	{
-		Asset::Material Material;
-	};
-
 	struct CameraData
 	{
 		inline CameraData(
@@ -48,9 +36,10 @@ namespace CMEngine
 		float FarZ = 0.0f;
 	};
 
-	struct CameraMatrices
+	/* Specifically match alignment to make pixels no go *poof*... */
+	struct alignas(alignof(Math::Mat4)) CameraMatrices
 	{
-		inline CameraMatrices(const Math::Matrix& view, const Math::Matrix& proj) noexcept
+		inline CameraMatrices(const Math::Mat4& view, const Math::Mat4& proj) noexcept
 			: View(view),
 			  Proj(proj)
 		{
@@ -59,8 +48,40 @@ namespace CMEngine
 		CameraMatrices() = default;
 		~CameraMatrices() = default;
 
-		Math::Matrix View = {};
-		Math::Matrix Proj = {};
+		Math::Mat4 View = {};
+		Math::Mat4 Proj = {};
+	};
+
+	struct Component {};
+
+	struct TextureComponent : public Component
+	{
+		inline TextureComponent(Asset::AssetID textureID) noexcept
+			: ID(textureID)
+		{
+		}
+
+		Asset::AssetID ID;
+	};
+
+	struct MaterialComponent : public Component
+	{
+		inline MaterialComponent(Asset::AssetID meshID) noexcept
+			: ID(meshID)
+		{
+		}
+
+		Asset::AssetID ID;
+	};
+
+	struct MeshComponent : public Component
+	{
+		inline MeshComponent(Asset::AssetID meshID) noexcept
+			: ID(meshID)
+		{
+		}
+
+		Asset::AssetID ID;
 	};
 
 	struct CameraComponent : public Component
@@ -80,9 +101,23 @@ namespace CMEngine
 
 		void CreateViewMatrix() noexcept;
 		void CreateProjectionMatrix() noexcept;
-		void CreateMatrices() noexcept;
+		void UpdateMatrices() noexcept;
+		void SetClean() noexcept;
+
+		inline [[nodiscard]] bool Dirty() const noexcept { return ViewDirty || ProjDirty; }
 		
 		CameraData Data;
 		CameraMatrices Matrices;
+		bool ViewDirty = false;
+		bool ProjDirty = false;
+	};
+
+	struct TransformComponent
+	{
+		inline void CreateModelMatrix() noexcept { Math::TransformMatrix(ModelMatrix, Transform); }
+
+		Transform Transform;
+		Math::Mat4 ModelMatrix = Math::IdentityMatrix();
+		bool Dirty = false;
 	};
 }

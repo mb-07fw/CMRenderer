@@ -12,6 +12,13 @@ namespace CMEngine
 		virtual ~IUploadable() = default;
 	};
 
+	class IBuffer : public IUploadable
+	{
+	public:
+		IBuffer() = default;
+		virtual ~IBuffer() = default;
+	};
+
 	using GPUBufferFlagUnderlying = uint8_t;
 	using GPUBufferTypeUnderlying = int8_t;
 

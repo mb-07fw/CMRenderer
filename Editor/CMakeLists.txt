@@ -7,6 +7,11 @@ set(SRC_FILES
 
 add_executable(Editor ${SRC_FILES})
 
+target_compile_definitions(Editor PRIVATE
+    ENGINE_EDITOR_RESOURCES_MODEL_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/resources/assets/models"
+    ENGINE_EDITOR_RESOURCES_MODEL_DIRECTORYW=L"${CMAKE_SOURCE_DIR}/resources/assets/models"
+)
+
 target_link_libraries(Editor PRIVATE LibEngineCore)
 
 set(OUTPUT_DIR "${CMAKE_BINARY_DIR}/Editor/out")

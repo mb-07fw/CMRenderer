@@ -132,7 +132,7 @@ namespace CMEngine::Platform::WinImpl
 		m_Desc.StructureByteStride = 0;
 	}
 
-	void GPUBufferBasic::Update(void* pData, size_t numBytes, const ComPtr<ID3D11DeviceContext>& pContext) noexcept
+	void GPUBufferBasic::Update(const void* pData, size_t numBytes, const ComPtr<ID3D11DeviceContext>& pContext) noexcept
 	{
 		CM_ENGINE_ASSERT(FlagUnderlying(m_Flags & GPUBufferFlag::Dynamic));
 		CM_ENGINE_ASSERT(pContext.Get() != nullptr);
