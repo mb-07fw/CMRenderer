@@ -70,8 +70,9 @@ namespace CMEngine::Platform::WinImpl
 		ShaderRegistry& operator=(ShaderRegistry&&) = delete;
 	public:
 		void CreateShaders(const ComPtr<ID3D11Device>& pDevice) noexcept;
-
 		void BindShader(ShaderID id, const ComPtr<ID3D11DeviceContext>& pContext) noexcept;
+
+		void ClearBound() noexcept;
 
 		[[nodiscard]] ShaderID QueryID(const std::wstring& shaderName) const noexcept;
 		[[nodiscard]] const ShaderData* Retrieve(ShaderID id) const noexcept;

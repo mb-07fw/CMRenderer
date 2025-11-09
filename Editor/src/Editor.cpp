@@ -12,9 +12,8 @@ namespace CMEngine::Editor
 		ECS::ECS& ecs = m_Core.ECS();
 
 		ECS::Entity cameraEntity = ecs.CreateEntity();
-		ECS::Entity gameObject1 = ecs.CreateEntity();
-		ECS::Entity gameObject2 = ecs.CreateEntity();
-		ECS::Entity gameObject3 = ecs.CreateEntity();
+		ECS::Entity gameObj1 = ecs.CreateEntity();
+		ECS::Entity gameObj2 = ecs.CreateEntity();
 
 		Asset::AssetManager& assetManager = m_Core.AssetManager();
 
@@ -31,22 +30,44 @@ namespace CMEngine::Editor
 		Asset::AssetID meshID = model->Meshes.at(0);
 		Asset::AssetID materialID = model->Materials.at(0);
 
-		/* Default construct components to avoid copying... */
+		/* Default construct components to avoid extra copying... */
 		ecs.EmplaceComponent<CameraComponent>(cameraEntity);
+		ecs.EmplaceComponent<TransformComponent>(gameObj1);
+		ecs.EmplaceComponent<TransformComponent>(gameObj2);
 
-		ecs.EmplaceComponent<TransformComponent>(gameObject1);
-		ecs.EmplaceComponent<MeshComponent>(gameObject1, meshID);
-		ecs.EmplaceComponent<MaterialComponent>(gameObject1, materialID);
+		TransformComponent& gObj1Transform = ecs.GetComponent<TransformComponent>(gameObj1);
+		TransformComponent& gObj2Transform = ecs.GetComponent<TransformComponent>(gameObj2);
 
-		m_Core.Renderer().GetBatchRenderer().SubmitMesh(gameObject1);
+		gObj1Transform.Transform.Translation.x = -1.0f;
+		gObj2Transform.Transform.Translation.x = 1.0f;
+
+		gObj1Transform.Transform.Scaling.x = 0.5f;
+		gObj1Transform.Transform.Scaling.y = 0.5f;
+		gObj1Transform.Transform.Scaling.z = 0.5f;
+
+		gObj2Transform.Transform.Scaling.x = 0.5f;
+		gObj2Transform.Transform.Scaling.y = 0.5f;
+		gObj2Transform.Transform.Scaling.z = 0.5f;
+
+		gObj1Transform.CreateModelMatrix();
+		gObj2Transform.CreateModelMatrix();
+
+		ecs.EmplaceComponent<MeshComponent>(gameObj1, meshID);
+		ecs.EmplaceComponent<MeshComponent>(gameObj2, meshID);
+		ecs.EmplaceComponent<MaterialComponent>(gameObj1, materialID);
+		ecs.EmplaceComponent<MaterialComponent>(gameObj2, materialID);
+
+		m_Core.Renderer().GetBatchRenderer().SubmitMesh(gameObj1);
 
 		Scene::SceneManager& sceneManager = m_Core.SceneManager();
 
 		m_EditorSceneID = sceneManager.NewScene();
 		Scene::Scene& scene = sceneManager.RetrieveScene(m_EditorSceneID);
+		Scene::SceneGraph& sceneGraph = scene.Graph();
 
-		scene.Graph().AddNode(Scene::Node::NodeType::Camera3D, cameraEntity);
-		scene.Graph().AddNode(Scene::Node::NodeType::GameObject, gameObject1);
+		sceneGraph.AddNode(Scene::Node::NodeType::Camera3D, cameraEntity);
+		sceneGraph.AddNode(Scene::Node::NodeType::GameObject, gameObj1);
+		sceneGraph.AddNode(Scene::Node::NodeType::GameObject, gameObj2);
 
 		auto& camera = ecs.GetComponent<CameraComponent>(cameraEntity);
 
@@ -58,7 +79,7 @@ namespace CMEngine::Editor
 		camera.Data.FovAngle = 45.0f;
 		camera.Data.NearZ = 0.5f;
 		camera.Data.FarZ = 1000.0f;
-		camera.ProjDirty = true; // So view and projection matrices are set later...
+		camera.ProjDirty = true;
 		camera.ViewDirty = true;
 
 		Scene::CameraSystem& cameraSystem = sceneManager.GetCameraSystem();

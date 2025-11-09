@@ -21,10 +21,42 @@ namespace CMEngine::Renderer
 		m_CB_Material  = m_Graphics.CreateBuffer(GPUBufferType::Constant, GPUBufferFlag::Dynamic);
 
 		constexpr std::array<InputElement, 4> Elements = {
-			InputElement("POSITION", 0, DataFormat::Float32x3, 0, 0, InputClass::PerVertex, 0),
-			InputElement("NORMAL", 0, DataFormat::Float32x3, 0, G_InputElement_InferByteOffset, InputClass::PerVertex, 0),
-			InputElement("TEXCOORD", 0, DataFormat::Float32x3, 0, G_InputElement_InferByteOffset, InputClass::PerVertex, 0),
-			InputElement("INST_TRANSFORM", G_InputElement_ExpandAsMultiple, DataFormat::Mat4, 1, G_InputElement_InferByteOffset, InputClass::PerInstance, 1)
+			InputElement(
+				"POSITION",
+				0, // Semantic index
+				DataFormat::Float32x3,
+				0, // Input slot (vb slot to read data from)
+				0, // Aligned byte offset
+				InputClass::PerVertex,
+				0 // Instance step rate
+			),
+			InputElement(
+				"NORMAL",
+				0,
+				DataFormat::Float32x3,
+				0,
+				G_InputElement_InferByteOffset,
+				InputClass::PerVertex,
+				0
+			),
+			InputElement(
+				"TEXCOORD",
+				0,
+				DataFormat::Float32x3,
+				0,
+				G_InputElement_InferByteOffset,
+				InputClass::PerVertex,
+				0
+			),
+			InputElement(
+				"INST_TRANSFORM",
+				G_InputElement_ExpandAsMultiple,
+				DataFormat::Mat4,
+				1,
+				G_InputElement_InferByteOffset,
+				InputClass::PerInstance,
+				1
+			)
 		};
 
 		ShaderID gltfBasicVertexId = m_Graphics.GetShader(L"Gltf_Basic_VS");
@@ -53,9 +85,6 @@ namespace CMEngine::Renderer
 		{
 			/* Note: This is essentially throwing away copying work done for any previous meshes,
 			 *		   not the best long term strategy. 
-			 *       However, a new submitted mesh is highly likely to trigger a re-ordering of mesh data,
-			 *         meaning the result could be similar.
-			 * 
 			 */
 			m_Vertices.clear();
 			m_Indices.clear();
@@ -93,6 +122,14 @@ namespace CMEngine::Renderer
 
 	void BatchRenderer::SubmitMesh(ECS::Entity e) noexcept
 	{
+		auto mesh = m_ECS.TryGetComponent<MeshComponent>(e);
+		auto material = m_ECS.TryGetComponent<MaterialComponent>(e);
+
+		if (mesh.Null() || material.Null())
+			return;
+		else if (m_MeshMetadata.find(mesh->ID) != m_MeshMetadata.end())
+			return;
+
 		m_SubmittedMeshes.emplace_back(e);
 		m_MeshSubmitted = true;
 	}
@@ -122,10 +159,9 @@ namespace CMEngine::Renderer
 				auto materialA = m_ECS.TryGetComponent<MaterialComponent>(a);
 				auto materialB = m_ECS.TryGetComponent<MaterialComponent>(b);
 
-				if (meshA.Null() || materialA.Null())
+				if (meshA.Null() || materialA.Null() ||
+					meshB.Null() || materialB.Null())
 					return false;
-				else if (meshB.Null() || materialB.Null())
-					return true;
 
 				/* Priority ordering is | Mesh ID | Material ID |
 				 * ex) a = (0, 0)

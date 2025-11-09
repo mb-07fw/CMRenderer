@@ -55,8 +55,11 @@ namespace CMEngine::ECS
 		 * m_DenseArray : Stores ID's contiguously.
 		 * m_Components : Stores Components contiguously, parallel to m_DenseArray.
 		 */
+		inline [[nodiscard]] std::vector<size_t>& Sparse() noexcept { return m_SparseArray; }
 		inline [[nodiscard]] const std::vector<size_t>& Sparse() const noexcept { return m_SparseArray; }
+		inline [[nodiscard]] std::vector<IDTy>& Dense() noexcept { return m_DenseArray; }
 		inline [[nodiscard]] const std::vector<IDTy>& Dense() const noexcept { return m_DenseArray; }
+		inline [[nodiscard]] std::vector<ComponentTy>& Components() noexcept { return m_Components; }
 		inline [[nodiscard]] const std::vector<ComponentTy>& Components() const noexcept { return m_Components; }
 	private:
 		inline void Insert(IDTy id) noexcept;

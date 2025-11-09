@@ -71,22 +71,22 @@ namespace CMEngine
 	{
 	public:
 		inline ViewBasic(Ty* pData) noexcept
-			: mP_Data(pData)
+			: mP_Ptr(pData)
 		{
 		}
 
 		ViewBasic() = default;
 		~ViewBasic() = default;
 
-		inline operator Ty* () noexcept { return mP_Data; }
-		inline ViewBasic<Ty>& operator=(Ty* pData) noexcept { mP_Data = pData; return*this; }
-		inline Ty* operator->() noexcept { return mP_Data; }
+		inline operator Ty* () noexcept { return mP_Ptr; }
+		inline ViewBasic<Ty>& operator=(Ty* pData) noexcept { mP_Ptr = pData; return*this; }
+		inline Ty* operator->() noexcept { return mP_Ptr; }
 
-		inline [[nodiscard]] Ty* Raw() noexcept { return mP_Data; }
-		inline [[nodiscard]] bool NonNull() const noexcept { return mP_Data != nullptr; }
-		inline [[nodiscard]] bool Null() const noexcept { return mP_Data == nullptr; }
-	private:
-		Ty* mP_Data = nullptr;
+		inline [[nodiscard]] Ty* Raw() noexcept { return mP_Ptr; }
+		inline [[nodiscard]] bool NonNull() const noexcept { return mP_Ptr != nullptr; }
+		inline [[nodiscard]] bool Null() const noexcept { return mP_Ptr == nullptr; }
+	protected:
+		Ty* mP_Ptr = nullptr;
 	};
 
 	/* View represents a non-onwing pointer to a resource that is NOT meant
@@ -97,7 +97,33 @@ namespace CMEngine
 	/* ConstView represents a non-onwing pointer to a const resource that is NOT meant
 	 *   to be deleted by the client. */
 	template <typename Ty>
-	using ConstView = ViewBasic<const Ty>;
+	struct ConstView : public ViewBasic<const Ty>
+	{
+		using Parent = ViewBasic<const Ty>;
+		using Parent::Parent;
+
+		inline ConstView(View<Ty> view) noexcept
+			: Parent(view.Raw())
+		{
+		}
+
+		inline ConstView& operator=(View<Ty> view) noexcept
+		{
+			/* Weird template specialization quirk... */
+			Parent::mP_Ptr = view.Raw();
+			return *this;
+		}
+
+		// prevent nullptr from hitting both overloads
+		ConstView& operator=(std::nullptr_t) noexcept
+		{
+			this->mP_Ptr = nullptr;
+			return *this;
+		}
+
+		ConstView() = default;
+		~ConstView() = default;
+	};
 
 	struct Float3;
 

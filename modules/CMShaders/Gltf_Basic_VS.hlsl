@@ -20,31 +20,36 @@ struct VSOutput
 cbuffer CBCameraProj : register(b0)
 {
     /* NOTE: THE ORDER OF THIS IS SUPERRRR IMPORTANT, MUST MATCH C++ SIDE OR COMPUTER WILL GO BOOM!!! */
-    float4x4 View;
-    float4x4 Projection;
+    column_major float4x4 View;
+    column_major float4x4 Projection;
 };
 
 VSOutput main( VSInput input )
 {
     VSOutput output;
     
-    float4x4 modelMatrix = float4x4(
+    column_major float4x4 modelMatrix = float4x4(
         input.Inst_Transform_0,
         input.Inst_Transform_1,
         input.Inst_Transform_2,
         input.Inst_Transform_3
     );
     
-    /* Transform position in world space. */
-    float4 worldPos4 = mul(float4(input.Position, 1.0), modelMatrix);
+    /* Transform position in world space.
+     * 
+     * Note: Matrix * Vector is valid if the Matrix is column major. If the matrix is row major,
+     *   the correct order is Vector * Matrix.
+     */
+    //float4 worldPos4 = mul(float4(input.Position, 1.0f), modelMatrix); // Row major
+    float4 worldPos4 = mul(modelMatrix, float4(input.Position, 1.0f)); // Column major
     output.WorldPos = worldPos4.xyz;
     
-    /* Transform normal to world space. */
-    output.Normal = normalize(mul(float4(input.Normal, 0.0), modelMatrix).xyz);
+    /* Transform normal in world space. */
+    output.Normal = normalize(mul(float4(input.Normal, 0.0f), modelMatrix).xyz);
 
     output.TexCoord = input.TexCoord;
     
-    output.PositionH = mul(float4(output.WorldPos, 1.0), View);
+    output.PositionH = mul(float4(output.WorldPos, 1.0f), View);
     output.PositionH = mul(output.PositionH, Projection);
 
     return output;

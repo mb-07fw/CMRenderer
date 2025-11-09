@@ -102,6 +102,13 @@ namespace CMEngine
 		void CreateViewMatrix() noexcept;
 		void CreateProjectionMatrix() noexcept;
 		void UpdateMatrices() noexcept;
+
+		void SetOrigin(Float3 origin) noexcept;
+		void SetLookAtPos(Float3 lookAtPos) noexcept;
+		void SetAspect(float aspect) noexcept;
+		void SetFovAngle(float fovAngle) noexcept;
+		void SetNearZ(float nearZ) noexcept;
+		void SetFarZ(float farZ) noexcept;
 		void SetClean() noexcept;
 
 		inline [[nodiscard]] bool Dirty() const noexcept { return ViewDirty || ProjDirty; }

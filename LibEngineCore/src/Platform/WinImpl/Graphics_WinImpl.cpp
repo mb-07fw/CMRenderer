@@ -7,31 +7,6 @@
 
 namespace CMEngine::Platform::WinImpl
 {
-	struct Vertex
-	{
-		aiVector3D Pos;
-		aiVector3D Normal;
-		aiVector3D TexCoord;
-	};
-
-	struct alignas(16) MaterialCB
-	{
-		static constexpr UINT S_PS_REGISTER_SLOT = 0;
-
-		aiColor4D BaseColor;
-		float Metallic = 0.0f;
-		float Roughness = 0.0f;
-		float padding[2] = { 0.0f, 0.0f };
-	};
-
-	struct SphereInstanceVB
-	{
-		static constexpr UINT S_REGISTER_SLOT = 1;
-
-		Float3 Origin;
-		float Radius = 0.0f;
-	};
-
 	static constexpr Float2 S_QUAD_FRONT_VERTICES[] = {
 			{ -0.5f,  0.5f },
 			{  0.5f,  0.5f },
@@ -539,6 +514,8 @@ namespace CMEngine::Platform::WinImpl
 	{
 		mP_Context->ClearState();
 		mP_Context->Flush();
+
+		m_ShaderRegistry.ClearBound();
 
 		ReleaseViews();
 

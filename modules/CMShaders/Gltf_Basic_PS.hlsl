@@ -41,7 +41,7 @@ float4 main( PSInput input ) : SV_Target
     for (int i = 0; i < NumLights; i++)
     {
         float3 L = normalize(Lights[i].Position - input.WorldPos);
-        float diff = max(dot(N, L), 0);
+        float diff = max(dot(N, L), 0.0f);
         color += diff * Lights[i].Color;
     } */
 

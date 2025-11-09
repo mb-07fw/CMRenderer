@@ -91,6 +91,12 @@ namespace CMEngine::Platform::WinImpl
 		}
 	}
 
+	void ShaderRegistry::ClearBound() noexcept
+	{
+		m_LastVS = ShaderID{};
+		m_LastPS = ShaderID{};
+	}
+
 	[[nodiscard]] ShaderID ShaderRegistry::QueryID(const std::wstring& shaderName) const noexcept
 	{
 		auto it = m_ShaderNames.find(shaderName.data());

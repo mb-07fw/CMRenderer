@@ -3,10 +3,24 @@
 
 namespace CMEngine::Scene
 {
-	SceneManager::SceneManager(ECS::ECS& ecs) noexcept
+	inline std::string ImGuiLabel(const char* base, uint32_t id)
+	{
+		std::string label = base;
+		label.append("##").append(std::to_string(id));
+		return label;
+	}
+
+	SceneManager::SceneManager(ECS::ECS& ecs, AWindow& window) noexcept
 		: m_ECS(ecs),
+		  m_Window(window),
 		  m_CameraSystem(ecs)
 	{
+		m_Window.SetCallbackOnResize(OnWindowResizeThunk, this);
+	}
+
+	SceneManager::~SceneManager() noexcept
+	{
+		m_Window.RemoveCallbackOnResize(OnWindowResizeThunk, this);
 	}
 
 	[[nodiscard]] SceneID SceneManager::NewScene() noexcept
@@ -30,6 +44,8 @@ namespace CMEngine::Scene
 			return;
 
 		Scene& currentScene = m_Scenes.at(m_ActiveSceneIndex);
+		std::string nodeName;
+		uint32_t currentNodeIndex = 0;
 
 		if (ImGui::Begin("Scene"))
 			if (ImGui::CollapsingHeader("Graph", ImGuiTreeNodeFlags_DefaultOpen))
@@ -40,8 +56,15 @@ namespace CMEngine::Scene
 					if (Node::IDerivedNode::IsLeaf(node.Type))
 						flags |= ImGuiTreeNodeFlags_Leaf;
 
-					std::string_view nodeName = Node::IDerivedNode::NameOf(node.Type);
-					if (ImGui::TreeNodeEx(nodeName.data(), flags))
+					nodeName = Node::IDerivedNode::NameOf(node.Type);
+
+					if (nodeName.size() + 3 < nodeName.capacity())
+						nodeName.reserve(nodeName.size() + 3);
+
+					/* ImGui shenanigans to make sure widget ID's aren't duplicated. */
+					nodeName.append("##").append(std::to_string(currentNodeIndex));
+
+					if (ImGui::TreeNodeEx(nodeName.c_str(), flags))
 					{
 						switch (node.Type)
 						{
@@ -63,24 +86,41 @@ namespace CMEngine::Scene
 							break;
 						}
 						case Node::NodeType::GameObject:
-							if (View<TransformComponent> component = m_ECS.TryGetComponent<TransformComponent>(node.Entity);
+							if (auto component = m_ECS.TryGetComponent<TransformComponent>(node.Entity);
 								component.NonNull())
-								DisplayTransformComponentWidget(*component);
-							if (View<MeshComponent> component = m_ECS.TryGetComponent<MeshComponent>(node.Entity);
+								DisplayTransformComponentWidget(*component, currentNodeIndex);
+							if (auto component = m_ECS.TryGetComponent<MeshComponent>(node.Entity);
 								component.NonNull())
-								DisplayMeshComponentWidget(*component);
-							if (View<MaterialComponent> component = m_ECS.TryGetComponent<MaterialComponent>(node.Entity);
+								DisplayMeshComponentWidget(*component, currentNodeIndex);
+							if (auto component = m_ECS.TryGetComponent<MaterialComponent>(node.Entity);
 								component.NonNull())
-								DisplayMaterialComponentWidget(*component);
+								DisplayMaterialComponentWidget(*component, currentNodeIndex);
 
 							break;
 						}
 
 						ImGui::TreePop();
 					}
+
+					currentNodeIndex++;
 				}
 
 		ImGui::End();
+	}
+
+	void SceneManager::OnWindowResize(Float2 res) noexcept
+	{
+		/* TODO: Move to CameraSystem... */
+
+		auto cameras = m_ECS.GetStorage<CameraComponent>();
+
+		for (auto& camera : cameras->Components())
+			camera.SetAspect(res.Aspect());
+	}
+
+	void SceneManager::OnWindowResizeThunk(Float2 res, void* pThis) noexcept
+	{
+		reinterpret_cast<SceneManager*>(pThis)->OnWindowResize(res);
 	}
 
 	void SceneManager::SetActiveScene(SceneID index) noexcept
@@ -92,7 +132,7 @@ namespace CMEngine::Scene
 		m_Scenes.at(index).OnActivate();
 	}
 
-	void SceneManager::DisplayTransformComponentWidget(TransformComponent& transform) noexcept
+	void SceneManager::DisplayTransformComponentWidget(TransformComponent& transform, uint32_t nodeIndex) noexcept
 	{
 		if (!ImGui::TreeNodeEx("TransformComponent", ImGuiTreeNodeFlags_SpanAvailWidth))
 			return;
@@ -102,33 +142,33 @@ namespace CMEngine::Scene
 		Float3 previousRotation = transformData.Rotation;
 		Float3 previousScaling = transformData.Scaling;
 
-		ImGui::SliderFloat3("Translation", transformData.Translation.Underlying(), -20.0f, 20.0f);
-		ImGui::SliderFloat3("Rotation", transformData.Rotation.Underlying(), -20.0f, 20.0f);
-		ImGui::SliderFloat3("Scaling", transformData.Scaling.Underlying(), -20.0f, 20.0f);
+		ImGui::SliderFloat3(ImGuiLabel("Translation", nodeIndex).c_str(), transformData.Translation.Underlying(), -50.0f, 50.0f);
+		ImGui::SliderFloat3(ImGuiLabel("Rotation", nodeIndex).c_str(), transformData.Rotation.Underlying(), 0.0f, 360.0f);
+		ImGui::SliderFloat3(ImGuiLabel("Scaling", nodeIndex).c_str(), transformData.Scaling.Underlying(), -50.0f, 50.0f);
 
 		if (!transformData.Translation.IsNearEqual(previousTranslation) ||
 			!transformData.Rotation.IsNearEqual(previousRotation) ||
 			!transformData.Scaling.IsNearEqual(previousScaling))
 		{
 			transform.CreateModelMatrix();
-			transform.Dirty = true;
+			transform.Dirty = false;
 		}
 
 		ImGui::TreePop();
 	}
 
-	void SceneManager::DisplayMeshComponentWidget(const MeshComponent& mesh) noexcept
+	void SceneManager::DisplayMeshComponentWidget(const MeshComponent& mesh, uint32_t nodeIndex) noexcept
 	{
-		if (!ImGui::TreeNodeEx("MeshComponent", ImGuiTreeNodeFlags_SpanAvailWidth))
+		if (!ImGui::TreeNodeEx(ImGuiLabel("MeshComponent", nodeIndex).c_str(), ImGuiTreeNodeFlags_SpanAvailWidth))
 			return;
 
 		ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.9f, 1.0f), "MeshID: %u", mesh.ID);
 		ImGui::TreePop();
 	}
 
-	void SceneManager::DisplayMaterialComponentWidget(const MaterialComponent& material) noexcept
+	void SceneManager::DisplayMaterialComponentWidget(const MaterialComponent& material, uint32_t nodeIndex) noexcept
 	{
-		if (!ImGui::TreeNodeEx("MaterialComponent", ImGuiTreeNodeFlags_SpanAvailWidth))
+		if (!ImGui::TreeNodeEx(ImGuiLabel("MaterialComponent", nodeIndex).c_str(), ImGuiTreeNodeFlags_SpanAvailWidth))
 			return;
 
 		ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.9f, 1.0f), "MaterialID: %u", material.ID);

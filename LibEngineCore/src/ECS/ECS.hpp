@@ -73,7 +73,7 @@ namespace CMEngine::ECS
 		 * Pointers to storages are guaranteed to be valid unless the underlying Storage instance is explicity destroyed.
 		 * A pointer is returned over a reference due to the possibility of misuse where a valid reference to a Storage may not exist. */
 		template <typename ComponentTy>
-		inline [[nodiscard]] ConstView<Storage<ComponentTy>> GetStorage() noexcept;
+		inline [[nodiscard]] View<Storage<ComponentTy>> GetStorage() noexcept;
 	private:
 		/* Iterates through all entities in m_ReservedEntities and compares @entity's ID to each reserved entity's ID.
 		 * Returns true if a matching entity ID was found, false otherwise.
@@ -176,7 +176,7 @@ namespace CMEngine::ECS
 	}
 
 	template <typename ComponentTy>
-	inline [[nodiscard]] ConstView<Storage<ComponentTy>> ECS::GetStorage() noexcept
+	inline [[nodiscard]] View<Storage<ComponentTy>> ECS::GetStorage() noexcept
 	{
 		using StorageTy = Storage<ComponentTy>;
 
