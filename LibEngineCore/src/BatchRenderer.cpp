@@ -9,8 +9,9 @@ namespace CMEngine::Renderer
 		  m_Graphics(graphics),
 		  m_AssetManager(assetManager)
 	{
-		constexpr size_t InitialVertexBufferSize = sizeof(Asset::Vertex) * 100;
-		constexpr size_t InitialIndexBufferSize = sizeof(Asset::Index) * 100;
+		/* approx. 10 kb of vertices... */
+		constexpr size_t InitialVertexBufferSize = (1024 * 10) / sizeof(Asset::Vertex);
+		constexpr size_t InitialIndexBufferSize = (1024) / sizeof(Asset::Index);
 
 		m_Vertices.reserve(InitialVertexBufferSize);
 		m_Indices.reserve(InitialIndexBufferSize);

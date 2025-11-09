@@ -4,7 +4,6 @@
 #include "Platform/WinImpl/IDXUploadable_WinImpl.hpp"
 
 #include <vector>
-
 #include <d3d11.h>
 
 namespace CMEngine::Platform::WinImpl

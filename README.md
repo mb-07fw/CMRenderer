@@ -47,3 +47,6 @@ cmake --build build
 
 Side note: Instead of using CMake to generate a .sln file for Visual Studio, I'd recommend using
 Visual Studio's native CMake integration by right-clicking on the project's root folder and clicking *"Open With Visual Studio"*.
+
+## Latest Screenshot
+![Latest Screenshot](https://github.com/mb-07fw/CMRenderer/blob/Test/screenshots/2025-11-9-(initial_batch_renderer).png)
