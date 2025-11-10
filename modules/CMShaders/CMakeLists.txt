@@ -78,6 +78,7 @@ set(VERTEX_SHADERS
 set(PIXEL_SHADERS 
     "${ROOT_DIR}/Quad_PS.hlsl"
     "${ROOT_DIR}/Gltf_Basic_PS.hlsl"
+    "${ROOT_DIR}/Gltf_Texture_PS.hlsl"
 )
 
 set(SHADER_FILES ${VERTEX_SHADERS} ${PIXEL_SHADERS})

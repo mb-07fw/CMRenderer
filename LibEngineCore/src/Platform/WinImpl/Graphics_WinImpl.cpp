@@ -1,6 +1,7 @@
 #include "PCH.hpp"
 #include "Platform/WinImpl/Platform_WinImpl.hpp"
 #include "Platform/WinImpl/Graphics_WinImpl.hpp"
+#include "Platform/WinImpl/Texture_WinImpl.hpp"
 #include "Platform/WinImpl/Types_WinImpl.hpp"
 #include "Platform/WinImpl/GPUBuffer_WinImpl.hpp"
 #include "Platform/WinImpl/InputLayout_WinImpl.hpp"
@@ -77,14 +78,28 @@ namespace CMEngine::Platform::WinImpl
 		}
 	}
 
-	void Graphics::Draw(uint32_t numVertices, uint32_t startVertexLocation) noexcept
+	void Graphics::Draw(
+		uint32_t numVertices,
+		uint32_t startVertexLocation
+	) noexcept
 	{
-		mP_Context->Draw(numVertices, startVertexLocation);
+		mP_Context->Draw(
+			numVertices,
+			startVertexLocation
+		);
 	}
 
-	void Graphics::DrawIndexed(uint32_t numIndices, uint32_t startIndexLocation, int32_t baseVertexLocation) noexcept
+	void Graphics::DrawIndexed(
+		uint32_t numIndices,
+		uint32_t startIndexLocation, 
+		int32_t baseVertexLocation
+	) noexcept
 	{
-		mP_Context->DrawIndexed(numIndices, startIndexLocation, baseVertexLocation);
+		mP_Context->DrawIndexed(
+			numIndices,
+			startIndexLocation,
+			baseVertexLocation
+		);
 	}
 
 	void Graphics::DrawIndexedInstanced(
@@ -104,9 +119,12 @@ namespace CMEngine::Platform::WinImpl
 		);
 	}
 
-	[[nodiscard]] Resource<IInputLayout> Graphics::CreateInputLayout(ShaderID vertexID, std::span<const InputElement> elements) noexcept
+	[[nodiscard]] Resource<IInputLayout> Graphics::CreateInputLayout(
+		std::span<const InputElement> elems,
+		ShaderID vertexID
+	) noexcept
 	{
-		Resource<InputLayout> pInputLayout = std::make_unique<InputLayout>(elements);
+		Resource<InputLayout> inputLayout = std::make_unique<InputLayout>(elems);
 
 		const ShaderData* pShaderData = m_ShaderRegistry.Retrieve(vertexID);
 
@@ -123,13 +141,13 @@ namespace CMEngine::Platform::WinImpl
 			return Resource<InputLayout>(nullptr);
 		}
 			
-		pInputLayout->Create(pShaderData->pBytecode, mP_Device);
-		return pInputLayout;
+		inputLayout->Create(pShaderData->pBytecode, mP_Device);
+		return inputLayout;
 	}
 
-	void Graphics::BindInputLayout(const Resource<IInputLayout>& pInputLayout) noexcept
+	void Graphics::BindInputLayout(const Resource<IInputLayout>& inputLayout) noexcept
 	{
-		InputLayout* pDerived = dynamic_cast<InputLayout*>(pInputLayout.get());
+		InputLayout* pDerived = dynamic_cast<InputLayout*>(inputLayout.get());
 
 		if (!pDerived)
 		{
@@ -144,9 +162,9 @@ namespace CMEngine::Platform::WinImpl
 		pDerived->Upload(mP_Context);
 	}
 
-	void Graphics::DumpInputLayout(const Resource<IInputLayout>& pInputLayout) noexcept
+	void Graphics::DumpInputLayout(const Resource<IInputLayout>& inputLayout) noexcept
 	{
-		InputLayout* pDerived = dynamic_cast<InputLayout*>(pInputLayout.get());
+		InputLayout* pDerived = dynamic_cast<InputLayout*>(inputLayout.get());
 
 		if (!pDerived)
 		{
@@ -196,6 +214,33 @@ namespace CMEngine::Platform::WinImpl
 		std::cout << '\n';
 	}
 
+	[[nodiscard]] Resource<ITexture> Graphics::CreateTexture(std::span<std::byte> data) noexcept
+	{
+		Resource<Texture> texture = std::make_unique<Texture>();
+
+		texture->Create(data, mP_Device);
+		return texture;
+	}
+
+	void Graphics::BindTexture(
+		const Resource<ITexture>& texture
+	) noexcept
+	{
+		Texture* pTexture = dynamic_cast<Texture*>(texture.get());
+
+		if (!pTexture)
+		{
+			spdlog::warn(
+				"(WinImpl_Graphics) [BindTexture] Internal warning: Attempted to bind a texture "
+				"that was either nullptr, or not of type derived from ITexture or IDXUploadable."
+			);
+
+			return;
+		}
+
+		pTexture->Upload(mP_Context);
+	}
+
 	[[nodiscard]] Resource<IBuffer> Graphics::CreateBuffer(GPUBufferType type, GPUBufferFlag flags) noexcept
 	{
 		switch (type)
@@ -212,9 +257,9 @@ namespace CMEngine::Platform::WinImpl
 		}
 	}
 
-	void Graphics::SetBuffer(const Resource<IBuffer>& pBuffer, const void* pData, size_t numBytes) noexcept
+	void Graphics::SetBuffer(const Resource<IBuffer>& buffer, const void* pData, size_t numBytes) noexcept
 	{
-		IGPUBuffer* pDerived = dynamic_cast<IGPUBuffer*>(pBuffer.get());
+		IGPUBuffer* pDerived = dynamic_cast<IGPUBuffer*>(buffer.get());
 
 		if (!pDerived)
 		{
@@ -228,9 +273,9 @@ namespace CMEngine::Platform::WinImpl
 			pDerived->Create(pData, numBytes, mP_Device);
 	}
 
-	void Graphics::BindVertexBuffer(const Resource<IBuffer>& pBuffer, uint32_t strideBytes, uint32_t offsetBytes, uint32_t slot) noexcept
+	void Graphics::BindVertexBuffer(const Resource<IBuffer>& buffer, uint32_t strideBytes, uint32_t offsetBytes, uint32_t slot) noexcept
 	{
-		VertexBuffer* pDerivedVB = dynamic_cast<VertexBuffer*>(pBuffer.get());
+		VertexBuffer* pDerivedVB = dynamic_cast<VertexBuffer*>(buffer.get());
 
 		if (!pDerivedVB)
 		{
@@ -244,9 +289,9 @@ namespace CMEngine::Platform::WinImpl
 		pDerivedVB->Upload(mP_Context);
 	}
 
-	void Graphics::BindIndexBuffer(const Resource<IBuffer>& pBuffer, DataFormat indexFormat, uint32_t startIndex) noexcept
+	void Graphics::BindIndexBuffer(const Resource<IBuffer>& buffer, DataFormat indexFormat, uint32_t startIndex) noexcept
 	{
-		IndexBuffer* pDerivedIB = dynamic_cast<IndexBuffer*>(pBuffer.get());
+		IndexBuffer* pDerivedIB = dynamic_cast<IndexBuffer*>(buffer.get());
 
 		if (!pDerivedIB)
 		{
@@ -259,9 +304,9 @@ namespace CMEngine::Platform::WinImpl
 		pDerivedIB->Upload(mP_Context);
 	}
 
-	[[nodiscard]] void Graphics::BindConstantBufferVS(const Resource<IBuffer>& pBuffer, uint32_t slot) noexcept
+	[[nodiscard]] void Graphics::BindConstantBufferVS(const Resource<IBuffer>& buffer, uint32_t slot) noexcept
 	{
-		ConstantBuffer* pDerivedCB = dynamic_cast<ConstantBuffer*>(pBuffer.get());
+		ConstantBuffer* pDerivedCB = dynamic_cast<ConstantBuffer*>(buffer.get());
 
 		if (!pDerivedCB)
 		{
@@ -274,9 +319,9 @@ namespace CMEngine::Platform::WinImpl
 		pDerivedCB->Upload(mP_Context);
 	}
 
-	[[nodiscard]] void Graphics::BindConstantBufferPS(const Resource<IBuffer>& pBuffer, uint32_t slot) noexcept
+	[[nodiscard]] void Graphics::BindConstantBufferPS(const Resource<IBuffer>& buffer, uint32_t slot) noexcept
 	{
-		ConstantBuffer* pDerivedCB = dynamic_cast<ConstantBuffer*>(pBuffer.get());
+		ConstantBuffer* pDerivedCB = dynamic_cast<ConstantBuffer*>(buffer.get());
 
 		if (!pDerivedCB)
 		{
@@ -398,12 +443,12 @@ namespace CMEngine::Platform::WinImpl
 
 		mP_SwapChain->GetDesc(&scDesc);
 
-		Float2 resolution(
+		Float2 res(
 			static_cast<float>(scDesc.BufferDesc.Width),
 			static_cast<float>(scDesc.BufferDesc.Height)
 		);
 
-		SetViewport(resolution);
+		SetViewport(res);
 
 		m_ShaderRegistry.CreateShaders(mP_Device);
 
@@ -499,10 +544,10 @@ namespace CMEngine::Platform::WinImpl
 		ReleaseD2DViews();
 	}
 
-	void Graphics::SetViewport(Float2 resolution) noexcept
+	void Graphics::SetViewport(Float2 res) noexcept
 	{
 		CD3D11_VIEWPORT viewport(
-			0.0f, 0.0f, resolution.x, resolution.y
+			0.0f, 0.0f, res.x, res.y
 		);
 
 		mP_Context->RSSetViewports(1, &viewport);
@@ -510,7 +555,7 @@ namespace CMEngine::Platform::WinImpl
 		mP_Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
-	void Graphics::OnResizeCallback(Float2 resolution) noexcept
+	void Graphics::OnResizeCallback(Float2 res) noexcept
 	{
 		mP_Context->ClearState();
 		mP_Context->Flush();
@@ -536,12 +581,12 @@ namespace CMEngine::Platform::WinImpl
 		CreateViews();
 		BindViews();
 
-		SetViewport(resolution);
+		SetViewport(res);
 	}
 
-	void Graphics::OnResizeThunk(Float2 resolution, void* pThis) noexcept
+	void Graphics::OnResizeThunk(Float2 res, void* pThis) noexcept
 	{
-		reinterpret_cast<Graphics*>(pThis)->OnResizeCallback(resolution);
+		reinterpret_cast<Graphics*>(pThis)->OnResizeCallback(res);
 	}
 
 	[[nodiscard]] bool Graphics::IsGraphicsDebugging() const noexcept
@@ -660,14 +705,19 @@ namespace CMEngine::Platform::WinImpl
 		mP_D2D_RT->EndDraw();
 	}
 
-	void Graphics::D2DDrawText(const std::wstring_view& text, const Float2& pos, const Float2& resolution, const Color4& color) noexcept
+	void Graphics::D2DDrawText(
+		const std::wstring_view& text,
+		const Float2& pos,
+		const Float2& res,
+		const Color4& color
+	) noexcept
 	{
 		if (IsGraphicsDebugging())
 			return;
 
-		D2D1_RECT_F layoutRect = ToD2D1RectF(pos, resolution);
-
 		mP_D2D_SC_Brush->SetColor(ToD2D1ColorF(color));
+
+		D2D1_RECT_F layoutRect = ToD2D1RectF(pos, res);
 
 		mP_D2D_RT->DrawText(
 			text.data(),
@@ -678,14 +728,14 @@ namespace CMEngine::Platform::WinImpl
 		);
 	}
 
-	void Graphics::D2DDrawRect(const Float2& pos, const Float2& resolution, const Color4& color) noexcept
+	void Graphics::D2DDrawRect(const Float2& pos, const Float2& res, const Color4& color) noexcept
 	{
 		if (IsGraphicsDebugging())
 			return;
 
-		D2D1_RECT_F layoutRect = ToD2D1RectF(pos, resolution);
-
 		mP_D2D_SC_Brush->SetColor(ToD2D1ColorF(color));
+
+		D2D1_RECT_F layoutRect = ToD2D1RectF(pos, res);
 
 		mP_D2D_RT->DrawRectangle(layoutRect, mP_D2D_SC_Brush.Get());
 	}

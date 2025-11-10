@@ -1,6 +1,7 @@
 #include "PCH.hpp"
 #include "BatchRenderer.hpp"
 #include "Types.hpp"
+#include "Log.hpp"
 
 namespace CMEngine::Renderer
 {
@@ -62,8 +63,8 @@ namespace CMEngine::Renderer
 
 		ShaderID gltfBasicVertexId = m_Graphics.GetShader(L"Gltf_Basic_VS");
 		m_IL_Basic = m_Graphics.CreateInputLayout(
-			gltfBasicVertexId,
-			std::span<const InputElement>(Elements.data(), Elements.size())
+			std::span<const InputElement>(Elements.data(), Elements.size()),
+			gltfBasicVertexId
 		);
 	}
 
@@ -84,12 +85,6 @@ namespace CMEngine::Renderer
 	{
 		if (m_MeshSubmitted)
 		{
-			/* Note: This is essentially throwing away copying work done for any previous meshes,
-			 *		   not the best long term strategy. 
-			 */
-			m_Vertices.clear();
-			m_Indices.clear();
-
 			CollectMeshes();
 
 			m_Graphics.SetBuffer(m_VB_Vertices, m_Vertices.data(), m_Vertices.size() * sizeof(Asset::Vertex));
@@ -121,136 +116,118 @@ namespace CMEngine::Renderer
 		m_Graphics.SetBuffer(m_VB_Instances, m_Instances.data(), m_Instances.size() * sizeof(BatchInstance));
 	}
 
-	void BatchRenderer::SubmitMesh(ECS::Entity e) noexcept
+	void BatchRenderer::SubmitMesh(MeshComponent mesh) noexcept
 	{
-		auto mesh = m_ECS.TryGetComponent<MeshComponent>(e);
-		auto material = m_ECS.TryGetComponent<MaterialComponent>(e);
-
-		if (mesh.Null() || material.Null())
-			return;
-		else if (m_MeshMetadata.find(mesh->ID) != m_MeshMetadata.end())
+		if (m_MeshMetadata.find(mesh.ID) != m_MeshMetadata.end())
 			return;
 
-		m_SubmittedMeshes.emplace_back(e);
+		m_SubmittedMeshes.emplace_back(mesh);
 		m_MeshSubmitted = true;
 	}
 
 	void BatchRenderer::SubmitInstance(
+		ECS::Entity e,
 		Asset::AssetID meshID,
 		Asset::AssetID materialID,
-		ECS::Entity e
+		Asset::AssetID textureID
 	) noexcept
 	{
-		m_Batches[Key(meshID, materialID)].Instances.emplace_back(e);
+		if (!meshID || !materialID)
+			return;
+
+		m_Batches[Key(e, meshID, materialID, textureID)].Instances.emplace_back(e);
 	}
 
 	void BatchRenderer::CollectMeshes() noexcept
 	{
-		/* Ensure all homogenous entries (Mesh and Material id's) are grouped together
-		 * to minimize state changes through differing materials, and so that all mesh data can be
-		 * pooled in the order that the entities are contained. */
-		std::sort(
-			m_SubmittedMeshes.begin(),
-			m_SubmittedMeshes.end(),
-			[&](ECS::Entity a, ECS::Entity b)
-			{
-				auto meshA = m_ECS.TryGetComponent<MeshComponent>(a);
-				auto meshB = m_ECS.TryGetComponent<MeshComponent>(b);
-
-				auto materialA = m_ECS.TryGetComponent<MaterialComponent>(a);
-				auto materialB = m_ECS.TryGetComponent<MaterialComponent>(b);
-
-				if (meshA.Null() || materialA.Null() ||
-					meshB.Null() || materialB.Null())
-					return false;
-
-				/* Priority ordering is | Mesh ID | Material ID |
-				 * ex) a = (0, 0)
-				 *	   b = (0, 1)
-				 *	   c = (0, 0) 
-				 *	   d = (1, 0) 
-				 *     e = (0, 2)
-				 * 
-				 * Final order: a, c, b, e, d */
-				if (meshA->ID != meshB->ID)
-					return meshA->ID < meshB->ID;
-				else
-					return materialA->ID < materialB->ID;
-			}
-		);
-
 		size_t totalVertices = 0;
 		size_t totalIndices = 0;
 
-		/* First iteration to get total element size of vertex and index buffers... */
-		for (ECS::Entity e : m_SubmittedMeshes)
-		{
-			auto mesh = m_ECS.GetComponent<MeshComponent>(e);
+		/* Remove all submitted meshes with an invalid mesh id... */
+		std::erase_if(
+			m_SubmittedMeshes,
+			[&](const MeshComponent& mesh)
+			{
+				ConstView<Asset::Mesh> meshAsset;
+				m_AssetManager.GetMesh(mesh.ID, meshAsset);
 
-			/* Mesh data is already present, no need to copy again. */
-			if (m_MeshMetadata.find(mesh.ID) != m_MeshMetadata.end())
-				continue;
+				/* No associated mesh asset...  */
+				if (meshAsset.Null())
+					return true;
 
-			ConstView<Asset::Mesh> meshAsset;
-			m_AssetManager.GetMesh(mesh.ID, meshAsset);
+				/* Accumulate total buffer sizes while meshes are retrieved... */
+				totalVertices += meshAsset->Data.Vertices.size();
+				totalIndices += meshAsset->Data.Indices.size();
 
-			CM_ENGINE_ASSERT(meshAsset.NonNull());
+				return false;
+			}
+		);
 
-			totalVertices += meshAsset->Data.Vertices.size();
-			totalIndices += meshAsset->Data.Indices.size();
-		}
-
-		/* Resize to ensure elements are valid (size is reflected). */
 		m_Vertices.resize(totalVertices);
 		m_Indices.resize(totalIndices);
 
-		size_t currentVertexOffset = 0;
-		size_t currentIndexOffset = 0;
+		uint32_t offsetVertices = 0;
+		uint32_t offsetIndices = 0;
 
-		/* Second iteration to copy all data... */
-		for (ECS::Entity e : m_SubmittedMeshes)
+		uint32_t currentOffsetVertices = 0;
+		uint32_t currentOffsetIndices = 0;
+
+		for (const MeshComponent& mesh : m_SubmittedMeshes)
 		{
-			auto mesh = m_ECS.GetComponent<MeshComponent>(e);
-			auto material = m_ECS.GetComponent<MaterialComponent>(e);
-
-			/* Mesh data is already present, no need to copy again. */
-			if (m_MeshMetadata.find(mesh.ID) != m_MeshMetadata.end())
-				continue;
-
 			ConstView<Asset::Mesh> meshAsset;
 			m_AssetManager.GetMesh(mesh.ID, meshAsset);
 
-			CM_ENGINE_ASSERT(meshAsset.NonNull());
+			/* Null checks aren't necessary because of previous filtering... */
+			const auto& vertices = meshAsset->Data.Vertices;
+			const auto& indices = meshAsset->Data.Indices;
 
-			const std::vector<Asset::Vertex>& vertices = meshAsset->Data.Vertices;
-			const std::vector<Asset::Index>& indices = meshAsset->Data.Indices;
+			currentOffsetVertices = offsetVertices;
+			currentOffsetIndices = offsetIndices;
 
-			size_t verticesSizeBytes = sizeof(Asset::Vertex) * vertices.size();
-			size_t indicesSizeBytes = sizeof(Asset::Index) * indices.size();
+			offsetVertices += (uint32_t)vertices.size();
+			offsetIndices += (uint32_t)indices.size();
 
-			std::memcpy(
-				&m_Vertices[currentVertexOffset],
-				vertices.data(),
-				verticesSizeBytes
-			);
+			auto it = m_MeshMetadata.find(mesh.ID);
+			bool metadataExists = it != m_MeshMetadata.end();
 
-			std::memcpy(
-				&m_Indices[currentIndexOffset],
-				indices.data(),
-				indicesSizeBytes
-			);
+			bool verticesRequireCopy = !metadataExists ||
+				it->second.OffsetVertices != (int32_t)currentOffsetVertices;
+
+			bool indicesRequireCopy = !metadataExists ||
+				it->second.OffsetIndices != currentOffsetIndices;
+
+			if (!verticesRequireCopy &&
+				!indicesRequireCopy)
+				continue;
+
+			if (verticesRequireCopy)
+				std::memcpy(
+					std::to_address(m_Vertices.begin() + currentOffsetVertices),
+					vertices.data(),
+					sizeof(Asset::Vertex) * vertices.size()
+				);
+
+			if (indicesRequireCopy)
+				std::memcpy(
+					std::to_address(m_Indices.begin() + currentOffsetIndices),
+					indices.data(),
+					sizeof(Asset::Index) * indices.size()
+				);
+
+			/* Mesh data was present, but was re-copied due to layout change. */
+			if (metadataExists)
+			{
+				it->second.OffsetVertices = currentOffsetVertices;
+				it->second.OffsetIndices = currentOffsetIndices;
+				continue;
+			}
 
 			MeshMeta& metadata = m_MeshMetadata[mesh.ID];
-
 			metadata.MeshID = mesh.ID;
-			metadata.MaterialID = material.ID;
-			metadata.OffsetVertices = (int32_t)currentVertexOffset;
-			metadata.OffsetIndices = (uint32_t)currentIndexOffset;
+			metadata.OffsetVertices = currentOffsetVertices;
+			metadata.OffsetIndices = currentOffsetIndices;
 			metadata.NumVertices = (uint32_t)vertices.size();
 			metadata.NumIndices = (uint32_t)indices.size();
-
-			currentVertexOffset += vertices.size();
-			currentIndexOffset += indices.size();
 		}
 
 		m_MeshSubmitted = false;
@@ -260,6 +237,7 @@ namespace CMEngine::Renderer
 	{
 		ShaderID basicVSID = m_Graphics.GetShader(L"Gltf_Basic_VS");
 		ShaderID basicPSID = m_Graphics.GetShader(L"Gltf_Basic_PS");
+		ShaderID texturePSID = m_Graphics.GetShader(L"Gltf_Texture_PS");
 
 		constexpr uint32_t OffsetBytes = 0;
 		constexpr uint32_t StartIndex = 0;
@@ -270,30 +248,48 @@ namespace CMEngine::Renderer
 
 		m_Graphics.BindInputLayout(m_IL_Basic);
 
+		m_Graphics.BindShader(basicVSID);
+		m_Graphics.BindShader(basicPSID);
+
 		Asset::AssetID lastMaterialID;
-		for (const auto& [meshID, metadata] : m_MeshMetadata)
+		Asset::AssetID lastTextureID;
+
+		for (const auto& [key, batch] : m_Batches)
 		{
 			ConstView<Asset::Material> material;
-			m_AssetManager.GetMaterial(metadata.MaterialID, material);
+			m_AssetManager.GetMaterial(key.MaterialID, material);
 
 			CM_ENGINE_ASSERT(material.NonNull());
 
-			/* TODO: Do other stuff if entity has a TextureComponent... */
-			if (metadata.MaterialID != lastMaterialID)
+			if (key.MaterialID != lastMaterialID)
 			{
 				m_Graphics.SetBuffer(m_CB_Material, &material->Data, sizeof(material->Data));
 				m_Graphics.BindConstantBufferPS(m_CB_Material, S_CB_Material_Register);
 			}
 
-			lastMaterialID = metadata.MaterialID;
+			bool wasTextureDependent = lastTextureID.IsRegistered();
+			bool isTextureDependent = key.TextureID.IsRegistered();
+			bool differentTextureID = key.TextureID != lastTextureID;
 
-			/* TODO: Speciallized shaders need to be used depending of textures, lights, etc... */
-			if (m_Graphics.LastVS() != basicVSID)
-				m_Graphics.BindShader(basicVSID);
-			if (m_Graphics.LastPS() != basicPSID)
-				m_Graphics.BindShader(basicPSID);
+			lastMaterialID = key.MaterialID;
+			lastTextureID = key.TextureID;
 
-			Batch& batch = m_Batches[Key(metadata.MeshID, metadata.MaterialID)];
+			auto texture = m_ECS.TryGetComponent<TextureComponent>(key.Entity);
+
+			/* Current texture use is different from previous.. */
+			if (isTextureDependent != wasTextureDependent)
+				m_Graphics.BindShader(isTextureDependent ? texturePSID : basicPSID);
+
+
+			if (texture.NonNull() &&
+				isTextureDependent &&
+				differentTextureID)
+				m_Graphics.BindTexture(texture->Texture);
+
+			auto it = m_MeshMetadata.find(key.MeshID);
+			CM_ENGINE_ASSERT(it != m_MeshMetadata.end());
+
+			MeshMeta& metadata = it->second;
 
 			m_Graphics.DrawIndexedInstanced(
 				metadata.NumIndices,

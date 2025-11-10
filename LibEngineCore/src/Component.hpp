@@ -54,16 +54,6 @@ namespace CMEngine
 
 	struct Component {};
 
-	struct TextureComponent : public Component
-	{
-		inline TextureComponent(Asset::AssetID textureID) noexcept
-			: ID(textureID)
-		{
-		}
-
-		Asset::AssetID ID;
-	};
-
 	struct MaterialComponent : public Component
 	{
 		inline MaterialComponent(Asset::AssetID meshID) noexcept
@@ -72,6 +62,18 @@ namespace CMEngine
 		}
 
 		Asset::AssetID ID;
+	};
+
+	struct TextureComponent : public Component
+	{
+		inline TextureComponent(Asset::AssetID id, Resource<ITexture>&& texture) noexcept
+			: ID(id)
+		{
+			Texture = std::move(texture);
+		}
+
+		Asset::AssetID ID;
+		Resource<ITexture> Texture;
 	};
 
 	struct MeshComponent : public Component

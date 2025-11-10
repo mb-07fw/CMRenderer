@@ -6,7 +6,7 @@
 namespace CMEngine::Platform::WinImpl
 {
 	/* A pure virtual interface for an object that is bindable to the D3D11 pipeline. */
-	class IDXUploadable : public IUploadable
+	class IDXUploadable
 	{
 	public:
 		IDXUploadable() = default;

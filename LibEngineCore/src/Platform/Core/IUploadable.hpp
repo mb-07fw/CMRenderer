@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <concepts>
+#include <memory>
 
 namespace CMEngine
 {
@@ -11,6 +13,12 @@ namespace CMEngine
 		IUploadable() = default;
 		virtual ~IUploadable() = default;
 	};
+
+	template <typename T>
+	concept Uploadable = std::derived_from<T, IUploadable>;
+
+	template <Uploadable T>
+	using Resource = std::unique_ptr<T>;
 
 	class IBuffer : public IUploadable
 	{

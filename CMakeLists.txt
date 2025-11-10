@@ -68,8 +68,6 @@ function (SetTargetCommon target target_output_dir)
     SetTargetProperties(${target} ${target_output_dir})
 endfunction()
 
-# TODO: Mess with vendor settings to reduce build times.
-
 add_subdirectory("vendor/submodules/spdlog")
 add_subdirectory("vendor/submodules/DirectXTK")
 

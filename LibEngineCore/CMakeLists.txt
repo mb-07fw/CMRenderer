@@ -51,6 +51,7 @@ set(ENGINE_FILES
     "src/Platform/Core/IPlatformUtil.hpp"
     "src/Platform/Core/IWindow.hpp"
     "src/Platform/Core/IUploadable.hpp"
+    "src/Platform/Core/ITexture.hpp"
     "src/Platform/Core/InputElement.hpp"
     "src/Platform/Core/InputLayout.hpp"
     "src/Platform/Core/Shader.hpp"
@@ -71,6 +72,7 @@ if (WIN32)
         "src/Platform/WinImpl/PlatformUtil_WinImpl.hpp"
         "src/Platform/WinImpl/ShaderRegistry_WinImpl.hpp"
         "src/Platform/WinImpl/Window_WinImpl.hpp"
+        "src/Platform/WinImpl/Texture_WinImpl.hpp"
         "src/Platform/WinImpl/Types_WinImpl.hpp"
         "src/Platform/WinImpl/GPUBuffer_WinImpl.hpp"
         "src/Platform/WinImpl/InputLayout_WinImpl.hpp"
@@ -82,6 +84,7 @@ if (WIN32)
         "src/Platform/WinImpl/Window_WinImpl.cpp"
         "src/Platform/WinImpl/GPUBuffer_WinImpl.cpp"
         "src/Platform/WinImpl/InputLayout_WinImpl.cpp"
+        "src/Platform/WinImpl/Texture_WinImpl.cpp"
     )
 endif()
 
@@ -102,6 +105,7 @@ if (WIN32)
         PRIVATE Ole32
         # (UuidToString -- rpcdce.h)
         PRIVATE Rpcrt4.lib
+        PRIVATE DirectXTK
     )
 endif()
 

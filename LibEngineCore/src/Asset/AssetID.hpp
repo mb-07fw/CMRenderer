@@ -25,7 +25,7 @@ namespace CMEngine::Asset
 		Model, /* Overarching owner of any subsequent meshes / materials. */
 		Mesh,
 		Material,
-		Texture,
+		Texture
 	};
 
 	inline constexpr [[nodiscard]] bool IsValidAssetType(AssetType type) noexcept
@@ -65,6 +65,8 @@ namespace CMEngine::Asset
 		inline [[nodiscard]] bool IsValid() const noexcept { return m_Handle != S_INVALID_HANDLE; }
 		inline static [[nodiscard]] AssetID Invalid() noexcept { return AssetID{}; }
 
+		inline operator bool() const noexcept { return IsRegistered(); }
+		inline [[nodiscard]] bool operator!() const noexcept { return !IsRegistered(); }
 		[[nodiscard]] bool operator==(AssetID other) const noexcept;
 		[[nodiscard]] bool operator<(AssetID other) const noexcept;
 	private:

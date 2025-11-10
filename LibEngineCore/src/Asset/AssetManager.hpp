@@ -96,12 +96,15 @@ namespace CMEngine::Asset
 		 *    and then GetModel or GetMaterial with any of it's children.
 		 * May return an invalid AssetID if a file of @modelPath doesn't exist. */
 		Result LoadModel(const std::filesystem::path& modelPath, AssetID& outModelID) noexcept;
+
+		Result LoadTexture(const std::filesystem::path& modelPath, AssetID& outTextureID) noexcept;
 		
 		/* Note: The underlying pointers may become invalidated if the corresponding bucket of the asset type resizes via asset loading.
 		 *       Best practice should be ensuring ConstView's are temporary and synchronous. */
 		Result GetModel(AssetID id, ConstView<Model>& outModel) noexcept;
 		Result GetMesh(AssetID id, ConstView<Mesh>& outMesh) noexcept;
 		Result GetMaterial(AssetID id, ConstView<Material>& outMaterial) noexcept;
+		Result GetTexture(AssetID id, ConstView<Texture>& outTexture) noexcept;
 
 		/* Returns true if the handle was registered previously; false otherwise. */
 		bool Unregister(AssetID& outID) noexcept;
@@ -126,6 +129,7 @@ namespace CMEngine::Asset
 		std::unordered_map<AssetID, Model> m_ModelMap;
 		std::unordered_map<AssetID, Mesh> m_MeshMap;
 		std::unordered_map<AssetID, Material> m_MaterialMap;
+		std::unordered_map<AssetID, Texture> m_TextureMap;
 	};
 
 	template <typename MapTy, typename AssetTy>

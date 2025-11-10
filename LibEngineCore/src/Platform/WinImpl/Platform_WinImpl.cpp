@@ -57,6 +57,12 @@ namespace CMEngine::Platform::WinImpl
 		: m_Config(),
 		  m_Graphics(m_Window, m_Config)
 	{
+		CM_ENGINE_ASSERT(CoInitialize(nullptr) == S_OK);
+	}
+
+	Platform::~Platform() noexcept
+	{
+		CoUninitialize();
 	}
 
 	bool Platform::Update() noexcept

@@ -32,7 +32,7 @@ namespace CMEngine::Platform::WinImpl
 	{
 	public:
 		Platform() noexcept;
-		~Platform() = default;
+		~Platform() noexcept;
 
 		virtual bool Update() noexcept override;
 

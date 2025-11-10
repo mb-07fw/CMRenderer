@@ -19,6 +19,7 @@ namespace CMEngine
 		Quad_PS,
 		Gltf_Basic_VS,
 		Gltf_Basic_PS,
+		Gltf_Texture_PS,
 		Custom
 	};
 

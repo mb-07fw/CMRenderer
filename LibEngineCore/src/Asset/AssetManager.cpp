@@ -86,7 +86,7 @@ namespace CMEngine::Asset
 	{
 		if (!std::filesystem::exists(modelPath))
 		{
-			spdlog::warn(
+			CM_ENGINE_LOG_WARN(
 				"(AssetManager) Internal warning: Provided model path doesn't exist. Path: {}",
 				modelPath.generic_string()
 			);
@@ -177,6 +177,56 @@ namespace CMEngine::Asset
 		return ResultType::Succeeded;
 	}
 
+	Result AssetManager::LoadTexture(const std::filesystem::path& modelPath, AssetID& outTextureID) noexcept
+	{
+		if (!std::filesystem::exists(modelPath))
+		{
+			CM_ENGINE_LOG_WARN(
+				"(AssetManager) Internal warning: Provided texture path doesn't exist. Path: {}",
+				modelPath.generic_string()
+			);
+
+			return ResultType::Failed_File_Absent;
+		}
+
+		std::ifstream stream(modelPath, std::ios::binary);
+
+		if (!stream.is_open())
+		{
+			CM_ENGINE_LOG_WARN(
+				"(AssetManager) Internal warning: Failed to open texture file. Path: {}",
+				modelPath.generic_string()
+			);
+
+			return ResultType::Failed_File_Import;
+		}
+
+		size_t byteSize = std::filesystem::file_size(modelPath);
+
+		if (byteSize == 0)
+		{
+			CM_ENGINE_LOG_WARN(
+				"(AssetManager) Internal warning: Texture file is empty. (byte size is 0) Path: {}",
+				modelPath.generic_string()
+			);
+
+			return ResultType::Failed_File_Import;
+		}
+
+		outTextureID = AssetID::Registered(AssetType::Texture, NextGlobalID());
+		Texture& texture = m_TextureMap[outTextureID];
+
+		texture.pBuffer = std::move(std::unique_ptr<std::byte>(new std::byte[byteSize]));
+		texture.SizeBytes = byteSize;
+
+		stream.read(
+			reinterpret_cast<char*>(texture.pBuffer.get()),
+			static_cast<std::streamsize>(texture.SizeBytes)
+		);
+
+		return ResultType::Succeeded;
+	}
+
 	Result AssetManager::GetModel(AssetID id, ConstView<Model>& outModel) noexcept
 	{
 		using MapTy = decltype(m_ModelMap);
@@ -193,6 +243,12 @@ namespace CMEngine::Asset
 	{
 		using MapTy = decltype(m_MaterialMap);
 		return GetAsset<MapTy, Material>(m_MaterialMap, AssetType::Material, id, outMaterial);
+	}
+
+	Result AssetManager::GetTexture(AssetID id, ConstView<Texture>& outTexture) noexcept
+	{
+		using MapTy = decltype(m_TextureMap);
+		return GetAsset<MapTy, Texture>(m_TextureMap, AssetType::Texture, id, outTexture);
 	}
 
 	bool AssetManager::Unregister(AssetID& outID) noexcept

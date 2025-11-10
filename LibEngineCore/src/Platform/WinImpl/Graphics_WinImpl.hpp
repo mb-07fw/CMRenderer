@@ -2,6 +2,7 @@
 
 #include "Macros.hpp"
 #include "Platform/Core/IGraphics.hpp"
+#include "Platform/Core/ITexture.hpp"
 #include "Platform/WinImpl/PlatformOSFwd_WinImpl.hpp"
 #include "Platform/WinImpl/Window_WinImpl.hpp"
 #include "Platform/WinImpl/ShaderRegistry_WinImpl.hpp"
@@ -10,10 +11,8 @@
 #include <assimp/Importer.hpp>
 
 #include <d3d11.h>
-
 #include <d2d1.h>
 #include <dwrite.h>
-
 #include <dxgi.h>
 #include <dxgi1_5.h>
 #include <dxgidebug.h>
@@ -29,6 +28,9 @@ namespace CMEngine::Platform::WinImpl
 {
 	struct PlatformConfig;
 
+	inline [[nodiscard]] D2D1::ColorF ToD2D1ColorF(const Color4& color) noexcept;
+	inline [[nodiscard]] D2D1_RECT_F ToD2D1RectF(const Float2& pos, const Float2& res) noexcept;
+
 	class Graphics : public IGraphics
 	{
 	public:
@@ -39,11 +41,19 @@ namespace CMEngine::Platform::WinImpl
 		Graphics& operator=(const Graphics& other) = delete;
 	public:
 		virtual void Clear(const Color4& color) noexcept override;
+
 		virtual void Present() noexcept override;
 
-		virtual void Draw(uint32_t numVertices, uint32_t startVertexLocation) noexcept override;
+		virtual void Draw(
+			uint32_t numVertices,
+			uint32_t startVertexLocation
+		) noexcept override;
 
-		void DrawIndexed(uint32_t numIndices, uint32_t startIndexLocation, int32_t baseVertexLocation) noexcept;
+		virtual void DrawIndexed(
+			uint32_t numIndices,
+			uint32_t startIndexLocation,
+			int32_t baseVertexLocation
+		) noexcept override;
 
 		virtual void DrawIndexedInstanced(
 			uint32_t indicesPerInstance,
@@ -53,17 +63,60 @@ namespace CMEngine::Platform::WinImpl
 			uint32_t startInstanceLocation
 		) noexcept override;
 
-		virtual [[nodiscard]] Resource<IInputLayout> CreateInputLayout(ShaderID vertexID, std::span<const InputElement> elements) noexcept override;
-		virtual void BindInputLayout(const Resource<IInputLayout>& pInputLayout) noexcept override;
-		void DumpInputLayout(const Resource<IInputLayout>& pInputLayout) noexcept;
+		virtual [[nodiscard]] Resource<IInputLayout> CreateInputLayout(
+			std::span<const InputElement> elems,
+			ShaderID vertexID
+		) noexcept override;
 
-		virtual [[nodiscard]] Resource<IBuffer> CreateBuffer(GPUBufferType type, GPUBufferFlag flags = GPUBufferFlag::Default) noexcept override;
-		virtual void SetBuffer(const Resource<IBuffer>& pBuffer, const void* pData, size_t numBytes) noexcept override;
+		virtual void BindInputLayout(
+			const Resource<IInputLayout>& inputLayout
+		) noexcept override;
 
-		virtual void BindVertexBuffer(const Resource<IBuffer>& pBuffer, uint32_t strideBytes, uint32_t offsetBytes, uint32_t slot) noexcept override;
-		virtual void BindIndexBuffer(const Resource<IBuffer>& pBuffer, DataFormat indexFormat, uint32_t startIndex) noexcept override;
-		virtual void BindConstantBufferVS(const Resource<IBuffer>& pBuffer, uint32_t slot) noexcept override;
-		virtual void BindConstantBufferPS(const Resource<IBuffer>& pBuffer, uint32_t slot) noexcept override;
+		void DumpInputLayout(
+			const Resource<IInputLayout>& inputLayout
+		) noexcept;
+
+		virtual [[nodiscard]] Resource<ITexture> CreateTexture(
+			std::span<std::byte> data
+		) noexcept override;
+
+		virtual void BindTexture(
+			const Resource<ITexture>& texture
+		) noexcept override;
+
+		virtual [[nodiscard]] Resource<IBuffer> CreateBuffer(
+			GPUBufferType type, 
+			GPUBufferFlag flags = GPUBufferFlag::Default
+		) noexcept override;
+
+		virtual void SetBuffer(
+			const Resource<IBuffer>& buffer,
+			const void* pData,
+			size_t numBytes
+		) noexcept override;
+
+		virtual void BindVertexBuffer(
+			const Resource<IBuffer>& buffer,
+			uint32_t strideBytes,
+			uint32_t offsetBytes,
+			uint32_t slot
+		) noexcept override;
+
+		virtual void BindIndexBuffer(
+			const Resource<IBuffer>& buffer,
+			DataFormat indexFormat,
+			uint32_t startIndex
+		) noexcept override;
+
+		virtual void BindConstantBufferVS(
+			const Resource<IBuffer>& buffer,
+			uint32_t slot
+		) noexcept override;
+
+		virtual void BindConstantBufferPS(
+			const Resource<IBuffer>& buffer,
+			uint32_t slot
+		) noexcept override;
 
 		[[nodiscard]] ShaderID GetShader(std::wstring_view shaderName) noexcept;
 		void BindShader(ShaderID id) noexcept;
@@ -93,11 +146,18 @@ namespace CMEngine::Platform::WinImpl
 		void D2DBeginDraw() noexcept;
 		void D2DEndDraw() noexcept;
 
-		void D2DDrawText(const std::wstring_view& text, const Float2& pos, const Float2& resolution, const Color4& color) noexcept;
-		void D2DDrawRect(const Float2& pos, const Float2& resolution, const Color4& color) noexcept;
+		void D2DDrawText(
+			const std::wstring_view& text,
+			const Float2& pos,
+			const Float2& res,
+			const Color4& color
+		) noexcept;
 
-		inline [[nodiscard]] D2D1::ColorF ToD2D1ColorF(const Color4& color) const noexcept;
-		inline [[nodiscard]] D2D1_RECT_F ToD2D1RectF(const Float2& pos, const Float2& resolution) const noexcept;
+		void D2DDrawRect(
+			const Float2& pos,
+			const Float2& res,
+			const Color4& color
+		) noexcept;
 	private:
 		Window& m_Window; /* TODO: Come up with a better solution for this dependency... */
 		const PlatformConfig& m_Config;
@@ -121,7 +181,7 @@ namespace CMEngine::Platform::WinImpl
 		bool m_LoadedDebugLayer = false;
 	};
 
-	inline [[nodiscard]] D2D1::ColorF Graphics::ToD2D1ColorF(const Color4& color) const noexcept
+	inline [[nodiscard]] D2D1::ColorF ToD2D1ColorF(const Color4& color) noexcept
 	{
 		return D2D1::ColorF(
 			color.r(),
@@ -131,13 +191,13 @@ namespace CMEngine::Platform::WinImpl
 		);
 	}
 
-	inline [[nodiscard]] D2D1_RECT_F Graphics::ToD2D1RectF(const Float2& pos, const Float2& resolution) const noexcept
+	inline [[nodiscard]] D2D1_RECT_F ToD2D1RectF(const Float2& pos, const Float2& res) noexcept
 	{
 		return D2D1::RectF(
 			pos.x,
 			pos.y,
-			resolution.x + pos.x,
-			resolution.y + pos.y
+			res.x + pos.x,
+			res.y + pos.y
 		);
 	}
 }

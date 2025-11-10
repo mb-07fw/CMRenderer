@@ -95,6 +95,7 @@ namespace CMEngine::Platform::WinImpl
 		std::unordered_map<std::wstring, ShaderID> m_ShaderNames = {
 			{ { L"Gltf_Basic_VS" }, { m_NextShaderIndex++, ShaderType::Vertex, AssignedShaderType::Gltf_Basic_VS } },
 			{ { L"Gltf_Basic_PS" }, { m_NextShaderIndex++, ShaderType::Pixel,  AssignedShaderType::Gltf_Basic_PS } },
+			{ { L"Gltf_Texture_PS" }, { m_NextShaderIndex++, ShaderType::Pixel,  AssignedShaderType::Gltf_Texture_PS } },
 			{ { L"Quad_VS" }, { m_NextShaderIndex++, ShaderType::Vertex, AssignedShaderType::Quad_VS } },
 			{ { L"Quad_PS" }, { m_NextShaderIndex++, ShaderType::Pixel,  AssignedShaderType::Quad_PS } }
 		};

@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <condition_variable>
 #include <filesystem>
+#include <fstream>
 #include <functional>
 #include <iostream>
 #include <limits>

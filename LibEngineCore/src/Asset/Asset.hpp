@@ -1,10 +1,12 @@
 #pragma once
 
+#include "Platform/Core/ITexture.hpp"
 #include "Asset/AssetID.hpp"
 #include "Types.hpp"
 
 #include <cstdint>
 #include <vector>
+#include <memory>
 
 namespace CMEngine::Asset
 {
@@ -25,9 +27,7 @@ namespace CMEngine::Asset
 
 	struct MaterialData
 	{
-		inline MaterialData() noexcept
-		{
-		}
+		MaterialData() = default;
 
 		inline MaterialData(
 			const Color4& baseColor,
@@ -69,6 +69,26 @@ namespace CMEngine::Asset
 		std::vector<AssetID> Materials;
 	};
 
+	struct Mesh : public Asset
+	{
+		inline Mesh(const MeshData& data) noexcept
+			: Asset(AssetType::Mesh),
+			Data(data)
+		{
+		}
+
+		inline Mesh() noexcept
+			: Asset(AssetType::Mesh)
+		{
+		}
+
+		~Mesh() = default;
+
+		MeshData Data;
+		AssetID ModelID;
+		uint32_t Index = 0;
+	};
+
 	struct Material : public Asset
 	{
 		inline Material() noexcept
@@ -100,23 +120,14 @@ namespace CMEngine::Asset
 		uint32_t Index = 0;
 	};
 
-	struct Mesh : public Asset
+	struct Texture : public Asset
 	{
-		inline Mesh(const MeshData& data) noexcept
-			: Asset(AssetType::Mesh),
-			  Data(data)
+		inline Texture() noexcept
+			: Asset(AssetType::Texture)
 		{
 		}
 
-		inline Mesh() noexcept
-			: Asset(AssetType::Mesh)
-		{
-		}
-
-		~Mesh() = default;
-
-		MeshData Data;
-		AssetID ModelID;
-		uint32_t Index = 0;
+		std::unique_ptr<std::byte> pBuffer;
+		size_t SizeBytes = 0;
 	};
 }

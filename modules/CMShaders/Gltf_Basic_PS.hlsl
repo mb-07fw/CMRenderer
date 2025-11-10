@@ -5,7 +5,6 @@ struct PSInput
     float3 TexCoord : TEXCOORD2;
 };
 
-/* TODO: Implement texture support. */
 cbuffer MaterialCB : register(b0)
 {
     float4 BaseColor;

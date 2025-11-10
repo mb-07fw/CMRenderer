@@ -4,6 +4,7 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <fstream>
 
 namespace CMEngine::Editor
 {
@@ -57,7 +58,9 @@ namespace CMEngine::Editor
 		ecs.EmplaceComponent<MaterialComponent>(gameObj1, materialID);
 		ecs.EmplaceComponent<MaterialComponent>(gameObj2, materialID);
 
-		m_Core.Renderer().GetBatchRenderer().SubmitMesh(gameObj1);
+		auto mesh = ecs.GetComponent<MeshComponent>(gameObj1);
+
+		m_Core.Renderer().GetBatchRenderer().SubmitMesh(mesh);
 
 		Scene::SceneManager& sceneManager = m_Core.SceneManager();
 
@@ -84,6 +87,23 @@ namespace CMEngine::Editor
 
 		Scene::CameraSystem& cameraSystem = sceneManager.GetCameraSystem();
 		cameraSystem.SetMainCamera(cameraEntity);
+		
+		constexpr std::wstring_view TexturePath = ENGINE_EDITOR_RESOURCES_TEXTURE_DIRECTORYW L"/cat.png";
+		std::filesystem::path texturePath(TexturePath);
+
+		Asset::AssetID textureID;
+		result = assetManager.LoadTexture(texturePath, textureID);
+		CM_ENGINE_ASSERT(result.Succeeded());
+
+		ConstView<Asset::Texture> textureAsset;
+		assetManager.GetTexture(textureID, textureAsset);
+		CM_ENGINE_ASSERT(textureAsset.NonNull());
+
+		Resource<ITexture> texture = platform.GetGraphics().CreateTexture(
+			std::span<std::byte>(textureAsset->pBuffer.get(), textureAsset->SizeBytes)
+		);
+
+		ecs.EmplaceComponent<TextureComponent>(gameObj2, textureID, std::move(texture));
 	}
 
 	Editor::~Editor() noexcept
@@ -98,11 +118,9 @@ namespace CMEngine::Editor
 
 			m_Core.Update();
 
-			AGraphics& graphics = m_Core.Platform().GetGraphics();
 			Renderer::Renderer& renderer = m_Core.Renderer();
 			ECS::ECS& ecs = m_Core.ECS();
 			Scene::SceneManager& sceneManager = m_Core.SceneManager();
-			Asset::AssetManager& assetManager = m_Core.AssetManager();
 			Scene::Scene& scene = sceneManager.RetrieveScene(m_EditorSceneID);
 
 			renderer.StartFrame(Color4::Black());
@@ -116,8 +134,14 @@ namespace CMEngine::Editor
 				{
 					auto mesh = ecs.GetComponent<MeshComponent>(node.Entity);
 					auto material = ecs.GetComponent<MaterialComponent>(node.Entity);
+					auto texture = ecs.TryGetComponent<TextureComponent>(node.Entity);
 
-					batchRenderer.SubmitInstance(mesh.ID, material.ID, node.Entity);
+					batchRenderer.SubmitInstance(
+						node.Entity,
+						mesh.ID,
+						material.ID,
+						texture.NonNull() ? texture->ID : Asset::AssetID()
+					);
 				}
 
 			batchRenderer.EndBatch();

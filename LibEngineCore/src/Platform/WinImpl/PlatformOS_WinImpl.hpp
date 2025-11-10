@@ -59,6 +59,8 @@
 #include <wrl/client.h>
 #include <DirectXMath.h>
 
+#include "WICTextureLoader.h"
+
 /* (CoCreateGuid) */
 #include <combaseapi.h>
 
