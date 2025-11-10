@@ -29,6 +29,7 @@ namespace CMEngine::Scene
 		void DisplayTransformComponentWidget(TransformComponent& transform, uint32_t nodeIndex) noexcept;
 		void DisplayMeshComponentWidget(const MeshComponent& mesh, uint32_t nodeIndex) noexcept;
 		void DisplayMaterialComponentWidget(const MaterialComponent& material, uint32_t nodeIndex) noexcept;
+		void DisplayTextureComponentWidget(const TextureComponent& texture, uint32_t nodeIndex) noexcept;
 	private:
 		static constexpr size_t S_INVALID_SCENE_INDEX = ~static_cast<size_t>(0ull);
 		ECS::ECS& m_ECS;

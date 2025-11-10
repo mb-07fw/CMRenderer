@@ -45,6 +45,7 @@ namespace CMEngine::Renderer
 			return TextureID < rhs.TextureID;
 		}
 
+		/* TODO: Move to Batch as Representative (first entity added) */
 		ECS::Entity Entity; /* Not sorted, we don't care about any key's entity. */
 		Asset::AssetID MeshID;
 		Asset::AssetID MaterialID;

@@ -95,6 +95,9 @@ namespace CMEngine::Scene
 							if (auto component = m_ECS.TryGetComponent<MaterialComponent>(node.Entity);
 								component.NonNull())
 								DisplayMaterialComponentWidget(*component, currentNodeIndex);
+							if (auto component = m_ECS.TryGetComponent<TextureComponent>(node.Entity);
+								component.NonNull())
+								DisplayTextureComponentWidget(*component, currentNodeIndex);
 
 							break;
 						}
@@ -172,6 +175,15 @@ namespace CMEngine::Scene
 			return;
 
 		ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.9f, 1.0f), "MaterialID: %u", material.ID);
+		ImGui::TreePop();
+	}
+
+	void SceneManager::DisplayTextureComponentWidget(const TextureComponent& texture, uint32_t nodeIndex) noexcept
+	{
+		if (!ImGui::TreeNodeEx(ImGuiLabel("TextureComponent", nodeIndex).c_str(), ImGuiTreeNodeFlags_SpanAvailWidth))
+			return;
+
+		ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.9f, 1.0f), "TextureID: %u", texture.ID);
 		ImGui::TreePop();
 	}
 }
