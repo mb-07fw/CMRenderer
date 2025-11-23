@@ -1,20 +1,23 @@
+// Gltf_Basic_VS.hlsl
+#include "Common.hlsl"
+
 struct VSInput
 {
-    float3 Position : POSITION;
-    float3 Normal : NORMAL;
-    float3 TexCoord : TEXCOORD0;
+    CM_POSITION Position : POSITION;
+    CM_NORMAL Normal : NORMAL;
+    CM_TEXCOORD TexCoord : TEXCOORD0;
     float4 Inst_Transform_0 : INST_TRANSFORM0;
     float4 Inst_Transform_1 : INST_TRANSFORM1;
     float4 Inst_Transform_2 : INST_TRANSFORM2;
     float4 Inst_Transform_3 : INST_TRANSFORM3;
-};
+};  
 
 struct VSOutput
 {
-    float3 WorldPos : TEXCOORD0;
-    float3 Normal : TEXCOORD1;
-    float3 TexCoord : TEXCOORD2;
-    float4 PositionH : SV_Position; // clip space
+    CM_POSITION WorldPos : TEXCOORD0;
+    CM_NORMAL Normal : TEXCOORD1;
+    CM_TEXCOORD TexCoord : TEXCOORD2;
+    CM_POSITION_H PositionH : SV_Position; // homogenous clip space
 };
 
 cbuffer CBCameraProj : register(b0)

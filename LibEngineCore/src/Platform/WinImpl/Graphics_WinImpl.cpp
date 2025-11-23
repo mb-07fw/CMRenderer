@@ -417,7 +417,7 @@ namespace CMEngine::Platform::WinImpl
 				spdlog::warn("(WinImpl_Graphics) Internal warning: Failed to get Dxgidebug.dll module. Debug info will not be available. (Graphics Debugger interference?)");
 			else
 			{
-				spdlog::info("(WinImpl_Graphics) Internal info: Successfuly loaded Dxgidebug.dll modudle.");
+				spdlog::info("(WinImpl_Graphics) Internal info: Successfuly loaded Dxgidebug.dll module.");
 
 				using GetDXGIInfoQueueFunc = HRESULT(*)(REFIID, void**);
 				GetDXGIInfoQueueFunc pDXGIGetDebugInterfaceFunc = reinterpret_cast<GetDXGIInfoQueueFunc>(GetProcAddress(pDxgiDebugModule, "DXGIGetDebugInterface"));

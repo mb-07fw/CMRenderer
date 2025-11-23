@@ -44,7 +44,7 @@ namespace CMEngine::Renderer
 			InputElement(
 				"TEXCOORD",
 				0,
-				DataFormat::Float32x3,
+				DataFormat::Float32x2,
 				0,
 				G_InputElement_InferByteOffset,
 				InputClass::PerVertex,

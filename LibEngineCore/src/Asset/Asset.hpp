@@ -14,7 +14,7 @@ namespace CMEngine::Asset
 	{
 		Float3 Pos;
 		Float3 Normal;
-		Float3 TexCoord;
+		Float2 TexCoord;
 	};
 
 	using Index = uint16_t;

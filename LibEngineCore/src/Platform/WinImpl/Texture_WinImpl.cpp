@@ -21,7 +21,7 @@ namespace CMEngine::Platform::WinImpl
 			&mP_TextureView
 		);
 
-		CM_ENGINE_ASSERT(hr == S_OK);
+		CM_ENGINE_ASSERT(!FAILED(hr));
 
 		/* Used if D3D11_TEXTURE_ADDRESS_BORDER is provided for AddressU, AddressV, or AddressW. */
 		constexpr FLOAT BorderColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };

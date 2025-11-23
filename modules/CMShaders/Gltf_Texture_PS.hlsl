@@ -1,8 +1,11 @@
+// Gltf_Texture_PS.hlsl
+#include "Common.hlsl"
+
 struct PSInput
 {
-    float3 WorldPos : TEXCOORD0;
-    float3 Normal : TEXCOORD1;
-    float3 TexCoord : TEXCOORD2;
+    CM_POSITION WorldPos : TEXCOORD0;
+    CM_NORMAL Normal : TEXCOORD1;
+    CM_TEXCOORD TexCoord : TEXCOORD2;
 };
 
 cbuffer MaterialCB : register(b0)
@@ -12,10 +15,10 @@ cbuffer MaterialCB : register(b0)
     float Roughness;
 };
 
-Texture2D inTexture : register(t0);
-SamplerState samplerState : register(s0);
+Texture2D g_Texture : register(t0);
+SamplerState g_SamplerState : register(s0);
 
 float4 main( PSInput input ) : SV_Target
 {
-    return BaseColor * inTexture.Sample(samplerState, (float2) input.TexCoord);
+    return BaseColor * g_Texture.Sample(g_SamplerState, input.TexCoord);
 }

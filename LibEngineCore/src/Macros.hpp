@@ -3,7 +3,7 @@
 #include <spdlog/spdlog.h>
 
 #define CM_ENGINE_WIDEN_STR2(x) L ## x
-#define CM_ENGINE_WIDEN_STR(x) CM_WIDEN_STR2(x)
+#define CM_ENGINE_WIDEN_STR(x) CM_ENGINE_WIDEN_STR2(x)
 
 
 #ifdef _WIN32

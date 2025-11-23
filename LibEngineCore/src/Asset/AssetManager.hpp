@@ -3,9 +3,12 @@
 #include "Asset/Asset.hpp"
 #include "Types.hpp"
 
+#include <spdlog/logger.h>
+
 #include <unordered_map>
 #include <memory>
 #include <functional>
+#include <filesystem>
 
 namespace CMEngine::Asset
 {
@@ -83,6 +86,11 @@ namespace CMEngine::Asset
 
 	class ModelImporterImpl;
 
+	struct File
+	{
+		std::filesystem::path Path;
+	};
+
 	class AssetManager
 	{
 	public:
@@ -106,6 +114,8 @@ namespace CMEngine::Asset
 		Result GetMaterial(AssetID id, ConstView<Material>& outMaterial) noexcept;
 		Result GetTexture(AssetID id, ConstView<Texture>& outTexture) noexcept;
 
+		Result DumpMesh(AssetID id) noexcept;
+
 		/* Returns true if the handle was registered previously; false otherwise. */
 		bool Unregister(AssetID& outID) noexcept;
 
@@ -122,10 +132,13 @@ namespace CMEngine::Asset
 		[[nodiscard]] uint32_t NextGlobalID() noexcept;
 
 		void CleanupID(AssetID& outID) noexcept;
+
+		void DumpFloat3(std::ofstream& stream, const Float3& f3) noexcept;
 	private:
 		uint32_t m_TotalAssetCount = 0;
 		std::unique_ptr<ModelImporterImpl> mP_ModelImporter;
 		std::vector<GlobalID> m_FreeGlobalIDs;
+		std::unordered_map<AssetID, File> m_LoadedFiles;
 		std::unordered_map<AssetID, Model> m_ModelMap;
 		std::unordered_map<AssetID, Mesh> m_MeshMap;
 		std::unordered_map<AssetID, Material> m_MaterialMap;

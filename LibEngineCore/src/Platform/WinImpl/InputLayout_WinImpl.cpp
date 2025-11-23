@@ -45,6 +45,7 @@ namespace CMEngine::Platform::WinImpl
 
 		uint32_t instanceByteOffset = 0;
 		uint32_t vertexByteOffset = 0;
+
 		for (InputElement& element : m_Elements)
 		{
 			uint32_t& currentByteOffset = element.InputClass == InputClass::PerInstance ?
@@ -62,6 +63,7 @@ namespace CMEngine::Platform::WinImpl
 			desc.InputSlot = element.InputSlot;
 			desc.InputSlotClass = InputClassToD3D11(element.InputClass);
 			desc.InstanceDataStepRate = element.InstanceStepRate;
+			desc.AlignedByteOffset = element.AlignedByteOffset;
 
 			if (!IsMatrixFormat(element.Format))
 			{

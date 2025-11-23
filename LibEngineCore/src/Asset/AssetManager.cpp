@@ -40,9 +40,9 @@ namespace CMEngine::Asset
 
 			Float3 vertexF3(vertex.x, vertex.y, vertex.z);
 			Float3 normalF3(normal.x, normal.y, normal.z);
-			Float3 texCoordF3(texCoord.x, texCoord.y, texCoord.z);
+			Float2 texCoordF2(texCoord.x, texCoord.y);
 
-			mesh.Data.Vertices.emplace_back(vertexF3, normalF3, texCoordF3);
+			mesh.Data.Vertices.emplace_back(vertexF3, normalF3, texCoordF2);
 		}
 	}
 
@@ -113,6 +113,8 @@ namespace CMEngine::Asset
 
 		outModelID = AssetID::Registered(AssetType::Model, NextGlobalID());
 		Model& model = m_ModelMap[outModelID];
+		File& file = m_LoadedFiles[outModelID];
+		file.Path = modelPath;
 
 		model.Meshes.reserve(scene->mNumMeshes);
 		model.Materials.reserve(scene->mNumMaterials);
@@ -251,6 +253,114 @@ namespace CMEngine::Asset
 		return GetAsset<MapTy, Texture>(m_TextureMap, AssetType::Texture, id, outTexture);
 	}
 
+	Result AssetManager::DumpMesh(AssetID id) noexcept
+	{
+		ConstView<Mesh> mesh;
+		Result result = GetAsset<decltype(m_MeshMap), Mesh>(m_MeshMap, AssetType::Mesh, id, mesh);
+
+		if (!result)
+			return result;
+		else if (mesh.Null())
+			return ResultType::Failed;
+		
+		std::string assetIDStr = std::to_string(id.RawHandle());
+
+		std::string filename = "logs/Dump_Mesh_";
+		filename.append(assetIDStr);
+		filename.append(".txt");
+
+		const File* pFile = nullptr;
+		bool isDirect = false;
+		auto loadedFileIt = m_LoadedFiles.find(id);
+		if (loadedFileIt != m_LoadedFiles.end())
+		{
+			pFile = &loadedFileIt->second;
+			isDirect = true;
+		}
+		else
+		{
+			auto parentIt = m_LoadedFiles.find(mesh->ModelID);
+
+			if (parentIt != m_LoadedFiles.end())
+				pFile = &parentIt->second;
+		}
+
+		std::ofstream stream(filename);
+
+		if (!stream)
+		{
+			CM_ENGINE_LOG_WARN(
+				"(AssetManager) Internal warning: Failed to open target "
+				"dump file: {}",
+				filename
+			);
+
+			return ResultType::Failed_File_Serialize;
+		}
+
+		auto now = std::chrono::system_clock::now();
+		time_t timeCurrent = std::chrono::system_clock::to_time_t(now);
+		tm tm = spdlog::details::os::localtime(timeCurrent);
+
+		char timestampBuffer[64];
+		std::strftime(timestampBuffer, sizeof(timestampBuffer), "%Y-%m-%d_%H-%M-%S", &tm);
+
+/* Evil macro used to avoid extraneous string concatenations. */
+#define DUMP_SPACING "          "
+		constexpr std::string_view Header = "         [Position]                         [Normal]                         [TexCoord]";
+
+		stream << timestampBuffer << '\n';
+
+		if (pFile != nullptr)
+		{
+			if (isDirect)
+				stream << "Referenced file: ";
+			else
+				stream << "Parent file: ";
+			
+			stream << pFile->Path << "\n\n";
+		}
+
+		stream << Header << '\n';
+		stream << std::fixed << std::setprecision(3);
+		
+		size_t numVertices = mesh->Data.Vertices.size();
+		size_t vIndex = 0;
+		size_t previousDigitsOfIndex = 0;
+		size_t digitsOfNumVertices = std::to_string(numVertices).size();
+
+		std::string uniformSpacing(digitsOfNumVertices, ' ');
+		std::string currentSpacing = uniformSpacing;
+
+		for (const Vertex& v : mesh->Data.Vertices)
+		{
+			std::string vIndexStr = std::to_string(vIndex);
+			size_t currentDigitsOfIndex = vIndexStr.size();
+
+			/* So spacing for each vertex is uniform... */
+			if (vIndexStr.size() != previousDigitsOfIndex)
+				currentSpacing = uniformSpacing.substr(0, uniformSpacing.size() - (currentDigitsOfIndex - 1));
+
+			previousDigitsOfIndex = currentDigitsOfIndex;
+
+			stream << vIndexStr << ':' << currentSpacing;
+			vIndex++;
+
+			DumpFloat3(stream, v.Pos);
+			stream << DUMP_SPACING;
+
+			DumpFloat3(stream, v.Normal);
+			stream << DUMP_SPACING;
+
+			DumpFloat3(stream, v.TexCoord);
+
+			if (vIndex != numVertices)
+				stream << '\n';
+		}
+#undef DUMP_SPACING
+		return ResultType::Succeeded;
+	}
+
 	bool AssetManager::Unregister(AssetID& outID) noexcept
 	{
 		if (!outID.IsRegistered())
@@ -307,5 +417,29 @@ namespace CMEngine::Asset
 		}
 
 		m_FreeGlobalIDs.emplace_back(outHandle.GlobalID());
+	}
+
+	void AssetManager::DumpFloat3(std::ofstream& stream, const Float3& f3) noexcept
+	{
+		auto clean = [](float v) {
+			return (std::fabs(v) < 1e-6f) ? 0.0f : v;
+		};
+
+		stream << "(";
+
+		if (f3.x >= 0)
+			stream << " ";
+
+		stream << clean(f3.x) << ", ";
+
+		if (f3.y >= 0)
+			stream << " ";
+
+		stream << clean(f3.y) << ", ";
+
+		if (f3.z >= 0)
+			stream << " ";
+
+		stream << clean(f3.z) << ")";
 	}
 }

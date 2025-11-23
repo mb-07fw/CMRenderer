@@ -20,6 +20,7 @@ namespace CMEngine::Platform::WinImpl
 				IsGraphicsDebugging = true;
 	}
 
+	/* TODO: Move spdlog stuff to IPlatform, or other core implementation... */
 	SpdlogManager::SpdlogManager() noexcept
 	{
 		std::shared_ptr<spdlog::sinks::stdout_color_sink_st> pConsoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_st>();
@@ -31,16 +32,17 @@ namespace CMEngine::Platform::WinImpl
 		);
 		pCallbackSink->set_level(spdlog::level::err);
 
-		CM_ENGINE_IF_DEBUG(std::string LogPath = "logs/cm_log_debug.txt");
-		CM_ENGINE_IF_RELEASE(std::string LogPath = "logs/cm_log_release.txt");
+		std::string logPath;
+		CM_ENGINE_IF_DEBUG(logPath = "logs/cm_log_debug.txt");
+		CM_ENGINE_IF_RELEASE(logPath = "logs/cm_log_release.txt");
 
-		std::shared_ptr<spdlog::sinks::basic_file_sink_st> pFileSink = std::make_shared<spdlog::sinks::basic_file_sink_st>(LogPath, true);
+		std::shared_ptr<spdlog::sinks::basic_file_sink_st> pFileSink = std::make_shared<spdlog::sinks::basic_file_sink_st>(logPath, true);
 		pFileSink->set_level(spdlog::level::trace);
 
-		mP_Logger = std::make_shared<spdlog::logger>("CMENGINE_LOG", spdlog::sinks_init_list{ pConsoleSink, pFileSink, pCallbackSink });
+		mP_Logger = std::make_shared<spdlog::logger>("CM_ENGINE_LOG", spdlog::sinks_init_list{ pConsoleSink, pFileSink, pCallbackSink });
 		spdlog::set_default_logger(mP_Logger);
 
-		CM_ENGINE_IF_DEBUG(spdlog::info("Debug build!!!"));
+		CM_ENGINE_IF_DEBUG("Debug build!!!");
 		spdlog::info("Working directory: {}", std::filesystem::current_path().generic_string());
 	}
 

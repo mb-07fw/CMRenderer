@@ -18,18 +18,27 @@ namespace CMEngine::Editor
 
 		Asset::AssetManager& assetManager = m_Core.AssetManager();
 
-		constexpr std::string_view MeshName = ENGINE_EDITOR_RESOURCES_MODEL_DIRECTORY "/cube.gltf";
+		constexpr std::string_view MeshName = ENGINE_EDITOR_RESOURCES_MODEL_DIRECTORY "/test_cube.glb";
 
 		Asset::AssetID modelID;
 		Asset::Result result = assetManager.LoadModel(MeshName, modelID);
+
 		CM_ENGINE_ASSERT(result.Succeeded());
 
 		ConstView<Asset::Model> model;
 		assetManager.GetModel(modelID, model);
+
 		CM_ENGINE_ASSERT(model.NonNull());
 
 		Asset::AssetID meshID = model->Meshes.at(0);
 		Asset::AssetID materialID = model->Materials.at(0);
+
+		ConstView<Asset::Mesh> meshAsset;
+		assetManager.GetMesh(meshID, meshAsset);
+
+		CM_ENGINE_ASSERT(meshAsset.NonNull());
+
+		assetManager.DumpMesh(meshID);
 
 		/* Default construct components to avoid extra copying... */
 		ecs.EmplaceComponent<CameraComponent>(cameraEntity);
@@ -88,7 +97,7 @@ namespace CMEngine::Editor
 		Scene::CameraSystem& cameraSystem = sceneManager.GetCameraSystem();
 		cameraSystem.SetMainCamera(cameraEntity);
 		
-		constexpr std::wstring_view TexturePath = ENGINE_EDITOR_RESOURCES_TEXTURE_DIRECTORYW L"/cat.png";
+		constexpr std::wstring_view TexturePath = ENGINE_EDITOR_RESOURCES_TEXTURE_DIRECTORYW L"/basic_texture.png";
 		std::filesystem::path texturePath(TexturePath);
 
 		Asset::AssetID textureID;

@@ -25,9 +25,11 @@
 
 #include <spdlog/spdlog.h>
 #include <spdlog/logger.h>
+#include <spdlog/stopwatch.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/callback_sink.h>
-#include "spdlog/sinks/basic_file_sink.h"
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/details/os.h>
 
 #include <imgui/CMImGui.hpp>
 
