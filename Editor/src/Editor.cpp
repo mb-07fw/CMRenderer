@@ -18,6 +18,7 @@ namespace CMEngine::Editor
 
 		Asset::AssetManager& assetManager = m_Core.AssetManager();
 
+		/* TODO: Fix weird DeadlyImportError exception... */
 		constexpr std::string_view MeshName = ENGINE_EDITOR_RESOURCES_MODEL_DIRECTORY "/test_cube.glb";
 
 		Asset::AssetID modelID;

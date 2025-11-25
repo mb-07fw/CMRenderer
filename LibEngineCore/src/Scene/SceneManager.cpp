@@ -146,7 +146,7 @@ namespace CMEngine::Scene
 		Float3 previousScaling = transformData.Scaling;
 
 		ImGui::SliderFloat3(ImGuiLabel("Translation", nodeIndex).c_str(), transformData.Translation.Underlying(), -50.0f, 50.0f);
-		ImGui::SliderFloat3(ImGuiLabel("Rotation", nodeIndex).c_str(), transformData.Rotation.Underlying(), 0.0f, 360.0f);
+		ImGui::SliderFloat3(ImGuiLabel("Rotation", nodeIndex).c_str(), transformData.Rotation.Underlying(), -360.0f, 360.0f);
 		ImGui::SliderFloat3(ImGuiLabel("Scaling", nodeIndex).c_str(), transformData.Scaling.Underlying(), -50.0f, 50.0f);
 
 		if (!transformData.Translation.IsNearEqual(previousTranslation) ||

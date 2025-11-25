@@ -1,8 +1,11 @@
+// Gltf_Basic_VS.hlsl
+#include "Common.hlsl"
+
 struct PSInput
 {
-    float3 WorldPos : TEXCOORD0;
-    float3 Normal : TEXCOORD1;
-    float3 TexCoord : TEXCOORD2;
+    CM_POSITION WorldPos : TEXCOORD0;
+    CM_NORMAL Normal : TEXCOORD1;
+    CM_TEXCOORD TexCoord : TEXCOORD2;
 };
 
 cbuffer MaterialCB : register(b0)

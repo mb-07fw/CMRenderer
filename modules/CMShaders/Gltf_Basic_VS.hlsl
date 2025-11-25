@@ -17,7 +17,7 @@ struct VSOutput
     CM_POSITION WorldPos : TEXCOORD0;
     CM_NORMAL Normal : TEXCOORD1;
     CM_TEXCOORD TexCoord : TEXCOORD2;
-    CM_POSITION_H PositionH : SV_Position; // homogenous clip space
+    CM_POSITION_H PositionH : SV_Position; // (homogenous clip space)
 };
 
 cbuffer CBCameraProj : register(b0)
