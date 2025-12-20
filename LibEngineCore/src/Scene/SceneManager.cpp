@@ -115,9 +115,9 @@ namespace CMEngine::Scene
 	{
 		/* TODO: Move to CameraSystem... */
 
-		auto cameras = m_ECS.GetStorage<CameraComponent>();
+		auto cameras = m_ECS.GetSparseSet<CameraComponent>();
 
-		for (auto& camera : cameras->Components())
+		for (auto& camera : cameras->Data())
 			camera.SetAspect(res.Aspect());
 	}
 

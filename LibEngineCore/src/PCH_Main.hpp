@@ -19,6 +19,7 @@
 #include <string_view>
 #include <span>
 #include <thread>
+#include <tuple>
 #include <type_traits>
 #include <unordered_map>
 #include <vector>

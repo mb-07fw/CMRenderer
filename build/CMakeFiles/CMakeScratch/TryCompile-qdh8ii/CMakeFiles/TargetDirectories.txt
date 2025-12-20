@@ -1,2 +1,0 @@
-C:/other/dev/projects/cpp/Direct3D/CMRenderer/build/CMakeFiles/CMakeScratch/TryCompile-qdh8ii/CMakeFiles/cmTC_4683c.dir
-C:/other/dev/projects/cpp/Direct3D/CMRenderer/build/CMakeFiles/CMakeScratch/TryCompile-qdh8ii/CMakeFiles/ALL_BUILD.dir

@@ -49,4 +49,4 @@ Side note: Instead of using CMake to generate a .sln file for Visual Studio, I'd
 Visual Studio's native CMake integration by right-clicking on the project's root folder and clicking *"Open With Visual Studio"*.
 
 ## Latest Screenshot
-![Latest Screenshot](https://github.com/mb-07fw/CMRenderer/blob/Test/screenshots/2025-11-23-(fixed_weird_texturing).png)
+![Latest Screenshot](https://github.com/mb-07fw/CMRenderer/blob/main/screenshots/2025-11-25-(fixed_face_mismatches).png)

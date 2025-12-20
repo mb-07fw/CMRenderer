@@ -28,13 +28,13 @@ namespace CMEngine::ECS
 
 	template <typename IDTy>
 	concept CustomID = requires(const IDTy & id) {
-		{ id.ToIndex() } -> std::convertible_to<size_t>;
+		{ id.Index() } -> std::convertible_to<size_t>;
 	};
 
 	template <typename IDTy>
 	concept ValidIDType = CustomID<IDTy> || std::unsigned_integral<IDTy>;
 
-	template <typename ComponentTy, typename IDTy = size_t>
+	template <typename Ty, typename IDTy = size_t>
 		requires ValidIDType<IDTy>
 	class SparseSet : public ISparseSet
 	{
@@ -48,57 +48,60 @@ namespace CMEngine::ECS
 		template <typename... Args>
 		inline void EmplaceComponent(IDTy id, Args&&... args) noexcept;
 
-		inline [[nodiscard]] ComponentTy* GetComponent(IDTy id) noexcept;
-		inline [[nodiscard]] const ComponentTy* GetComponent(IDTy id) const noexcept;
+		inline [[nodiscard]] Ty* Get(IDTy id) noexcept;
+		inline [[nodiscard]] const Ty* Get(IDTy id) const noexcept;
 
-		/* m_SparseArray: Maps ID → it's Index in m_DenseArray.
-		 * m_DenseArray : Stores ID's contiguously.
-		 * m_Components : Stores Components contiguously, parallel to m_DenseArray.
-		 */
 		inline [[nodiscard]] std::vector<size_t>& Sparse() noexcept { return m_SparseArray; }
 		inline [[nodiscard]] const std::vector<size_t>& Sparse() const noexcept { return m_SparseArray; }
+
 		inline [[nodiscard]] std::vector<IDTy>& Dense() noexcept { return m_DenseArray; }
 		inline [[nodiscard]] const std::vector<IDTy>& Dense() const noexcept { return m_DenseArray; }
-		inline [[nodiscard]] std::vector<ComponentTy>& Components() noexcept { return m_Components; }
-		inline [[nodiscard]] const std::vector<ComponentTy>& Components() const noexcept { return m_Components; }
+
+		inline [[nodiscard]] std::vector<Ty>& Data() noexcept { return m_Data; }
+		inline [[nodiscard]] const std::vector<Ty>& Data() const noexcept { return m_Data; }
 	private:
 		inline void Insert(IDTy id) noexcept;
 
 		inline constexpr [[nodiscard]] size_t AsIndex(IDTy id) const noexcept;
 	private:
+		/* m_SparseArray: Maps ID → it's Index in m_DenseArray.
+		 * m_DenseArray : Stores ID's contiguously. (used to map indexes into m_Data back to entity ID's)
+		 * m_Data : Stores Ty's contiguously, parallel to m_DenseArray.
+		 */
 		std::vector<size_t> m_SparseArray;
 		std::vector<IDTy> m_DenseArray;
-		std::vector<ComponentTy> m_Components;
+		std::vector<Ty> m_Data;
 #undef max
-		constexpr static size_t S_INVALID_INDEX = std::numeric_limits<size_t>::max();
+		constexpr static size_t S_Removed_Index = std::numeric_limits<size_t>::max();
 	};
 
-	template <typename ComponentTy, typename IDTy>
+	template <typename Ty, typename IDTy>
 		requires ValidIDType<IDTy>
-	inline SparseSet<ComponentTy, IDTy>::SparseSet() noexcept
-		: ISparseSet(TypeWrangler::GetTypeID<ComponentTy>())
+	inline SparseSet<Ty, IDTy>::SparseSet() noexcept
+		: ISparseSet(GetTypeID<Ty>())
 	{
 	}
 
-	template <typename ComponentTy, typename IDTy>
+	template <typename Ty, typename IDTy>
 		requires ValidIDType<IDTy>
-	inline [[nodiscard]] bool SparseSet<ComponentTy, IDTy>::Contains(IDTy id) const noexcept
+	inline [[nodiscard]] bool SparseSet<Ty, IDTy>::Contains(IDTy id) const noexcept
 	{
 		size_t sparseIndex = AsIndex(id);
 
-		if (sparseIndex >= m_SparseArray.size() || sparseIndex == S_INVALID_INDEX)
+		if (sparseIndex >= m_SparseArray.size() || 
+			sparseIndex == S_Removed_Index)
 			return false;
 
 		size_t denseIndex = m_SparseArray[sparseIndex];
 
 		/* BUG: Capacity is 0 when it should match the number of components currently stored. */
-		return denseIndex < m_Components.size() &&	  // denseIndex at sparseIndex is in bounds of m_Components.
+		return denseIndex < m_Data.size() &&	  // denseIndex at sparseIndex is in bounds of m_Data.
 			AsIndex(m_DenseArray[denseIndex]) == sparseIndex;  // Entity id's sparse index stored in m_DenseArray matches the sparseIndex.
 	}
 
-	template <typename ComponentTy, typename IDTy>
+	template <typename Ty, typename IDTy>
 		requires ValidIDType<IDTy>
-	inline void SparseSet<ComponentTy, IDTy>::Remove(IDTy id) noexcept
+	inline void SparseSet<Ty, IDTy>::Remove(IDTy id) noexcept
 	{
 		if (!Contains(id))
 			return;
@@ -106,57 +109,57 @@ namespace CMEngine::ECS
 		size_t sparseIndex = AsIndex(id);
 		size_t denseIndex = m_SparseArray[sparseIndex];
 
-		if (m_Components.size() > 1)
+		if (m_Data.size() > 1)
 		{
-			m_Components[denseIndex] = m_Components.back();
+			m_Data[denseIndex] = m_Data.back();
 			m_DenseArray[denseIndex] = m_DenseArray.back();
 		}
 
-		m_Components.pop_back();
+		m_Data.pop_back();
 		m_DenseArray.pop_back();
 
-		m_SparseArray[sparseIndex] = S_INVALID_INDEX;
+		m_SparseArray[sparseIndex] = S_Removed_Index;
 	}
 
-	template <typename ComponentTy, typename IDTy>
+	template <typename Ty, typename IDTy>
 		requires ValidIDType<IDTy>
 	template <typename... Args>
-	inline void SparseSet<ComponentTy, IDTy>::EmplaceComponent(IDTy id, Args&&... args) noexcept
+	inline void SparseSet<Ty, IDTy>::EmplaceComponent(IDTy id, Args&&... args) noexcept
 	{
 		if (Contains(id))
 			return;
 
 		Insert(id);
 
-		if (m_Components.size() >= m_Components.capacity())
-			m_Components.reserve((m_Components.size() + 1) * 2);
+		if (m_Data.size() >= m_Data.capacity())
+			m_Data.reserve((m_Data.size() + 1) * 2);
 
-		m_Components.emplace_back(std::forward<Args>(args)...);
+		m_Data.emplace_back(std::forward<Args>(args)...);
 	}
 
-	template <typename ComponentTy, typename IDTy>
+	template <typename Ty, typename IDTy>
 		requires ValidIDType<IDTy>
-	inline [[nodiscard]] ComponentTy* SparseSet<ComponentTy, IDTy>::GetComponent(IDTy id) noexcept
+	inline [[nodiscard]] Ty* SparseSet<Ty, IDTy>::Get(IDTy id) noexcept
 	{
 		if (!Contains(id))
 			return nullptr;
 
-		return &m_Components[m_SparseArray[AsIndex(id)]];
+		return &m_Data[m_SparseArray[AsIndex(id)]];
 	}
 
-	template <typename ComponentTy, typename IDTy>
+	template <typename Ty, typename IDTy>
 		requires ValidIDType<IDTy>
-	inline [[nodiscard]] const ComponentTy* SparseSet<ComponentTy, IDTy>::GetComponent(IDTy id) const noexcept
+	inline [[nodiscard]] const Ty* SparseSet<Ty, IDTy>::Get(IDTy id) const noexcept
 	{
 		if (!Contains(id))
 			return nullptr;
 
-		return &m_Components[m_SparseArray[AsIndex(id)]];
+		return &m_Data[m_SparseArray[AsIndex(id)]];
 	}
 
-	template <typename ComponentTy, typename IDTy>
+	template <typename Ty, typename IDTy>
 		requires ValidIDType<IDTy>
-	inline void SparseSet<ComponentTy, IDTy>::Insert(IDTy id) noexcept
+	inline void SparseSet<Ty, IDTy>::Insert(IDTy id) noexcept
 	{
 		size_t sparseIndex = AsIndex(id);
 
@@ -170,12 +173,12 @@ namespace CMEngine::ECS
 		m_DenseArray.emplace_back(id);
 	}
 
-	template <typename ComponentTy, typename IDTy>
+	template <typename Ty, typename IDTy>
 		requires ValidIDType<IDTy>
-	inline constexpr [[nodiscard]] size_t SparseSet<ComponentTy, IDTy>::AsIndex(IDTy id) const noexcept
+	inline constexpr [[nodiscard]] size_t SparseSet<Ty, IDTy>::AsIndex(IDTy id) const noexcept
 	{
 		if constexpr (CustomID<IDTy>)
-			return static_cast<size_t>(id.ToIndex());
+			return static_cast<size_t>(id.Index());
 		else
 			return static_cast<size_t>(id);
 	}

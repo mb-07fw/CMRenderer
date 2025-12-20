@@ -26,12 +26,6 @@
 #define CM_ENGINE_IF_DEBUG(x)				x
 #define CM_ENGINE_IF_NDEBUG(x)				(void)0
 #define CM_ENGINE_IF_NDEBUG_REPLACE(x)		x
-#define CM_ENGINE_ASSERT(x) \
-    if (!(x)) { \
-        CM_ENGINE_BREAK_DEBUGGER(); \
-        spdlog::critical("CM_ENGINE_ASSERT failed. (" #x ") | Line : {} | File : {}", __LINE__, __FILE__); \
-        exit(-1); \
-    } \
 
 #else
 
@@ -39,7 +33,6 @@
 #define CM_ENGINE_IF_DEBUG(x)			CM_ENGINE_NO_OP
 #define CM_ENGINE_IF_NDEBUG(x)		    x
 #define CM_ENGINE_IF_NDEBUG_REPLACE(x)
-#define CM_ENGINE_ASSERT(x)		        CM_ENGINE_NO_OP
 
 #endif
 
@@ -48,3 +41,12 @@
 #else
     #define CM_ENGINE_IF_RELEASE(x)     CM_ENGINE_NO_OP
 #endif
+
+#define CM_ENGINE_ASSERT(x) \
+    CM_ENGINE_IF_DEBUG( \
+        if (!(x)) \
+        { \
+            CM_ENGINE_BREAK_DEBUGGER(); \
+            spdlog::critical("CM_ENGINE_ASSERT failed: (" #x ") | Line: {} | File: {}", __LINE__, __FILE__); \
+            exit(-1); \
+        })

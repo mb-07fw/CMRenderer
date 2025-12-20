@@ -2,47 +2,17 @@
 
 #include <cstdint>
 
+#include "Types.hpp"
+
 namespace CMEngine::ECS
 {
-	constexpr uint32_t G_ENTITY_INDEX_BITS = 24;
-	constexpr uint32_t G_ENTITY_VERSION_BITS = 8;
+	inline constexpr uint32_t G_Entity_Index_Bits = 24;
+	inline constexpr uint32_t G_Entity_Version_Bits = 8;
+	inline constexpr uint32_t G_Entity_Index_Shift = 0; /* Start at first bit... */
+	inline constexpr uint32_t G_Entity_Version_Shift = G_Entity_Index_Bits; /* Version field starts at the end of index field... */
 
-	/* Shift 1 left by 24 bits :
-	 *
-	 *		00000000 00000000 00000000 00000001
-	 *				to :
-	 *		00000001 00000000 00000000 00000000
-	 *
-	 * Subtract 1 to mask the lower 24 bits :
-	 *
-	 *	 NOTE : Subtracting 1 in binary means you're flipping the
-	 *			lowest 1 bit to 0, and all trailing 0s to 1s until
-	 *			the first 1 (carry/borrow effect).
-	 *
-	 *		00000001 00000000 00000000 00000000
-	 *				to :
-	 *		00000000 11111111 11111111 11111111
-	 */
-	constexpr uint32_t G_ENTITY_INDEX_MASK = (1u << G_ENTITY_INDEX_BITS) - 1;
-
-	/* Shift 1 left by 8 bits :
-	 *
-	 *		00000000 00000000 00000000 00000001
-	 *				to :
-	 *		00000000 00000000 00000001 00000000
-	 *
-	 * Subtract 1 to mask the lower 8 bits :
-	 *
-	 *   NOTE : Subtracting 1 in binary means you're flipping the
-	 *			lowest 1 bit to 0, and all trailing 0s to 1s until
-	 *			the first 1 (carry/borrow effect).
-	 *
-	 *		00000000 00000000 00000001 00000000
-	 *				to :
-	 *		00000000 00000000 00000000 11111111
-	 */
-	constexpr uint32_t G_ENTITY_VERSION_MASK = (1u << G_ENTITY_VERSION_BITS) - 1;
-
+	using IndexField = Bitfield<uint32_t, G_Entity_Index_Bits, G_Entity_Index_Shift>;
+	using VersionField = Bitfield<uint32_t, G_Entity_Version_Bits, G_Entity_Version_Shift>;
 
 	/* 31         24 23                        0
 	 *	+----------+---------------------------+
@@ -55,12 +25,15 @@ namespace CMEngine::ECS
 	struct Entity
 	{
 		friend class ECS;
+		friend class ArchetypeECS;
 
 		Entity() = default;
+		~Entity() = default;
+
 		Entity(uint32_t version, uint32_t index) noexcept;
 
-		uint32_t ToVersion() const noexcept;
-		uint32_t ToIndex() const noexcept;
+		uint32_t Version() const noexcept;
+		uint32_t Index() const noexcept;
 
 		[[nodiscard]] bool operator==(Entity other) const noexcept;
 		[[nodiscard]] operator EntityID() const noexcept;

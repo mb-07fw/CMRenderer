@@ -43,7 +43,7 @@ namespace CMEngine::Asset
 		Color4 BaseColor;
 		float Metallic = 0.0f;
 		float Roughness = 0.0f;
-		float Padding[2];
+		float Padding[2] = { 0.0f, 0.0f };
 	};
 
 	struct Asset

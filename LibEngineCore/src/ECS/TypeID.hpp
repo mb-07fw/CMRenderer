@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Types.hpp"
+
 #include <cstdint>
 
 namespace CMEngine::ECS
@@ -8,12 +10,15 @@ namespace CMEngine::ECS
 	 * Relies on TypeWrangler to generate an ID for any given type. */
 	struct TypeID
 	{
+		TypeID() = default;
+		~TypeID() = default;
+
 		inline explicit TypeID(int32_t ID) noexcept
 			: ID(ID)
 		{
 		}
 
-		bool operator==(TypeID other) const noexcept
+		inline [[nodiscard]] bool operator==(TypeID other) const noexcept
 		{
 			return ID == other.ID;
 		}
@@ -23,11 +28,8 @@ namespace CMEngine::ECS
 			return ID;
 		}
 
-		TypeID() = default;
-		~TypeID() = default;
-
-		constexpr static int32_t S_INVALID_ID = -1;
-		int32_t ID = S_INVALID_ID;
+		constexpr static int32_t S_Invalid_ID = -1;
+		int32_t ID = S_Invalid_ID;
 	};
 
 	/* A class that uses static memory to generate a unique ID (technically an index)
@@ -37,18 +39,24 @@ namespace CMEngine::ECS
 	class TypeWrangler
 	{
 	public:
-		/* For each template - instantiation of Ty, a different static ID is retrieved. */
-		template <typename Ty>
-		inline static TypeID GetTypeID() noexcept;
+		/* For each template - instantiation of Ty, a different static ID is retrieved.
+		 *   (a non-qualified type is preferred so that different instantiations aren't
+		 *      generated for different type qualifiers, ex. int, const int) 
+		 */
+		template <NonQualified Ty>
+		inline static [[nodiscard]] TypeID GetTypeID() noexcept;
+
+		template <NonQualified... Types>
+		inline static [[nodiscard]] std::array<TypeID, sizeof...(Types)> GetTypeIDs() noexcept;
 	private:
 		/* Returns a different ID each call, as the ID increments every call. */
-		inline static TypeID NextTypeID() noexcept;
+		inline static [[nodiscard]] TypeID NextTypeID() noexcept;
 
 		inline static TypeID s_NextID = {};
 	};
 
-	template <typename Ty>
-	inline TypeID TypeWrangler::GetTypeID() noexcept
+	template <NonQualified Ty>
+	inline [[nodiscard]] TypeID TypeWrangler::GetTypeID() noexcept
 	{
 		/* For each call of GetTypeID :
 		 *   The compiler checks if the static s_TypeID variable has already been initialized for that particular type T.
@@ -58,8 +66,20 @@ namespace CMEngine::ECS
 		return s_TypeID;
 	}
 
-	inline TypeID TypeWrangler::NextTypeID() noexcept
+	inline [[nodiscard]] TypeID TypeWrangler::NextTypeID() noexcept
 	{
 		return TypeID(++s_NextID.ID);
+	}
+
+	template <NonQualified... Types>
+	inline static [[nodiscard]] std::array<TypeID, sizeof...(Types)> TypeWrangler::GetTypeIDs() noexcept
+	{
+		return std::array<TypeID, sizeof...(Types)>{ GetTypeID<Types>()... };
+	}
+
+	template <NonQualified Ty>
+	inline static [[nodiscard]] TypeID GetTypeID() noexcept
+	{
+		return TypeWrangler::GetTypeID<Ty>();
 	}
 }

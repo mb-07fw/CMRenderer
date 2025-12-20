@@ -6,16 +6,185 @@
 #include <thread>
 #include <fstream>
 
+struct A
+{
+	A(int x)
+		: X(x)
+	{
+		std::cout << "Constructed A!\n";
+	}
+
+	A(const A& other) noexcept
+		: X(other.X)
+	{
+		std::cout << "Copy constructed A!\n";
+	}
+
+	A(A&& other) noexcept
+		: X(other.X)
+	{
+		std::cout << "Move constructed A!\n";
+	}
+
+
+	A& operator=(const A& other) noexcept
+	{
+		X = other.X;
+		std::cout << "Copy assigned A!\n";
+		return *this;
+	}
+
+	A& operator=(A&& other) noexcept
+	{
+		X = other.X;
+		std::cout << "Move assigned A!\n";
+		return *this;
+	}
+
+	int X = 0;
+};
+
+struct B
+{
+	B(float x)
+		: X(x)
+	{
+		std::cout << "Constructed B!\n";
+	}
+
+	B(const B& other) noexcept
+		: X(other.X)
+	{
+		std::cout << "Copy constructed B!\n";
+	}
+
+	B(B&& other) noexcept
+		: X(other.X)
+	{
+		std::cout << "Move constructed B!\n";
+	}
+
+	B& operator=(const B& other) noexcept
+	{
+		X = other.X;
+		std::cout << "Copy assigned B!\n";
+		return *this;
+	}
+
+	B& operator=(B&& other) noexcept
+	{
+		X = other.X;
+		std::cout << "Move assigned B!\n";
+		return *this;
+	}
+
+	float X = 0.0f;
+};
+
+struct TestA
+{
+	TestA(const A& a) noexcept
+		: a(a)
+	{
+	}
+
+	TestA(const TestA& other) noexcept
+		: a(other.a)
+	{
+		std::cout << "Copy constructed TestA!\n";
+	}
+
+	TestA(TestA&& other) noexcept
+		: a(std::move(other.a))
+	{
+		std::cout << "Move constructed TestA!\n";
+	}
+
+
+	TestA& operator=(const TestA& other) noexcept
+	{
+		a = other.a;
+		std::cout << "Copy assigned TestA!\n";
+	}
+
+	TestA& operator=(TestA&& other) noexcept
+	{
+		a = std::move(other.a);
+		std::cout << "Move assigned TestA!\n";
+	}
+
+	A a;
+};
+
+struct TestB
+{
+	TestB(const B& b) noexcept
+		: b(b)
+	{
+	}
+
+	TestB(const TestB& other) noexcept
+		: b(other.b)
+	{
+		std::cout << "Copy constructed TestB!\n";
+	}
+
+	TestB(TestB&& other) noexcept
+		: b(std::move(other.b))
+	{
+		std::cout << "Move constructed TestB!\n";
+	}
+
+
+	TestB& operator=(const TestB& other) noexcept
+	{
+		b = other.b;
+		std::cout << "Copy assigned TestB!\n";
+	}
+
+	TestB& operator=(TestB&& other) noexcept
+	{
+		b = std::move(other.b);
+		std::cout << "Move assigned TestB!\n";
+	}
+
+	B b;
+};
+
 namespace CMEngine::Editor
 {
 	Editor::Editor() noexcept
 	{
 		ECS::ECS& ecs = m_Core.ECS();
 
+		/* Archetype testing shenanigans... */
+		View<ECS::Archetype<A, B>> archetype = ecs.CreateArchetype<A, B>();
+		CM_ENGINE_ASSERT(archetype.NonNull());
+		
+		ECS::Entity test = ecs.CreateEntity();
+
+		ecs.EmplaceRow(
+			test,
+			archetype.Ref(),
+			MakeParams<A>(2399),
+			MakeParams<B>(43.0f)
+		);
+
+		auto getTest = ecs.GetArchetype<A, B>();
+		auto newArchetype = ecs.ArchetypeAdd<float>(test, archetype.Ref(), 6454.0f);
+
+		auto getTestTwo = ecs.GetArchetype<A, B, float>();
+		auto getTestThree = ecs.GetArchetype<int, float, short>();
+
+		bool destroyed = ecs.DestroyEntity(test);
+		destroyed = ecs.DestroyArchetype(getTest);
+		destroyed = ecs.DestroyArchetype(getTestTwo);
+		destroyed = ecs.DestroyArchetype(getTestThree);
+
 		ECS::Entity cameraEntity = ecs.CreateEntity();
 		ECS::Entity gameObj1 = ecs.CreateEntity();
 		ECS::Entity gameObj2 = ecs.CreateEntity();
-
+			
 		Asset::AssetManager& assetManager = m_Core.AssetManager();
 
 		/* TODO: Fix weird DeadlyImportError exception... */
@@ -97,7 +266,7 @@ namespace CMEngine::Editor
 
 		Scene::CameraSystem& cameraSystem = sceneManager.GetCameraSystem();
 		cameraSystem.SetMainCamera(cameraEntity);
-		
+
 		constexpr std::wstring_view TexturePath = ENGINE_EDITOR_RESOURCES_TEXTURE_DIRECTORYW L"/basic_texture.png";
 		std::filesystem::path texturePath(TexturePath);
 

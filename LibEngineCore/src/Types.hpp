@@ -4,13 +4,26 @@
 #include <cmath>
 #include <vector>
 #include <span>
-#include <limits>
+#include <tuple>
 #include <type_traits>
+
+#include "Macros.hpp"
 
 namespace CMEngine
 {
-	template <typename... Args>
-	constexpr bool AllTriviallyCopyable = (std::is_trivially_copyable_v<Args>&&...);
+#pragma region Random Helper Functions
+	template <typename TyTo, typename TyFrom>
+		requires (std::is_pointer<TyTo>::value&& std::is_pointer<TyFrom>::value)
+	inline [[nodiscard]] TyTo TryCast(TyFrom pFrom) noexcept
+	{
+		return dynamic_cast<TyTo>(pFrom);
+	}
+
+	template <typename TyTo, typename TyFrom>
+	inline [[nodiscard]] TyTo Cast(TyFrom pFrom) noexcept
+	{
+		return static_cast<TyTo>(pFrom);
+	}
 
 	template <typename Ty>
 	inline [[nodiscard]] std::span<Ty> ToSpan(const std::vector<Ty>& vec) noexcept
@@ -24,21 +37,16 @@ namespace CMEngine
 		return std::span<std::byte>((std::byte*)vec.data(), vec.size() * sizeof(Ty));
 	}
 
-	inline constexpr void HashCombine(size_t& outSeed, size_t value) noexcept
-	{
-		constexpr size_t UnholyMagicConstantIDontUnderstandThanksChatGPT = 0x9e3779b97f4a7c15ull; // // aka 2^64...
-
-		outSeed ^= value + UnholyMagicConstantIDontUnderstandThanksChatGPT + (outSeed << 6) + (outSeed >> 2);
-	}
-
-	inline constexpr float G_NEAR_EQUAL_FLOAT_EPSILON = 1e-4f;
+	inline constexpr float G_Near_Equal_Float_Epsilon = 1e-4f;
 
 	/* Note: Cannot be constexpr due to std::abs not being constexpr. */
-	inline [[nodiscard]] bool IsNearEqualFloat(float x, float other, float epsilon = G_NEAR_EQUAL_FLOAT_EPSILON) noexcept
+	inline [[nodiscard]] bool IsNearEqualFloat(float x, float other, float epsilon = G_Near_Equal_Float_Epsilon) noexcept
 	{
 		return std::abs(x - other) <= epsilon;
 	}
+#pragma endregion
 
+#pragma region Type Declarations (not-templated)
 	struct Color4
 	{
 		inline constexpr Color4(float r, float g, float b, float a = 1.0f) noexcept
@@ -66,65 +74,6 @@ namespace CMEngine
 		float rgba[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	};
 
-	template <typename Ty>
-	class ViewBasic
-	{
-	public:
-		inline ViewBasic(Ty* pData) noexcept
-			: mP_Ptr(pData)
-		{
-		}
-
-		ViewBasic() = default;
-		~ViewBasic() = default;
-
-		inline operator Ty* () noexcept { return mP_Ptr; }
-		inline ViewBasic<Ty>& operator=(Ty* pData) noexcept { mP_Ptr = pData; return*this; }
-		inline Ty* operator->() noexcept { return mP_Ptr; }
-
-		inline [[nodiscard]] Ty* Raw() noexcept { return mP_Ptr; }
-		inline [[nodiscard]] bool NonNull() const noexcept { return mP_Ptr != nullptr; }
-		inline [[nodiscard]] bool Null() const noexcept { return mP_Ptr == nullptr; }
-	protected:
-		Ty* mP_Ptr = nullptr;
-	};
-
-	/* View represents a non-onwing pointer to a resource that is NOT meant
-	 *   to be deleted by the client. */
-	template <typename Ty>
-	using View = ViewBasic<Ty>;
-
-	/* ConstView represents a non-onwing pointer to a const resource that is NOT meant
-	 *   to be deleted by the client. */
-	template <typename Ty>
-	struct ConstView : public ViewBasic<const Ty>
-	{
-		using Parent = ViewBasic<const Ty>;
-		using Parent::Parent;
-
-		inline ConstView(View<Ty> view) noexcept
-			: Parent(view.Raw())
-		{
-		}
-
-		inline ConstView& operator=(View<Ty> view) noexcept
-		{
-			/* Weird template specialization quirk... */
-			Parent::mP_Ptr = view.Raw();
-			return *this;
-		}
-
-		// prevent nullptr from hitting both overloads
-		ConstView& operator=(std::nullptr_t) noexcept
-		{
-			this->mP_Ptr = nullptr;
-			return *this;
-		}
-
-		ConstView() = default;
-		~ConstView() = default;
-	};
-
 	struct Float3;
 
 	struct Float2
@@ -140,8 +89,8 @@ namespace CMEngine
 		inline constexpr [[nodiscard]] bool IsEqual(Float2 other) const noexcept;
 		inline constexpr [[nodiscard]] bool IsEqual(float value) const noexcept;
 		inline constexpr [[nodiscard]] bool IsZero() const noexcept;
-		[[nodiscard]] bool IsNearEqual(Float2 other, float epsilon = G_NEAR_EQUAL_FLOAT_EPSILON) const noexcept;
-		[[nodiscard]] bool IsNearEqual(float value, float epsilon = G_NEAR_EQUAL_FLOAT_EPSILON) const noexcept;
+		[[nodiscard]] bool IsNearEqual(Float2 other, float epsilon = G_Near_Equal_Float_Epsilon) const noexcept;
+		[[nodiscard]] bool IsNearEqual(float value, float epsilon = G_Near_Equal_Float_Epsilon) const noexcept;
 
 		/* Returns the aspect ratio of the x and y components. */
 		inline constexpr [[nodiscard]] float Aspect() const noexcept { return x / y; }
@@ -175,8 +124,8 @@ namespace CMEngine
 		inline constexpr [[nodiscard]] bool IsEqual(Float3 other) const noexcept;
 		inline constexpr [[nodiscard]] bool IsEqual(float value) const noexcept;
 		inline constexpr [[nodiscard]] bool IsZero() const noexcept { return IsEqual(0.0f); }
-		[[nodiscard]] bool IsNearEqual(Float3 other, float epsilon = G_NEAR_EQUAL_FLOAT_EPSILON) const noexcept;
-		[[nodiscard]] bool IsNearEqual(float value, float epsilon = G_NEAR_EQUAL_FLOAT_EPSILON) const noexcept;
+		[[nodiscard]] bool IsNearEqual(Float3 other, float epsilon = G_Near_Equal_Float_Epsilon) const noexcept;
+		[[nodiscard]] bool IsNearEqual(float value, float epsilon = G_Near_Equal_Float_Epsilon) const noexcept;
 
 		inline [[nodiscard]] std::span<const float, 3> Data() const noexcept { return std::span<const float, 3>(Underlying(), 3); }
 
@@ -194,7 +143,7 @@ namespace CMEngine
 		inline constexpr [[nodiscard]] bool operator==(Rect other) const noexcept { return IsEqual(other); }
 		inline constexpr [[nodiscard]] bool IsEqual(Rect other) const noexcept;
 		inline constexpr [[nodiscard]] bool IsZero() const noexcept;
-		[[nodiscard]] bool IsNearEqual(Rect other, float epsilon = G_NEAR_EQUAL_FLOAT_EPSILON) const noexcept;
+		[[nodiscard]] bool IsNearEqual(Rect other, float epsilon = G_Near_Equal_Float_Epsilon) const noexcept;
 
 		float left = 0.0f, top = 0.0f, right = 0.0f, bottom = 0.0f;
 	};
@@ -215,7 +164,7 @@ namespace CMEngine
 		inline constexpr [[nodiscard]] bool operator==(const Transform& other) const noexcept { return IsEqual(other); }
 		inline constexpr [[nodiscard]] bool IsEqual(const Transform& other) const noexcept;
 		inline constexpr [[nodiscard]] bool IsZero() const noexcept;
-		[[nodiscard]] bool IsNearEqual(const Transform& other, float epsilon = G_NEAR_EQUAL_FLOAT_EPSILON) const noexcept;
+		[[nodiscard]] bool IsNearEqual(const Transform& other, float epsilon = G_Near_Equal_Float_Epsilon) const noexcept;
 
 		inline [[nodiscard]] const Float3* Underlying() const noexcept { return reinterpret_cast<const Float3*>(this); }
 		inline [[nodiscard]] Float3* Underlying() noexcept { return reinterpret_cast<Float3*>(this); }
@@ -242,7 +191,7 @@ namespace CMEngine
 		inline constexpr [[nodiscard]] bool operator==(const RigidTransform& other) const noexcept { return IsEqual(other); }
 		inline constexpr [[nodiscard]] bool IsEqual(const RigidTransform& other) const noexcept;
 		inline constexpr [[nodiscard]] bool IsZero() const noexcept;
-		[[nodiscard]] bool IsNearEqual(const RigidTransform& other, float epsilon = G_NEAR_EQUAL_FLOAT_EPSILON) const noexcept;
+		[[nodiscard]] bool IsNearEqual(const RigidTransform& other, float epsilon = G_Near_Equal_Float_Epsilon) const noexcept;
 
 		inline [[nodiscard]] const Float3* Underlying() const noexcept { return reinterpret_cast<const Float3*>(this); }
 		inline [[nodiscard]] Float3* Underlying() noexcept { return reinterpret_cast<Float3*>(this); }
@@ -252,7 +201,9 @@ namespace CMEngine
 		Float3 Rotation;
 		Float3 Translation;
 	};
+#pragma endregion
 
+#pragma region Type Definitions (non-templated)
 	inline constexpr Float2::Float2(float x, float y) noexcept
 		: x(x), y(y)
 	{
@@ -283,13 +234,13 @@ namespace CMEngine
 
 	inline constexpr Float3::Float3(float x, float y, float z) noexcept
 		: Float2(x, y),
-		  z(z)
+		z(z)
 	{
 	}
 
 	inline constexpr Float3::Float3(Float2 float2, float z) noexcept
 		: Float2(float2),
-		  z(z)
+		z(z)
 	{
 	}
 
@@ -309,17 +260,17 @@ namespace CMEngine
 
 	inline constexpr Rect::Rect(float left, float top, float right, float bottom) noexcept
 		: left(left),
-		  top(top),
-		  right(right),
-		  bottom(bottom)
+		top(top),
+		right(right),
+		bottom(bottom)
 	{
 	}
 
 	inline constexpr Rect::Rect(Float2 x, Float2 y) noexcept
 		: left(x.x),
-		  top(y.x),
-		  right(x.y),
-		  bottom(y.y)
+		top(y.x),
+		right(x.y),
+		bottom(y.y)
 	{
 	}
 
@@ -345,8 +296,8 @@ namespace CMEngine
 		const Float3& translation
 	) noexcept
 		: Scaling(scaling),
-		  Rotation(rotation),
-		  Translation(translation)
+		Rotation(rotation),
+		Translation(translation)
 	{
 	}
 
@@ -369,7 +320,7 @@ namespace CMEngine
 		const Float3& translation
 	) noexcept
 		: Rotation(rotation),
-		  Translation(translation)
+		Translation(translation)
 	{
 	}
 
@@ -384,7 +335,328 @@ namespace CMEngine
 		return Translation.IsZero() &&
 			Rotation.IsZero();
 	}
+#pragma endregion
 
+#pragma region Template Shenanigans
+
+#pragma region Custom Helper Traits
+	template <typename Ty>
+	inline constexpr bool IsNonQualified_v = std::is_same_v<Ty, std::remove_cvref_t<Ty>>;
+
+	template <typename Ty>
+	concept NonQualified = IsNonQualified_v<Ty>;
+
+	template <typename... Args>
+	constexpr bool AllTriviallyCopyable = (std::is_trivially_copyable_v<Args>&&...);
+
+	template <typename Ty, typename... Args>
+	inline constexpr bool IsInPack = (std::is_same_v<Ty, Args> || ...);
+
+	/* Basic compile-time container of types to be unpacked
+	 *   using template specialization. */
+	template <typename... Args>
+	struct TypeList {};
+
+	template <typename Ty, typename... Args>
+	struct ParamsBasic
+	{
+		static_assert(
+			std::is_constructible_v<Ty, Args...>,
+			"Type Ty should be constructible from the list of types provided."
+			);
+
+		using ConstructTy = Ty;
+
+		inline explicit constexpr ParamsBasic(Args&&... args) noexcept
+			: StoredParams(std::forward<Args>(args)...)
+		{
+		}
+
+		std::tuple<Args...> StoredParams;
+	};
+
+	template <typename Ty, typename... Args>
+	struct ParamsVal : public ParamsBasic<Ty, std::remove_cvref_t<Args>...>
+	{
+		using ParentTy = ParamsBasic<Ty, std::remove_cvref_t<Args>...>;
+		using ParentTy::ParentTy;
+	};
+
+	/* Represents a list of parameter references that
+	 *   can be used to construct an instance of Ty.
+	 *
+	 * Future note:
+	 *   Since this version of ParamsBasic stores Args&& (rvalue references),
+	 *     if the ParamsRef outlives the temporary value from which it was constructed,
+	 *     that results in a dangling reference, and thus UB.
+	 *
+	 *   ex... auto p = MakeParamsRef<A>(43); (UB, a dangling reference is held in 'p' to an int value that
+	 *											was destroyed immediately after exiting the function's scope)
+	 *
+	 *   ex... Foo(MakeParamsRef<A>(43)); (Not UB, the ParamsRef instance is guaranteed to outlive the int
+	 *									    value via the reverse order of destruction) */
+	template <typename Ty, typename... Args>
+	struct ParamsRef : public ParamsBasic<Ty, Args&&...>
+	{
+		using ParentTy = ParamsBasic<Ty, Args&&...>;
+		using ParentTy::ParentTy;
+	};
+
+	template <typename Ty, typename... Args>
+	using Params = ParamsVal<Ty, Args...>;
+
+	template <typename Ty>
+	struct IsParams : std::false_type {};
+
+	template <typename Ty, typename... ParamsArgs>
+	struct IsParams<ParamsRef<Ty, ParamsArgs...>> : std::true_type {};
+
+	template <typename Ty, typename... ParamsArgs>
+	struct IsParams<ParamsVal<Ty, ParamsArgs...>> : std::true_type {};
+
+	template <typename Ty>
+	concept ParamsType = IsParams<Ty>::value;
+
+	template <typename Ty>
+	inline constexpr bool IsParams_v = IsParams<Ty>::value;
+
+	template <typename... Types>
+	struct AllParams : std::bool_constant<(IsParams<Types>::value && ...)> {};
+
+	template <typename... Types>
+	concept AllParamsType = AllParams<Types...>::value;
+
+	template <typename... Types>
+	inline constexpr bool AllParams_v = AllParams<Types...>::value;
+
+	template <typename Ty, typename... Args>
+		requires std::is_constructible_v<Ty, Args...>
+	inline [[nodiscard]] ParamsRef<Ty, Args...> MakeParamsRef(Args&&... params) noexcept
+	{
+		return ParamsRef<Ty, Args...>(std::forward<Args>(params)...);
+	}
+
+	template <typename Ty, typename... Args>
+		requires std::is_constructible_v<Ty, Args...>
+	inline [[nodiscard]] ParamsVal<Ty, Args...> MakeParamsVal(Args&&... params) noexcept
+	{
+		return ParamsVal<Ty, Args...>(std::forward<Args>(params)...);
+	}
+
+	template <typename Ty, typename... Args>
+		requires std::is_constructible_v<Ty, Args...>
+	inline [[nodiscard]] Params<Ty, Args...> MakeParams(Args&&... params) noexcept
+	{
+		return Params<Ty, Args...>(std::forward<Args>(params)...);
+	}
+
+	/* Prepends a type to a TypeList. */
+	template <typename Ty, typename TyList>
+	struct Prepend;
+
+	template <typename Ty, typename... ExistingTypes>
+	struct Prepend<Ty, TypeList<ExistingTypes...>> {
+		using Type = TypeList<Ty, ExistingTypes...>;
+	};
+
+	/* Returns a type list with the given type prepended to it. */
+	template <typename Ty, typename TyList>
+	using Prepend_t = Prepend<Ty, TyList>::Type;
+
+	template <typename RemoveTy, typename... Types>
+	struct RemoveType;
+
+	/* Base case, empty pack... */
+	template <typename RemoveTy>
+	struct RemoveType<RemoveTy>
+	{
+		using Type = TypeList<>;
+	};
+
+	/* Recursive case...
+	 *
+	 * Initial use:
+	 *   RemoveType<B, A, B, C>
+	 *
+	 * Recursion:
+	 *   1) Tail = RemoveType<B, B, C>::Type
+	 *     2) Tail = RemoveType<B, C>::Type
+	 *	     3) Tail = RemoveType<B>::Type
+	 *        4) Type = TypeList<> (empty base case)
+	 *		 3) Type = TypeList<C> (TypeList<C> + empty Tail)
+	 *	   2) Type = TypeList<C> (First == Remove? No -> keep C)
+	 *	 1) Type = TypeList<C> (First == Remove? Yes -> drop B)
+	 *
+	 * Initial use:
+	 *   Tail = TypeList<C>
+	 *   Type = TypeList<A, C>
+	 */
+	template <typename RemoveTy, typename FirstTy, typename... RestTy>
+	struct RemoveType<RemoveTy, FirstTy, RestTy...>
+	{
+		/* Recurse through all other types... */
+		using Tail = typename RemoveType<RemoveTy, RestTy...>::Type;
+
+		using Type = std::conditional_t<
+			std::is_same_v<FirstTy, RemoveTy>, /* If first element needs to be removed... */
+			Tail,
+			typename Prepend_t<FirstTy, Tail>  /* Keep First... */
+		>;
+	};
+
+	template <typename RemoveTy, typename... Types>
+	using Remove_t = typename RemoveType<RemoveTy, Types...>::Type;
+
+	template <typename...>
+	struct Last;
+
+	template <typename Ty>
+	struct Last<Ty>
+	{
+		using Type = Ty;
+	};
+
+	template <typename Ty, typename... Types>
+	struct Last<Ty, Types...> : Last<Types...> {};
+
+	template <typename... Types>
+	using Last_t = typename Last<Types...>::Type;
+
+	template <typename...>
+	struct PopLast;
+
+	template <typename Last>
+	struct PopLast<Last>
+	{
+		using Type = TypeList<>;
+	};
+
+	template <typename First, typename... Rest>
+	struct PopLast<First, Rest...>
+	{
+		/* Recurse through all other types... */
+		using Tail = typename PopLast<Rest...>::Type;
+		using Type = typename Prepend_t<First, Tail>;
+	};
+
+	template <typename... Types>
+	using PopLast_t = typename PopLast<Types...>::Type;
+
+	/* Appends the type to the end of a TypeList... */
+	template <typename AddTy, typename... Types>
+	struct AddType
+	{
+		using Type = TypeList<Types..., AddTy>;
+	};
+
+	template <typename NewTy, typename... Types>
+	using Add_t = typename AddType<NewTy, Types...>::Type;
+#pragma endregion
+
+#pragma region Random Templated Types
+	template <std::unsigned_integral UIntegral,
+		UIntegral NBits,
+		UIntegral NShift,
+		UIntegral NPossibleBits = sizeof(UIntegral) * 8>
+		requires (NBits <= NPossibleBits) &&
+	(NBits + NShift <= NPossibleBits)
+		struct Bitfield
+	{
+
+		static constexpr UIntegral Bits = NBits; /* The total number of bits in the field... */
+		static constexpr UIntegral Shift = NShift;
+		static constexpr UIntegral PossibleBits = NPossibleBits;
+		static constexpr UIntegral One = static_cast<UIntegral>(1);
+		static constexpr UIntegral Mask = (One << Bits) - One; /* Based from the 0th bit. */
+		static constexpr UIntegral FieldMask = Mask << Shift; /* Based from the actual position in the bit field. */
+
+		inline static constexpr UIntegral Extract(UIntegral value)
+		{
+			/* Mask out the value from the field and shift it down from it's bit offset... */
+			return (value & FieldMask) >> Shift;
+		}
+
+		inline static constexpr UIntegral Insert(UIntegral newValue, UIntegral insert)
+		{
+			/* Clear the field's bits, shift up to bitfield, and mask to prevent
+			 * overflow of bits outside the field... */
+			return (insert & ~FieldMask) | ((newValue << Shift) & FieldMask);
+		}
+	};
+
+	template <typename Ty>
+	class ViewBasic
+	{
+	public:
+		inline ViewBasic(Ty* pData) noexcept
+			: mP_Ptr(pData)
+		{
+		}
+
+		ViewBasic() = default;
+		~ViewBasic() = default;
+
+		inline operator Ty* () noexcept { return mP_Ptr; }
+		inline ViewBasic<Ty>& operator=(Ty* pData) noexcept { mP_Ptr = pData; return*this; }
+		inline Ty* operator->() noexcept { return mP_Ptr; }
+
+		inline [[nodiscard]] Ty* Raw() noexcept { return mP_Ptr; }
+		inline [[nodiscard]] Ty& Ref();
+
+		inline void Reset() noexcept { mP_Ptr = nullptr; }
+
+		inline [[nodiscard]] bool NonNull() const noexcept { return mP_Ptr != nullptr; }
+		inline [[nodiscard]] bool Null() const noexcept { return mP_Ptr == nullptr; }
+
+		inline static [[nodiscard]] ViewBasic<Ty> NullView() noexcept { return ViewBasic<Ty>(); }
+	protected:
+		Ty* mP_Ptr = nullptr;
+	};
+
+	template <typename Ty>
+	inline [[nodiscard]] Ty& ViewBasic<Ty>::Ref()
+	{
+		CM_ENGINE_ASSERT(NonNull());
+		return *Raw();
+	}
+
+	/* View represents a non-onwing pointer to a resource that is NOT meant
+	 *   to be deleted by the client. */
+	template <typename Ty>
+	using View = ViewBasic<Ty>;
+
+	/* ConstView represents a non-onwing pointer to a const resource that is NOT meant
+	 *   to be deleted by the client. */
+	template <typename Ty>
+	struct ConstView : public ViewBasic<const Ty>
+	{
+		using Parent = ViewBasic<const Ty>;
+		using Parent::Parent;
+
+		inline ConstView(View<Ty> view) noexcept
+			: Parent(view.Raw())
+		{
+		}
+
+		inline ConstView& operator=(View<Ty> view) noexcept
+		{
+			/* Weird template specialization quirk... */
+			Parent::mP_Ptr = view.Raw();
+			return *this;
+		}
+
+		// prevent nullptr from hitting both overloads
+		inline ConstView& operator=(std::nullptr_t) noexcept
+		{
+			this->mP_Ptr = nullptr;
+			return *this;
+		}
+
+		ConstView() = default;
+		~ConstView() = default;
+	};
+
+#pragma region a bunch of useless custom smart pointers...
 	template <typename Ty>
 	class UniquePtr
 	{
@@ -765,5 +1037,11 @@ namespace CMEngine
 		mP_Control = other.mP_Control;
 		other.mP_Control = nullptr;
 	}
+#pragma endregion
+
+#pragma endregion
+
+#pragma endregion
+
 #pragma endregion
 }

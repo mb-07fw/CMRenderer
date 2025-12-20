@@ -5,8 +5,8 @@ namespace CMEngine::ECS
 {
 	ECS::ECS() noexcept
 	{
-		m_ReservedEntities.reserve(S_DEFAULT_POOL_SIZE);
-		m_DestroyedEntities.reserve(S_DEFAULT_POOL_SIZE);
+		m_ReservedEntities.reserve(S_Default_Entity_Pool_Size);
+		m_DestroyedEntities.reserve(S_Default_Entity_Pool_Size);
 	}
 
 	[[nodiscard]] Entity ECS::CreateEntity() noexcept
@@ -29,6 +29,9 @@ namespace CMEngine::ECS
 
 	bool ECS::DestroyEntity(Entity entity) noexcept
 	{
+		if (IsMappedToArchetype(entity))
+			UnmapFromArchetype(entity);
+
 		for (size_t index = 0; index < m_ReservedEntities.size(); ++index)
 		{
 			Entity reservedEntity = m_ReservedEntities[index];
@@ -41,6 +44,8 @@ namespace CMEngine::ECS
 				Entity replacingEntity = m_ReservedEntities.back();
 				m_ReservedEntities[index] = replacingEntity;
 			}
+
+
 
 			m_ReservedEntities.pop_back();
 			m_DestroyedEntities.emplace_back(reservedEntity);
@@ -60,6 +65,28 @@ namespace CMEngine::ECS
 				return true;
 
 		return false;
+	}
+
+	[[nodiscard]] bool ECS::IsMappedToArchetype(Entity e) const noexcept
+	{
+		uint32_t entityIndex = e.Index();
+
+		return entityIndex < m_SparseIDs.size() &&
+			m_SparseIDs[entityIndex] < m_DenseLocations.size() &&
+			!m_DenseLocations[m_SparseIDs[entityIndex]].ID.IsInvalid();
+	}
+
+	void ECS::UnmapFromArchetype(Entity e) noexcept
+	{
+		CM_ENGINE_ASSERT(IsMappedToArchetype(e));
+
+		const EntityLocation& location = m_DenseLocations[m_SparseIDs[e.Index()]];
+		auto it = m_Archetypes.find(location.ID);
+
+		if (it == m_Archetypes.end())
+			return;
+
+		it->second->DestroyRow(location.Index);
 	}
 
 	// TODO: Come up with a solution to handle the deletion of stale ID's.

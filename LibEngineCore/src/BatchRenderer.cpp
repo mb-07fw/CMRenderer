@@ -105,9 +105,9 @@ namespace CMEngine::Renderer
 			batch.OffsetInstances = (uint32_t)currentInstanceOffset;
 			batch.NumInstances = (uint32_t)batch.Instances.size();
 
-			ConstView<ECS::Storage<TransformComponent>> storage = m_ECS.GetStorage<TransformComponent>();
+			ConstView<ECS::ECSSparseSet<TransformComponent>> sparseSet = m_ECS.GetSparseSet<TransformComponent>();
 			for (ECS::Entity e : batch.Instances)
-				if (const TransformComponent* pTransform = storage->GetComponent(e); pTransform)
+				if (const TransformComponent* pTransform = sparseSet->Get(e); pTransform)
 					m_Instances.emplace_back(pTransform->ModelMatrix);
 			
 			currentInstanceOffset += batch.Instances.size();

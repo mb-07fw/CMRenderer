@@ -10,17 +10,22 @@ set(ENGINE_FILES
     "src/Platform.hpp"
     "src/PlatformUtil.hpp"
     "src/Types.hpp"
+    "src/Utility.hpp"
     "src/Component.hpp"
     "src/Math.hpp"
     "src/BatchRenderer.hpp"
     "src/Renderer.hpp"
+
+    "src/ECS/Archetype.hpp"
     "src/ECS/TypeID.hpp"
     "src/ECS/SparseSet.hpp"
     "src/ECS/Entity.hpp"
     "src/ECS/ECS.hpp"
+
     "src/Asset/Asset.hpp"
     "src/Asset/AssetID.hpp"
     "src/Asset/AssetManager.hpp"
+
     "src/Scene/Node.hpp"
     "src/Scene/CameraSystem.hpp"
     "src/Scene/Scene.hpp"
@@ -31,11 +36,14 @@ set(ENGINE_FILES
     "src/Component.cpp"
     "src/BatchRenderer.cpp"
     "src/Renderer.cpp"
+
     "src/ECS/TypeID.cpp"
     "src/ECS/Entity.cpp"
     "src/ECS/ECS.cpp"
+
     "src/Asset/AssetID.cpp"
     "src/Asset/AssetManager.cpp"
+
     "src/Scene/Node.cpp"
     "src/Scene/CameraSystem.cpp"
     "src/Scene/Scene.cpp"

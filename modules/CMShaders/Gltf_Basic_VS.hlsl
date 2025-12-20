@@ -20,7 +20,7 @@ struct VSOutput
     CM_POSITION_H PositionH : SV_Position; // (homogenous clip space)
 };
 
-cbuffer CBCameraProj : register(b0)
+cbuffer CB_CameraProj : register(b0)
 {
     /* NOTE: THE ORDER OF THIS IS SUPERRRR IMPORTANT, MUST MATCH C++ SIDE OR COMPUTER WILL GO BOOM!!! */
     column_major float4x4 View;
