@@ -1,155 +1,46 @@
 #include "Editor.hpp"
 #include "Component.hpp"
+#include "Math.hpp"
 
 #include <iostream>
 #include <chrono>
 #include <thread>
-#include <fstream>
+#include <format>
 
-struct A
+namespace std
 {
-	A(int x)
-		: X(x)
+	template <>
+	struct formatter<CMEngine::Float3>
 	{
-		std::cout << "Constructed A!\n";
-	}
+		// Parse: In this simple case, we don't support custom format specifiers,
+		// so we just consume the closing '}'
+		constexpr auto parse(std::format_parse_context& ctx)
+		{
+			return ctx.begin();
+		}
 
-	A(const A& other) noexcept
-		: X(other.X)
+		auto format(const CMEngine::Float3& f, auto& ctx) const
+		{
+			return std::format_to(ctx.out(), "({}, {}, {})", f.x, f.y, f.z);
+		}
+	};
+
+	template <>
+	struct formatter<CMEngine::Float3, wchar_t>
 	{
-		std::cout << "Copy constructed A!\n";
-	}
+		// Parse: In this simple case, we don't support custom format specifiers,
+		// so we just consume the closing '}'
+		constexpr auto parse(auto& ctx)
+		{
+			return ctx.begin();
+		}
 
-	A(A&& other) noexcept
-		: X(other.X)
-	{
-		std::cout << "Move constructed A!\n";
-	}
-
-
-	A& operator=(const A& other) noexcept
-	{
-		X = other.X;
-		std::cout << "Copy assigned A!\n";
-		return *this;
-	}
-
-	A& operator=(A&& other) noexcept
-	{
-		X = other.X;
-		std::cout << "Move assigned A!\n";
-		return *this;
-	}
-
-	int X = 0;
-};
-
-struct B
-{
-	B(float x)
-		: X(x)
-	{
-		std::cout << "Constructed B!\n";
-	}
-
-	B(const B& other) noexcept
-		: X(other.X)
-	{
-		std::cout << "Copy constructed B!\n";
-	}
-
-	B(B&& other) noexcept
-		: X(other.X)
-	{
-		std::cout << "Move constructed B!\n";
-	}
-
-	B& operator=(const B& other) noexcept
-	{
-		X = other.X;
-		std::cout << "Copy assigned B!\n";
-		return *this;
-	}
-
-	B& operator=(B&& other) noexcept
-	{
-		X = other.X;
-		std::cout << "Move assigned B!\n";
-		return *this;
-	}
-
-	float X = 0.0f;
-};
-
-struct TestA
-{
-	TestA(const A& a) noexcept
-		: a(a)
-	{
-	}
-
-	TestA(const TestA& other) noexcept
-		: a(other.a)
-	{
-		std::cout << "Copy constructed TestA!\n";
-	}
-
-	TestA(TestA&& other) noexcept
-		: a(std::move(other.a))
-	{
-		std::cout << "Move constructed TestA!\n";
-	}
-
-
-	TestA& operator=(const TestA& other) noexcept
-	{
-		a = other.a;
-		std::cout << "Copy assigned TestA!\n";
-	}
-
-	TestA& operator=(TestA&& other) noexcept
-	{
-		a = std::move(other.a);
-		std::cout << "Move assigned TestA!\n";
-	}
-
-	A a;
-};
-
-struct TestB
-{
-	TestB(const B& b) noexcept
-		: b(b)
-	{
-	}
-
-	TestB(const TestB& other) noexcept
-		: b(other.b)
-	{
-		std::cout << "Copy constructed TestB!\n";
-	}
-
-	TestB(TestB&& other) noexcept
-		: b(std::move(other.b))
-	{
-		std::cout << "Move constructed TestB!\n";
-	}
-
-
-	TestB& operator=(const TestB& other) noexcept
-	{
-		b = other.b;
-		std::cout << "Copy assigned TestB!\n";
-	}
-
-	TestB& operator=(TestB&& other) noexcept
-	{
-		b = std::move(other.b);
-		std::cout << "Move assigned TestB!\n";
-	}
-
-	B b;
-};
+		auto format(const CMEngine::Float3& f, auto& ctx) const
+		{
+			return std::format_to(ctx.out(), L"({}, {}, {})", f.x, f.y, f.z);
+		}
+	};
+}
 
 namespace CMEngine::Editor
 {
@@ -157,39 +48,15 @@ namespace CMEngine::Editor
 	{
 		ECS::ECS& ecs = m_Core.ECS();
 
-		/* Archetype testing shenanigans... */
-		View<ECS::Archetype<A, B>> archetype = ecs.CreateArchetype<A, B>();
-		CM_ENGINE_ASSERT(archetype.NonNull());
-		
-		ECS::Entity test = ecs.CreateEntity();
-
-		ecs.EmplaceRow(
-			test,
-			archetype.Ref(),
-			MakeParams<A>(2399),
-			MakeParams<B>(43.0f)
-		);
-
-		auto getTest = ecs.GetArchetype<A, B>();
-		auto newArchetype = ecs.ArchetypeAdd<float>(test, archetype.Ref(), 6454.0f);
-
-		auto getTestTwo = ecs.GetArchetype<A, B, float>();
-		auto getTestThree = ecs.GetArchetype<int, float, short>();
-
-		bool destroyed = ecs.DestroyEntity(test);
-		destroyed = ecs.DestroyArchetype(getTest);
-		destroyed = ecs.DestroyArchetype(getTestTwo);
-		destroyed = ecs.DestroyArchetype(getTestThree);
-
 		ECS::Entity cameraEntity = ecs.CreateEntity();
 		ECS::Entity gameObj1 = ecs.CreateEntity();
 		ECS::Entity gameObj2 = ecs.CreateEntity();
 			
 		Asset::AssetManager& assetManager = m_Core.AssetManager();
 
-		/* TODO: Fix weird DeadlyImportError exception... */
 		constexpr std::string_view MeshName = ENGINE_EDITOR_RESOURCES_MODEL_DIRECTORY "/test_cube.glb";
 
+		/* TODO: Fix weird DeadlyImportError exception... */
 		Asset::AssetID modelID;
 		Asset::Result result = assetManager.LoadModel(MeshName, modelID);
 
@@ -212,8 +79,92 @@ namespace CMEngine::Editor
 
 		/* Default construct components to avoid extra copying... */
 		ecs.EmplaceComponent<CameraComponent>(cameraEntity);
+		ecs.EmplaceComponent<LocomotionComponent>(cameraEntity);
 		ecs.EmplaceComponent<TransformComponent>(gameObj1);
 		ecs.EmplaceComponent<TransformComponent>(gameObj2);
+
+		/* TODO: Clean this manual event parsing up... (input mapping system?) */
+		m_KeyPressedID = m_Core.EventSystem().Subscribe(
+			Event::EventType::Input_Key_Pressed,
+			[cameraEntity, &ecs](const Event::IEvent& event)
+			{
+				CM_ENGINE_ASSERT(TryCast<const Event::KeyPressed*>(&event) != nullptr);
+				
+				auto& keyPressed = *static_cast<const Event::KeyPressed*>(&event);
+				auto locomotion = ecs.TryGetComponent<LocomotionComponent>(cameraEntity);
+
+				if (locomotion.Null())
+					return;
+
+				switch (keyPressed.Keycode)
+				{
+				case KeycodeType::Shift:
+					locomotion->SetFlag(LocomotionState::Running);
+					locomotion->ClearFlag(LocomotionState::Walking);
+					break;
+				case KeycodeType::Ctrl:
+					locomotion->InputDirection.y += -1.0f;
+					break;
+				case KeycodeType::Space:
+					locomotion->InputDirection.y += 1.0f;
+					break;
+				case KeycodeType::W:
+					locomotion->InputDirection.z += 1.0f;
+					break;
+				case KeycodeType::A: 
+					locomotion->InputDirection.x += -1.0f;
+					break;
+				case KeycodeType::S: 
+					locomotion->InputDirection.z += -1.0f;
+					break;
+				case KeycodeType::D: 
+					locomotion->InputDirection.x += 1.0f;
+					break;
+				case KeycodeType::B:
+					CM_ENGINE_BREAK_DEBUGGER();
+					break;
+				default:
+					return;
+				}
+			});
+
+		m_KeyReleasedID = m_Core.EventSystem().Subscribe(
+			Event::EventType::Input_Key_Released,
+			[cameraEntity, &ecs](const Event::IEvent& event)
+			{
+				CM_ENGINE_ASSERT(TryCast<const Event::KeyReleased*>(&event) != nullptr);
+
+				auto keyPressed = *static_cast<const Event::KeyReleased*>(&event);
+				auto locomotion = ecs.TryGetComponent<LocomotionComponent>(cameraEntity);
+
+				switch (keyPressed.Keycode)
+				{
+				case KeycodeType::Shift:
+					locomotion->ClearFlag(LocomotionState::Running);
+					locomotion->SetFlag(LocomotionState::Walking);
+					break;
+				case KeycodeType::Ctrl:
+					locomotion->InputDirection.y += 1.0f;
+					break;
+				case KeycodeType::Space:
+					locomotion->InputDirection.y += -1.0f;
+					break;
+				case KeycodeType::W:
+					locomotion->InputDirection.z += -1.0f;
+					break;
+				case KeycodeType::A:
+					locomotion->InputDirection.x += 1.0f;
+					break;
+				case KeycodeType::S:
+					locomotion->InputDirection.z += 1.0f;
+					break;
+				case KeycodeType::D:
+					locomotion->InputDirection.x += -1.0f;
+					break;
+				default:
+					return;
+				}
+			});
 
 		TransformComponent& gObj1Transform = ecs.GetComponent<TransformComponent>(gameObj1);
 		TransformComponent& gObj2Transform = ecs.GetComponent<TransformComponent>(gameObj2);
@@ -287,33 +238,97 @@ namespace CMEngine::Editor
 
 	Editor::~Editor() noexcept
 	{	
+		/* Unsubscribe any listeners so no callbacks are triggered after destruction. */
+		auto& eventSystem = m_Core.EventSystem();
+		eventSystem.Unsubscribe(m_KeyPressedID);
+		eventSystem.Unsubscribe(m_KeyReleasedID);
 	}
+
 
 	void Editor::Run() noexcept
 	{
+		auto lastTime = std::chrono::high_resolution_clock::now();
+		
+		constexpr std::string_view DirectionFmt =	  "Input Direction: {}";
+		constexpr std::string_view NormDirectionFmt = "Normalized Direction: {}";
+		constexpr std::string_view WalkSpeedFmt =	  "Walk Speed: {}";
+		constexpr std::string_view VelocityFmt =	  "Velocity: {}";
+		constexpr std::string_view DeltaVelocityFmt = "Delta Velocity: {}";
+		constexpr std::string_view PosFmt =			  "Pos: {}";
+
 		while (m_Core.Platform().IsRunning())
 		{
 			auto startTime = std::chrono::high_resolution_clock::now();
 
-			m_Core.Update();
+			float deltaSeconds = std::chrono::duration<float>((startTime - lastTime)).count();
 
-			Renderer::Renderer& renderer = m_Core.Renderer();
+			lastTime = startTime;
+
 			ECS::ECS& ecs = m_Core.ECS();
 			Scene::SceneManager& sceneManager = m_Core.SceneManager();
-			Scene::Scene& scene = sceneManager.RetrieveScene(m_EditorSceneID);
+			Renderer::Renderer& renderer = m_Core.Renderer();
+
+			/* Process window messages, etc... */
+			m_Core.Update();
+
+			ECS::Entity cameraEntity = sceneManager.GetCameraSystem().GetMainCameraEntity();
+
+			auto& locomotion = ecs.GetComponent<LocomotionComponent>(cameraEntity);
+			auto& camera = ecs.GetComponent<CameraComponent>(cameraEntity);
+
+			Float3& currentPos = camera.Data.Origin;
+			Float3 previousPos = currentPos;
+
+			Float3 normDirection = Math::Normalize(locomotion.InputDirection);
+			Float3 velocity = normDirection;
+
+			velocity.x *= locomotion.WalkSpeed;
+			velocity.z *= locomotion.WalkSpeed;
+			velocity.y *= locomotion.JumpForce;
+
+			Float3 deltaVelocity = velocity * deltaSeconds;
+			currentPos += deltaVelocity;
+
+			/* Technically, the input direction from last frame could be cached 
+			 *   instead, saving the calulations unless necessary... */
+			if (!currentPos.IsNearEqual(previousPos))
+			{
+				camera.CreateViewMatrix();
+				renderer.SetCamera(camera);
+			}
 
 			renderer.StartFrame(Color4::Black());
+
+			if (renderer.ImGuiWindow("Locomotion Debugging"))
+			{
+				std::string directionStr = std::vformat(DirectionFmt, std::make_format_args(locomotion.InputDirection));
+				std::string normDirectionStr = std::vformat(NormDirectionFmt, std::make_format_args(normDirection));
+				std::string walkSpeedStr = std::vformat(WalkSpeedFmt, std::make_format_args(locomotion.WalkSpeed));
+				std::string velocityStr = std::vformat(VelocityFmt, std::make_format_args(velocity));
+				std::string deltaVelocityStr = std::vformat(DeltaVelocityFmt, std::make_format_args(deltaVelocity));
+				std::string posStr = std::vformat(PosFmt, std::make_format_args(currentPos));
+
+				renderer.ImGuiText(directionStr);
+				renderer.ImGuiText(normDirectionStr);
+				renderer.ImGuiText(walkSpeedStr);
+				renderer.ImGuiText(velocityStr);
+				renderer.ImGuiText(deltaVelocityStr);
+				renderer.ImGuiText(posStr);
+			}
+
+			renderer.ImGuiEndWindow();
 
 			Renderer::BatchRenderer& batchRenderer = renderer.GetBatchRenderer();
 
 			batchRenderer.BeginBatch();
 
+			Scene::Scene& scene = sceneManager.RetrieveScene(m_EditorSceneID);
 			for (const auto& node : scene.Graph().Root().Nodes)
 				if (node.Type == Scene::Node::NodeType::GameObject)
 				{
-					auto mesh = ecs.GetComponent<MeshComponent>(node.Entity);
-					auto material = ecs.GetComponent<MaterialComponent>(node.Entity);
-					auto texture = ecs.TryGetComponent<TextureComponent>(node.Entity);
+					MeshComponent mesh = ecs.GetComponent<MeshComponent>(node.Entity);
+					MaterialComponent material = ecs.GetComponent<MaterialComponent>(node.Entity);
+					View<TextureComponent> texture = ecs.TryGetComponent<TextureComponent>(node.Entity);
 
 					batchRenderer.SubmitInstance(
 						node.Entity,

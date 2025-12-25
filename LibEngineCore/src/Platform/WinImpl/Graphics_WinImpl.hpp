@@ -63,6 +63,19 @@ namespace CMEngine::Platform::WinImpl
 			uint32_t startInstanceLocation
 		) noexcept override;
 
+		void D2DDrawText(
+			const std::wstring_view& text,
+			const Float2& pos,
+			const Float2& res,
+			const Color4& color
+		) noexcept;
+
+		void D2DDrawRect(
+			const Float2& pos,
+			const Float2& res,
+			const Color4& color
+		) noexcept;
+
 		virtual [[nodiscard]] Resource<IInputLayout> CreateInputLayout(
 			std::span<const InputElement> elems,
 			ShaderID vertexID
@@ -145,19 +158,6 @@ namespace CMEngine::Platform::WinImpl
 
 		void D2DBeginDraw() noexcept;
 		void D2DEndDraw() noexcept;
-
-		void D2DDrawText(
-			const std::wstring_view& text,
-			const Float2& pos,
-			const Float2& res,
-			const Color4& color
-		) noexcept;
-
-		void D2DDrawRect(
-			const Float2& pos,
-			const Float2& res,
-			const Color4& color
-		) noexcept;
 	private:
 		Window& m_Window; /* TODO: Come up with a better solution for this dependency... */
 		const PlatformConfig& m_Config;

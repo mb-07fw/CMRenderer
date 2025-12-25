@@ -55,8 +55,9 @@ namespace CMEngine::Platform::WinImpl
 		std::exit(-1);
 	}
 
-	Platform::Platform() noexcept
+	Platform::Platform(Event::EventSystem& eventSystem) noexcept
 		: m_Config(),
+		  m_Window(eventSystem),
 		  m_Graphics(m_Window, m_Config)
 	{
 		CM_ENGINE_ASSERT(CoInitialize(nullptr) == S_OK);

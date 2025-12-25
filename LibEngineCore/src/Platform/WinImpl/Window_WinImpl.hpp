@@ -3,6 +3,8 @@
 #include "Platform/Core/IWindow.hpp"
 #include "Platform/WinImpl/PlatformOSFwd_WinImpl.hpp"
 
+#include "Event/EventSystem.hpp"
+
 #include <string_view>
 #include <vector>
 
@@ -14,7 +16,7 @@ namespace CMEngine::Platform::WinImpl
 	class Window : public IWindow
 	{
 	public:
-		Window() noexcept;
+		Window(Event::EventSystem& eventSystem) noexcept;
 		~Window() noexcept;
 
 		Window(const Window& other) = delete;
@@ -79,6 +81,9 @@ namespace CMEngine::Platform::WinImpl
 		RECT m_ClientArea = {};
 		RECT m_WindowArea = {};
 		std::vector<WindowCallbackOnResize> m_CallbacksOnResize;
+		/* TODO: Organize this somewhere else later... (Keyboard)...  */
+		std::vector<KeycodeType> m_PressedKeys;
+		Event::EventSystem& m_EventSystem;
 	};
 
 	inline constexpr [[nodiscard]] Rect RECTToRect(RECT rect) noexcept

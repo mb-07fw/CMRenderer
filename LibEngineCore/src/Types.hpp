@@ -39,7 +39,6 @@ namespace CMEngine
 
 	inline constexpr float G_Near_Equal_Float_Epsilon = 1e-4f;
 
-	/* Note: Cannot be constexpr due to std::abs not being constexpr. */
 	inline [[nodiscard]] bool IsNearEqualFloat(float x, float other, float epsilon = G_Near_Equal_Float_Epsilon) noexcept
 	{
 		return std::abs(x - other) <= epsilon;
@@ -86,6 +85,13 @@ namespace CMEngine
 
 		inline constexpr [[nodiscard]] bool operator==(Float2 other) const noexcept { return IsEqual(other); }
 		inline constexpr [[nodiscard]] bool operator==(float value) const noexcept { return IsEqual(value); }
+		inline constexpr [[nodiscard]] Float2 operator*(float value) const noexcept { return Multiply(value); }
+		inline constexpr [[nodiscard]] Float2 operator*(Float2 other) const noexcept { return Multiply(other); }
+		inline constexpr Float2& operator+=(Float2 other) noexcept { *this = Add(other); return *this; }
+
+		inline constexpr [[nodiscard]] Float2 Multiply(float value) const noexcept;
+		inline constexpr [[nodiscard]] Float2 Multiply(Float2 other) const noexcept;
+		inline constexpr [[nodiscard]] Float2 Add(Float2 other) const noexcept;
 		inline constexpr [[nodiscard]] bool IsEqual(Float2 other) const noexcept;
 		inline constexpr [[nodiscard]] bool IsEqual(float value) const noexcept;
 		inline constexpr [[nodiscard]] bool IsZero() const noexcept;
@@ -121,6 +127,13 @@ namespace CMEngine
 
 		inline constexpr [[nodiscard]] bool operator==(Float3 other) const noexcept { return IsEqual(other); }
 		inline constexpr [[nodiscard]] bool operator==(float value) const noexcept { return IsEqual(value); }
+		inline constexpr [[nodiscard]] Float3 operator*(float value) const noexcept { return Multiply(value); }
+		inline constexpr [[nodiscard]] Float3 operator*(Float3 other) const noexcept { return Multiply(other); }
+		inline constexpr Float3& operator+=(Float3 other) noexcept { *this = Add(other); return *this; }
+
+		inline constexpr [[nodiscard]] Float3 Multiply(float value) const noexcept;
+		inline constexpr [[nodiscard]] Float3 Multiply(Float3 other) const noexcept;
+		inline constexpr [[nodiscard]] Float3 Add(Float3 other) const noexcept;
 		inline constexpr [[nodiscard]] bool IsEqual(Float3 other) const noexcept;
 		inline constexpr [[nodiscard]] bool IsEqual(float value) const noexcept;
 		inline constexpr [[nodiscard]] bool IsZero() const noexcept { return IsEqual(0.0f); }
@@ -131,6 +144,9 @@ namespace CMEngine
 
 		float z = 0.0f;
 	};
+
+	using Vec2 = Float2;
+	using Vec3 = Float3;
 
 	struct Rect
 	{
@@ -204,6 +220,8 @@ namespace CMEngine
 #pragma endregion
 
 #pragma region Type Definitions (non-templated)
+	
+
 	inline constexpr Float2::Float2(float x, float y) noexcept
 		: x(x), y(y)
 	{
@@ -212,6 +230,21 @@ namespace CMEngine
 	inline constexpr Float2::Float2(Float3 float3) noexcept
 		: x(float3.x), y(float3.y)
 	{
+	}
+
+	inline constexpr [[nodiscard]] Float2 Float2::Multiply(float value) const noexcept
+	{
+		return Float2(x * value, y * value);
+	}
+
+	inline constexpr [[nodiscard]] Float2 Float2::Multiply(Float2 other) const noexcept
+	{
+		return Float2(x * other.x, y * other.y);
+	}
+
+	inline constexpr [[nodiscard]] Float2 Float2::Add(Float2 other) const noexcept
+	{
+		return Float2(x + other.x, y + other.y);
 	}
 
 	inline constexpr [[nodiscard]] bool Float2::IsEqual(Float2 other) const noexcept
@@ -242,6 +275,21 @@ namespace CMEngine
 		: Float2(float2),
 		z(z)
 	{
+	}
+
+	inline constexpr [[nodiscard]] Float3 Float3::Multiply(float value) const noexcept
+	{
+		return Float3(x * value, y * value, z * value);
+	}
+
+	inline constexpr [[nodiscard]] Float3 Float3::Multiply(Float3 other) const noexcept
+	{
+		return Float3(x * other.x, y * other.y, z * other.z);
+	}
+
+	inline constexpr [[nodiscard]] Float3 Float3::Add(Float3 other) const noexcept
+	{
+		return Float3(x + other.x, y + other.y, z + other.z);
 	}
 
 	inline constexpr [[nodiscard]] bool Float3::IsEqual(Float3 other) const noexcept
@@ -657,6 +705,8 @@ namespace CMEngine
 	};
 
 #pragma region a bunch of useless custom smart pointers...
+	/* I will never use these a day in my life... */
+
 	template <typename Ty>
 	class UniquePtr
 	{

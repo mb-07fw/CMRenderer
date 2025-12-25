@@ -5,9 +5,32 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 
 namespace CMEngine::Platform::WinImpl
 {
-	Window::Window() noexcept
+	constexpr [[nodiscard]] KeycodeType TranslateVirtualKey(WPARAM vk)
+	{
+		if (vk >= 'A' && vk <= 'Z')
+			return static_cast<KeycodeType>(
+				(uint8_t)KeycodeType::A + (vk - 'A')
+			);
+
+		switch (vk)
+		{
+		case VK_F1:      return KeycodeType::F1;
+		case VK_RETURN:  return KeycodeType::Return;
+		case VK_BACK:    return KeycodeType::Back;
+		case VK_MENU:    return KeycodeType::Alt;
+		case VK_SHIFT:   return KeycodeType::Shift;
+		case VK_CONTROL: return KeycodeType::Ctrl;
+		case VK_SPACE:   return KeycodeType::Space;
+		default:		 return KeycodeType::Unknown;
+		}
+	}
+
+	Window::Window(Event::EventSystem& eventSystem) noexcept
+		: m_EventSystem(eventSystem)
 	{
 		Init();
+
+		m_PressedKeys.reserve((size_t)KeycodeType::Total_Values);
 	}
 
 	Window::~Window() noexcept
@@ -197,15 +220,70 @@ namespace CMEngine::Platform::WinImpl
 
 		switch (msgCode)
 		{
+		case WM_KEYDOWN:
+		{
+			KeycodeType keycode = TranslateVirtualKey(wParam);
+
+			/* Bit 30 is set if the message is a repeat. */
+			bool isRepeat = (lParam & (1 << 30)) != 0;
+			if (isRepeat)
+				return S_OK;
+
+			Event::KeyPressed event(keycode);
+			m_EventSystem.Dispatch(event);
+
+			m_PressedKeys.emplace_back(keycode);
+			return S_OK;
+		}
 		case WM_KEYUP:
 			if (wParam != VK_ESCAPE)
-				return DefWindowProcW(hWnd, msgCode, wParam, lParam);
+			{
+				KeycodeType keycode = TranslateVirtualKey(wParam);
 
+				Event::KeyReleased event(keycode);
+				m_EventSystem.Dispatch(event);
+
+				/* TODO: Come up with a more efficient approach for this... */
+				if (m_PressedKeys.size() != 1)
+					for (size_t i = 0; i < m_PressedKeys.size(); ++i)
+					{
+						KeycodeType pressedKeycode = m_PressedKeys[i];
+
+						if (keycode == pressedKeycode)
+						{
+							m_PressedKeys[i] = m_PressedKeys.back();
+							break;
+						}
+					}
+
+				m_PressedKeys.pop_back();
+				return S_OK;
+			}
+			
+			/* Close if escape is pressed... */
 			[[fallthrough]];
 		case WM_CLOSE:
 			m_Running = false;
 			PostQuitMessage(0);
 			return S_OK;
+		case WM_KILLFOCUS: [[fallthrough]];
+		case WM_ACTIVATEAPP: // wParam == FALSE means deactivated
+		{
+			/* Guarded, since events shouldn't be dispatched when the program window is closing. */
+			if (m_Running)
+			{
+				/* Release any key's that were active when the window loses focus... */
+				Event::KeyReleased event;
+				for (KeycodeType keycode : m_PressedKeys)
+				{
+					event.Keycode = keycode;
+					m_EventSystem.Dispatch(event);
+				}
+
+				m_PressedKeys.clear();
+			}
+			return DefWindowProcW(hWnd, msgCode, wParam, lParam);
+		}
 		case WM_SIZE:
 			if (!GetClientRect(mP_HWND, &m_ClientArea))
 				spdlog::critical("(WinImpl_Window) Internal error: Failed to retrieve client area after resizing.");

@@ -24,6 +24,10 @@ namespace CMEngine::Renderer
 
 		void Flush() noexcept;
 
+		[[nodiscard]] bool ImGuiWindow(const std::string_view& label) noexcept;
+		void ImGuiEndWindow() noexcept;
+		void ImGuiText(const std::string_view& text) noexcept;
+
 		inline [[nodiscard]] BatchRenderer& GetBatchRenderer() noexcept { return m_BatchRenderer; }
 	private:
 		static constexpr uint32_t S_CB_CameraProj_Register = 0;

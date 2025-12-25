@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Asset/Asset.hpp"
+#include "Event/Observer.hpp"
 #include "Types.hpp"
 #include "Math.hpp"
 
@@ -128,5 +129,77 @@ namespace CMEngine
 		Transform Transform;
 		Math::Mat4 ModelMatrix = Math::IdentityMatrix();
 		bool Dirty = false;
+	};
+
+	using LocomotionStateUnderlying = uint8_t;
+	using LocomotionFlags = LocomotionStateUnderlying;
+
+	enum class LocomotionState : LocomotionStateUnderlying
+	{
+		Unknown,
+		Idle,
+		Walking,
+		Running,
+		Jumping,
+		Falling
+	};
+
+	inline constexpr [[nodiscard]] LocomotionState operator|(LocomotionState lhs, LocomotionState rhs) noexcept
+	{
+		return static_cast<LocomotionState>((LocomotionStateUnderlying)lhs | (LocomotionStateUnderlying)rhs);
+	}
+
+	inline constexpr [[nodiscard]] LocomotionState operator&(LocomotionState lhs, LocomotionState rhs) noexcept
+	{
+		return static_cast<LocomotionState>((LocomotionStateUnderlying)lhs & (LocomotionStateUnderlying)rhs);
+	}
+
+	inline constexpr [[nodiscard]] LocomotionState operator~(LocomotionState type) noexcept
+	{
+		return static_cast<LocomotionState>(~(LocomotionStateUnderlying)type);
+	}
+
+	inline constexpr void operator|=(LocomotionState& lhs, LocomotionState rhs) noexcept
+	{
+		lhs = lhs | rhs;
+	}
+
+	inline constexpr void operator&=(LocomotionState& lhs, LocomotionState rhs) noexcept
+	{
+		lhs = lhs & rhs;
+	}
+
+	inline constexpr [[nodiscard]] LocomotionFlags ToFlags(LocomotionState type) noexcept
+	{
+		return (LocomotionFlags)type;
+	}
+
+	inline constexpr [[nodiscard]] bool IsMovementTypeSet(LocomotionFlags flags, LocomotionState type) noexcept
+	{
+		return flags & (LocomotionFlags)type;
+	}
+
+	struct LocomotionComponent
+	{
+		LocomotionFlags Flags = ToFlags(LocomotionState::Walking);
+
+		Vec3 Velocity = { 0.0f, 0.0f, 0.0f };
+		Vec3 Acceleration = { 0.0f, 0.0f, 0.0f };
+		Vec3 InputDirection = { 0.0f, 0.0f, 0.0f };
+
+		float WalkSpeed = 7.5f; /* m/s... */
+		float RunSpeed = 10.0f; /* m/s... */
+		float JumpForce = 10.0f; /* m/s... */
+		float Gravity = 9.81f; /* m/s... */
+
+		inline void SetFlag(LocomotionState state) noexcept
+		{
+			Flags |= (LocomotionFlags)state;
+		}
+
+		inline void ClearFlag(LocomotionState state) noexcept
+		{
+			Flags &= ~(LocomotionFlags)state;
+		}
 	};
 }

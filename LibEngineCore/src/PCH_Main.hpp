@@ -2,12 +2,14 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <cmath>
 
 #include <array>
 #include <atomic>
 #include <algorithm>
 #include <condition_variable>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <functional>
 #include <iostream>

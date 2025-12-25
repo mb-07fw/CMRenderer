@@ -5,6 +5,7 @@
 #include "Platform/WinImpl/Window_WinImpl.hpp"
 #include "Platform/WinImpl/Graphics_WinImpl.hpp"
 
+#include "Event/EventSystem.hpp"
 
 namespace CMEngine::Platform::WinImpl
 {
@@ -31,7 +32,7 @@ namespace CMEngine::Platform::WinImpl
 	class Platform : public IPlatform
 	{
 	public:
-		Platform() noexcept;
+		Platform(Event::EventSystem& eventSystem) noexcept;
 		~Platform() noexcept;
 
 		virtual bool Update() noexcept override;

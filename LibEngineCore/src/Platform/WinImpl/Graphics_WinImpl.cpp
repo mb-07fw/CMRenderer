@@ -42,6 +42,8 @@ namespace CMEngine::Platform::WinImpl
 		ImGui_ImplWin32_NewFrame();
 		ImGui_ImplDX11_NewFrame();
 		ImGui::NewFrame();
+
+		D2DBeginDraw();
 	}
 
 	void Graphics::Present() noexcept
@@ -57,6 +59,8 @@ namespace CMEngine::Platform::WinImpl
 		}
 
 		HRESULT hr = mP_SwapChain->Present(m_PresentSyncInterval, m_PresentFlags);
+
+		D2DEndDraw();
 
 		if (!FAILED(hr))
 		{

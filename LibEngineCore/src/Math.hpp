@@ -8,11 +8,42 @@ namespace CMEngine::Math
 {
 	using Mat4 = DirectX::XMMATRIX;
 
+	inline constexpr [[nodiscard]] float AngleToRadians(float angle) noexcept;
+
 	inline constexpr [[nodiscard]] DirectX::XMFLOAT3 ToXMFloat3(Float2 float2, float z = 0.0f) noexcept;
 	inline constexpr [[nodiscard]] DirectX::XMFLOAT3 ToXMFloat3(Float3 float3) noexcept;
 
 	inline constexpr [[nodiscard]] DirectX::XMFLOAT4 ToXMFloat4(Float2 float2, float z = 0.0f, float w = 1.0f) noexcept;
 	inline constexpr [[nodiscard]] DirectX::XMFLOAT4 ToXMFloat4(Float3 float3, float w = 1.0f) noexcept;
+
+	/* Returns the length (magnitude) of the provided vector. */
+	[[nodiscard]] float Length(Vec2 v) noexcept;
+	[[nodiscard]] float Length(Vec3 v) noexcept;
+
+	/* Normalizes the length (magnitude) of the provided vector to unit length. (1)*/
+	[[nodiscard]] Vec2 Normalize(Vec2 v) noexcept;
+	[[nodiscard]] Vec3 Normalize(Vec3 v) noexcept;
+
+	[[nodiscard]] Mat4 IdentityMatrix() noexcept;
+
+	void ViewMatrixLookAtLH(
+		Mat4& outMatrix,
+		const Float3& origin,
+		const Float3& lookAtPos
+	) noexcept;
+
+	void ProjectionMatrixPerspectiveFovLH(
+		Mat4& outMatrix,
+		float fovAngle,
+		float aspectRatio,
+		float nearZ,
+		float farZ
+	);
+
+	void TransformMatrix(
+		Mat4& outMatrix,
+		const Transform& transform
+	) noexcept;
 
 	inline constexpr [[nodiscard]] float AngleToRadians(float angle) noexcept
 	{
@@ -37,79 +68,5 @@ namespace CMEngine::Math
 	inline constexpr [[nodiscard]] DirectX::XMFLOAT4 ToXMFloat4(Float3 float3, float w) noexcept
 	{
 		return DirectX::XMFLOAT4(float3.x, float3.y, float3.z, w);
-	}
-
-	inline [[nodiscard]] Mat4 IdentityMatrix() noexcept
-	{
-		return DirectX::XMMatrixIdentity();
-	}
-
-	inline void ViewMatrixLookAtLH(
-		Mat4& outMatrix,
-		const Float3& origin,
-		const Float3& lookAtPos
-	) noexcept
-	{
-		DirectX::XMFLOAT3 cameraPos = ToXMFloat3(origin);
-		DirectX::XMFLOAT3 cameraFocusPos = ToXMFloat3(lookAtPos);
-		DirectX::XMFLOAT3 upDirection = { 0.0f, 1.0f, 0.0f };
-
-		DirectX::XMVECTOR cameraPosVec = DirectX::XMLoadFloat3(&cameraPos);
-		DirectX::XMVECTOR cameraFocusPosVec = DirectX::XMLoadFloat3(&cameraFocusPos);
-		DirectX::XMVECTOR upDirectionVec = DirectX::XMLoadFloat3(&upDirection);
-
-		outMatrix = DirectX::XMMatrixTranspose(
-			DirectX::XMMatrixLookAtLH(
-				cameraPosVec,
-				cameraFocusPosVec,
-				upDirectionVec
-			)
-		);
-	}
-
-	inline void ProjectionMatrixPerspectiveFovLH(
-		Mat4& outMatrix,
-		float fovAngle,
-		float aspectRatio,
-		float nearZ,
-		float farZ
-	)
-	{
-		float fovRad = AngleToRadians(fovAngle);
-
-		outMatrix = DirectX::XMMatrixTranspose(
-			DirectX::XMMatrixPerspectiveFovLH(
-				fovRad,
-				aspectRatio,
-				nearZ,
-				farZ
-			)
-		);
-	}
-
-	inline void TransformMatrix(Mat4& outMatrix, const Transform& transform) noexcept
-	{
-		outMatrix = DirectX::XMMatrixIdentity();
-		
-		if (!transform.Scaling.IsNearEqual(1.0f))
-			outMatrix *= DirectX::XMMatrixScaling(
-				transform.Scaling.x,
-				transform.Scaling.y,
-				transform.Scaling.z
-			);
-		if (!transform.Rotation.IsNearEqual(0.0f))
-			outMatrix *= DirectX::XMMatrixRotationRollPitchYaw(
-				AngleToRadians(transform.Rotation.x),
-				AngleToRadians(transform.Rotation.y),
-				AngleToRadians(transform.Rotation.z)
-			);
-		if (!transform.Translation.IsNearEqual(0.0f))
-			outMatrix *= DirectX::XMMatrixTranslation(
-				transform.Translation.x,
-				transform.Translation.y,
-				transform.Translation.z
-			);
-
-		outMatrix = DirectX::XMMatrixTranspose(outMatrix);
 	}
 }

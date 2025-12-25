@@ -28,5 +28,7 @@ namespace CMEngine::Editor
 	private:
 		EngineCore m_Core;
 		Scene::SceneID m_EditorSceneID = {};
+		Event::ObserverID m_KeyPressedID;
+		Event::ObserverID m_KeyReleasedID;
 	};
 }

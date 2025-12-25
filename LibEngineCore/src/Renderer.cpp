@@ -1,6 +1,7 @@
 #include "PCH.hpp"
 #include "Renderer.hpp"
 #include "Component.hpp"
+#include "imgui/CMImGui.hpp"
 
 namespace CMEngine::Renderer
 {
@@ -35,5 +36,20 @@ namespace CMEngine::Renderer
 	void Renderer::Flush() noexcept
 	{
 		m_BatchRenderer.Flush();
+	}
+
+	[[nodiscard]] bool Renderer::ImGuiWindow(const std::string_view& label) noexcept
+	{
+		return ImGui::Begin(label.data());
+	}
+
+	void Renderer::ImGuiEndWindow() noexcept
+	{
+		ImGui::End();
+	}
+
+	void Renderer::ImGuiText(const std::string_view& text) noexcept
+	{
+		ImGui::Text(text.data());
 	}
 }

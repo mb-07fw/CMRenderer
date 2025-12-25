@@ -31,6 +31,23 @@ namespace CMEngine
 	template struct WindowCallback<WindowCallbackSignatureOnResize>;
 	using WindowCallbackOnResize = WindowCallback<WindowCallbackSignatureOnResize>;
 
+	enum class KeycodeType : uint8_t
+	{
+		Unknown,
+		F1,
+		Return,
+		Back, // Backspace...
+		Alt,
+		Shift,
+		Ctrl,
+		Space,
+		A, B, C, D, E, F, G, H, I, J, K, L, M,
+		N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+
+		Total_Keys = Z,
+		Total_Values = Z + 1
+	};
+
 	class IWindow
 	{
 	public:

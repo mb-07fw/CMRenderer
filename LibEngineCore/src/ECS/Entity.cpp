@@ -27,12 +27,12 @@ namespace CMEngine::ECS
 
 	void Entity::SetVersion(uint32_t version) noexcept
 	{
-		VersionField::Insert(version, ID);
+		ID = VersionField::Insert(version, ID);
 	}
 
 	void Entity::SetIndex(uint32_t index) noexcept
 	{
-		IndexField::Insert(index, ID);
+		ID = IndexField::Insert(index, ID);
 	}
 
 	void Entity::IncrementVersion() noexcept
