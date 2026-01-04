@@ -1,6 +1,6 @@
-# CMRenderer
+# Engine
 
-This project is a rendering framework / primitive game engine I am implementing in C++ to learn graphics programming in depth. I have plans for portability, but the project is currently only buildable on Windows, and with MSVC bias.
+This project is a primitive game engine I am implementing in C++ to learn graphics programming in depth. I have plans for portability, but the project is currently only buildable on Windows, and is heavily geared towards MSVC.
 
 The project also currently relies heavily on D3D11, and will terminate at runtime if not supported. (Cross platform is yet to be implemented)
 
