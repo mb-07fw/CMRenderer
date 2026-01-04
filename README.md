@@ -20,7 +20,7 @@ which *must* be cloned alongside the base repository.
 
 To clone the repository:
 ```
-git clone --recursive-submodules [this-repository-url]
+git clone --recurse-submodules [this-repository-url]
 ```
 
 Or if the repository has already been cloned:
@@ -31,7 +31,7 @@ git submodule update --init --recursive
 ## Building (CMake)
 For CMake, you can generate a project file by running:
 ```
-cmake -S . -B build -G "[your-generator-here]"
+cmake -B build -G "[your-generator-here]"
 ```
 
 at the root directory of the project (the directory the project was cloned into).
