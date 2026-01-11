@@ -1,0 +1,85 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "CMake: Configure (Single-Gen: Debug)",
+            "type": "shell",
+            "command": "cmake -B build -DCMAKE_BUILD_TYPE=Debug",
+            "problemMatcher": ["$msCompile"]
+        },
+        {
+            "label": "CMake: Configure (Single-Gen: RelWithDebInfo)",
+            "type": "shell",
+            "command": "cmake -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo",
+            "problemMatcher": ["$msCompile"]
+        },
+        {
+            "label": "CMake: Configure (Single-Gen: Release)",
+            "type": "shell",
+            "command": "cmake -B build -DCMAKE_BUILD_TYPE=Release",
+            "problemMatcher": ["$msCompile"]
+        },
+        {
+            "label": "CMake: Configure (Single-Gen: MinSizeRel)",
+            "type": "shell",
+            "command": "cmake -B build -DCMAKE_BUILD_TYPE=MinSizeRel",
+            "problemMatcher": ["$msCompile"]
+        },
+        {
+            "label": "CMake: Configure (Multi-Gen; Default)",
+            "type": "shell",
+            "command": "cmake -B build",
+            "problemMatcher": ["$msCompile"]
+        },
+        {
+            "label": "CMake: Build (Default)",
+            "type": "shell",
+            "command": "cmake --build build",
+            "problemMatcher": ["$msCompile"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "CMake: Build (Debug)",
+            "type": "shell",
+            "command": "cmake --build build --config Debug",
+            "problemMatcher": ["$msCompile"],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "CMake: Build (RelWithDebInfo)",
+            "type": "shell",
+            "command": "cmake --build build --config RelWithDebInfo",
+            "problemMatcher": ["$msCompile"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "CMake: Build (Release)",
+            "type": "shell",
+            "command": "cmake --build build --config Release",
+            "problemMatcher": ["$msCompile"],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "CMake: Build (MinSizeRel)",
+            "type": "shell",
+            "command": "cmake --build build --config MinSizeRel",
+            "problemMatcher": ["$msCompile"],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+    ]
+}

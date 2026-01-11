@@ -1,0 +1,1 @@
+// This is to force CMake to export Common as a .lib that can be linked to. (for now)
