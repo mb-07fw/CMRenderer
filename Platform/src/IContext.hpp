@@ -4,7 +4,7 @@
 #include "IPlatform.hpp"
 #include "IApi.hpp"
 
-namespace Platform::Graphics
+namespace Platform
 {
     class PLATFORM_API IContext
     {

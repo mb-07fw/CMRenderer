@@ -85,7 +85,9 @@ inline void RuntimeFailureIfV(
 
 #define LOC_CURRENT() std::source_location::current()
 
+// `...` is used to optionally provide a IBasicLogger instance.
 #define RUNTIME_FAILURE(msg, ...)    				  RuntimeFailure("false", msg, __VA_ARGS__)
-#define RUNTIME_FAILURE_V(x, pLoggerOpt, fmt, ...)    RuntimeFailureV(#x, LOC_CURRENT(), pLoggerOpt, fmt, __VA_ARGS__)
+
+#define RUNTIME_FAILURE_V(pLoggerOpt, fmt, ...)    RuntimeFailureV("false", LOC_CURRENT(), pLoggerOpt, fmt, __VA_ARGS__)
 #define RUNTIME_FAILURE_IF(x, msg, pLoggerOpt)		  RuntimeFailureIf(x, #x, msg, pLoggerOpt)
 #define RUNTIME_FAILURE_IF_V(x, pLoggerOpt, fmt, ...) RuntimeFailureIfV(x, #x, LOC_CURRENT(), pLoggerOpt, fmt, __VA_ARGS__)

@@ -1,9 +1,10 @@
-#include "Win32/Window_Win32.hpp"
-#include "Win32/PlatformOS_Win32.hpp"
+#include "Backend/Win32/Window_Win32.hpp"
+#include "Backend/Win32/PlatformOS_Win32.hpp"
+#include "IPlatform.hpp"
 #include "Common/Assert.hpp"
 #include "Common/Cast.hpp"
 
-namespace Platform::Win32
+namespace Platform::Backend::Win32
 {
     Window::Window() noexcept
     {
@@ -17,6 +18,21 @@ namespace Platform::Win32
         Shutdown();
 
         std::cout << "Window_Win32 Destroyed!\n";
+    }
+
+    void Window::SetWindowResizeCallback(
+        void (*pCallback)(uint32_t width, uint32_t height, void* pUserData),
+        void* pUserData
+    ) noexcept
+    {
+        m_CurrentResizeCallback.pCallback = pCallback;
+        m_CurrentResizeCallback.pUserData = pUserData;
+    }
+
+    void Window::ClearWindowResizeCallback() noexcept
+    {
+        m_CurrentResizeCallback.pCallback = nullptr;
+        m_CurrentResizeCallback.pUserData = nullptr;
     }
 
     void Window::Update() noexcept
@@ -102,6 +118,7 @@ namespace Platform::Win32
 
 		::ShowWindow(mP_hWnd, SW_SHOW);
 		m_IsRunning = true;
+        m_IsVisible = true;
     }
 
     void Window::Shutdown() noexcept
@@ -128,10 +145,10 @@ namespace Platform::Win32
 		Window* const pWindow = Reinterpret<Window*>(pCreateStruct->lpCreateParams);
 
 		/* Set WinAPI-managed user data to store a pointer to this instance of Window. */
-		::SetWindowLongPtr(hWnd, GWLP_USERDATA, Reinterpret<::LONG_PTR>(pWindow));
+		::SetWindowLongPtrW(hWnd, GWLP_USERDATA, Reinterpret<::LONG_PTR>(pWindow));
 
 		/* Set message procedure to WndProcThunk now that the instance of Window is stored. */
-		::SetWindowLongPtr(hWnd, GWLP_WNDPROC, Reinterpret<::LONG_PTR>(Window::WndProcThunk));
+		::SetWindowLongPtrW(hWnd, GWLP_WNDPROC, Reinterpret<::LONG_PTR>(Window::WndProcThunk));
 
 		/* Forward message to the instance WndProc. */
 		return pWindow->WndProc(hWnd, msgCode, wParam, lParam);
@@ -163,7 +180,32 @@ namespace Platform::Win32
         case WM_CLOSE:
 			m_IsRunning = false;
 			PostQuitMessage(0);
-			return S_OK;
+			return 0;
+        case WM_SHOWWINDOW:
+            m_IsVisible = Cast<bool>(wParam);
+            return 0;
+        case WM_SIZE:
+        {
+            /* NOTE: To get the visible window bounds, not including the invisible resize borders,
+             *         use DwmGetWindowAttribute, specifying DWMWA_EXTENDED_FRAME_BOUNDS.
+             *         (not adjusted for DPI) */
+            if (!::GetWindowRect(mP_hWnd, &m_WindowArea))
+                LogFatal("(Window_Win32) Failed to retrieve window area after resizing.");
+
+            ::UINT width = LOWORD(lParam);
+            ::UINT height = HIWORD(lParam);
+
+            m_ClientArea.right = width;
+            m_ClientArea.bottom = height;
+
+            if (width == 0 && height == 0)
+                m_IsVisible = false;
+
+            if (auto pCallback = m_CurrentResizeCallback.pCallback)
+                pCallback(width, height, m_CurrentResizeCallback.pUserData);
+            
+            return 0;
+        }
         default:
             return DefWindowProcW(hWnd, msgCode, wParam, lParam);
         }

@@ -6,7 +6,7 @@ namespace Engine
 {
     Engine::Engine() noexcept
     {
-        m_NativePlatform.CreateGraphicsContext(Platform::Graphics::ApiType::Direct3D_11);
+        m_NativePlatform.CreateGraphicsContext(Platform::ApiType::Direct3D_11);
 
         std::cout << "Engine!\n";
     }

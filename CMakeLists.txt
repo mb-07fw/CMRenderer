@@ -22,9 +22,9 @@ if (MSVC)
     # /W4: Enable high warning level
     # /sdl: Security checks
     # /permissive-: Strict C++ compliance
-    set(WARNINGS /W4 /sdl /permissive- /utf-8)
+    set(WARNINGS /WX /W4 /sdl /permissive- /utf-8)
 else()
-    set(WARNINGS -Wall)
+    set(WARNINGS -Wall -Werror)
 endif()
 
 function(SetTargetProperties target target_output_dir)

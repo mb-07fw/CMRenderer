@@ -1,15 +1,15 @@
-#include "Win32/Platform_Win32.hpp"
-#include "Win32/Window_Win32.hpp"
-#include "Win32/Context_Win32.hpp"
-#include "Win32/PlatformOS_Win32.hpp"
+#include "Backend/Win32/Platform_Win32.hpp"
+#include "Backend/Win32/Window_Win32.hpp"
+#include "Backend/Win32/Context_Win32.hpp"
+#include "Backend/Win32/PlatformOS_Win32.hpp"
+#include "Backend/Win32/D3D/_11/Api_D3D11.hpp"
 #include "Common/Assert.hpp"
 
+#include <functional>
 #include <iostream>
 #include <string_view>
 
-extern Platform::ILogger* gP_ActiveLogger = nullptr;
-
-namespace Platform::Win32
+namespace Platform::Backend::Win32
 {
     struct Platform::Impl
     {
@@ -17,7 +17,7 @@ namespace Platform::Win32
         ~Impl() = default;
 
         Win32::Window Window;
-        Win32::Graphics::Context Context;
+        Win32::Context Context;
     };
 
     Platform::Platform() noexcept
@@ -51,15 +51,31 @@ namespace Platform::Win32
         std::cout << "Platform_Win32 Destroyed!\n";
     }
 
-    void Platform::CreateGraphicsContext(Graphics::ApiType api) noexcept
+    void Platform::CreateGraphicsContext(ApiType api) noexcept
     {
         ::HWND hWnd = mP_Impl->Window.Impl_hWnd();
-        Win32::Graphics::Context& context = mP_Impl->Context;
+        Win32::Context& context = mP_Impl->Context;
+        Win32::Window& window = mP_Impl->Window;
 
         ASSERT(
             context.Impl_Create(api, m_Settings, hWnd),
             "(Platform_Win32) Failed to create a graphics api instance."
         );
+
+        auto onResizeFunc = [](
+            uint32_t width,
+            uint32_t height,
+            void* pUserData)
+        {
+            auto& platform = *Reinterpret<Platform*>(pUserData);
+
+            auto& api = platform.Context().Api();
+
+            /* TODO: Make window resizing deferred... */
+            api.OnWindowResize(width, height);
+        };
+
+        window.SetWindowResizeCallback(onResizeFunc, this);
     }
 
     [[nodiscard]] IWindow& Platform::Window() noexcept
@@ -67,8 +83,18 @@ namespace Platform::Win32
         return mP_Impl->Window;
     }
 
-    [[nodiscard]] Graphics::IContext& Platform::Context() noexcept
+    [[nodiscard]] IContext& Platform::Context() noexcept
     {
         return mP_Impl->Context;
+    }
+
+    [[nodiscard]] IApi& Platform::GetGraphicsApi() noexcept
+    {
+        return Context().Api();
+    }
+    
+    [[nodiscard]] IApiFactory& Platform::GetGraphicsApiFactory() noexcept
+    {
+        return Context().Api().Factory();
     }
 }

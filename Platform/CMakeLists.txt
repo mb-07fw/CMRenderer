@@ -1,32 +1,57 @@
 # Platform CMakeLists.txt
 
-set(Src_Files 
-    "src/IApi.hpp"
+set(Src_Files
+    "include/IRefCounted.hpp"
+
+    "src/IApi.hpp" 
+    "src/IApiFactory.hpp"
+    "src/IApiResources.cpp"
+    "src/IApiResources.hpp"
 
     "src/IContext.hpp"
 
     "src/ILogger.hpp"
 
-    "src/IPlatform.hpp"
+    "src/ImplRefCounted.hpp"
+    "src/ImplRefCountedUndef.hpp"
+
     "src/IPlatform.cpp"
+    "src/IPlatform.hpp"
 
     "src/IWindow.hpp"
 
+    "src/PlatformFailure.hpp"
 
-    "src/Win32/Platform_Win32.hpp"
-    "src/Win32/Platform_Win32.cpp"
+    "src/Types.cpp"
+    "src/Types.hpp"
 
-    "src/Win32/Window_Win32.hpp"
-    "src/Win32/Window_Win32.cpp"
+    "src/Backend/RefCounted.hpp"
 
-    "src/Win32/Context_Win32.hpp"
-    "src/Win32/Context_Win32.cpp"
+    "src/Backend/Win32/Platform_Win32.cpp"
+    "src/Backend/Win32/Platform_Win32.hpp"
+
+    "src/Backend/Win32/Types_Win32.hpp"
+
+    "src/Backend/Win32/Window_Win32.cpp"
+    "src/Backend/Win32/Window_Win32.hpp"
+
+    "src/Backend/Win32/Resources_Win32.cpp"
+    "src/Backend/Win32/Resources_Win32.hpp"
+
+    "src/Backend/Win32/Context_Win32.cpp"
+    "src/Backend/Win32/Context_Win32.hpp"
     
-    "src/Win32/D3D/_11/Api_D3D11.hpp"
-    "src/Win32/D3D/_11/Api_D3D11.cpp"
+    "src/Backend/Win32/D3D/_11/ApiFactory_D3D11.cpp"
+    "src/Backend/Win32/D3D/_11/ApiFactory_D3D11.hpp"
 
-    "src/Win32/PlatformOS_Win32.hpp"
-    "src/Win32/PlatformFwd_Win32.hpp"
+    "src/Backend/Win32/D3D/_11/ApiResources_D3D11.cpp"
+    "src/Backend/Win32/D3D/_11/ApiResources_D3D11.hpp"
+
+    "src/Backend/Win32/D3D/_11/Api_D3D11.cpp"
+    "src/Backend/Win32/D3D/_11/Api_D3D11.hpp"
+
+    "src/Backend/Win32/PlatformOS_Win32.hpp"
+    "src/Backend/Win32/PlatformFwd_Win32.hpp"
 )
 
 set(Inc_Files "include/Platform.hpp")

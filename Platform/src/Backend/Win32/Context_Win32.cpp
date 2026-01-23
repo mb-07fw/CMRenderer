@@ -1,15 +1,13 @@
-#include "Win32/Context_Win32.hpp"
-#include "Win32/D3D/_11/API_D3D11.hpp"
+#include "Backend/Win32/Context_Win32.hpp"
+#include "Backend/Win32/D3D/_11/API_D3D11.hpp"
 #include "Common/Assert.hpp"
 #include "Common/Cast.hpp"
 #include "Common/RuntimeFailure.hpp"
 #include "ILogger.hpp"
 
-extern Platform::ILogger* gP_ActiveLogger;
-
 #define CONTEXT_FAILURE_IF(x, msg) RUNTIME_FAILURE_IF(x, msg, GetActiveLogger())
 
-namespace Platform::Win32::Graphics
+namespace Platform::Backend::Win32
 {
     [[nodiscard]] bool Context::Impl_Create(
         ApiType api,
@@ -22,12 +20,7 @@ namespace Platform::Win32::Graphics
 
     [[nodiscard]] IApi& Context::Api() noexcept
     {
-        CONTEXT_FAILURE_IF(
-            mP_Api.get() == nullptr,
-            "(Context_Win32) Attempted to retrieve a reference to an instance of the graphics api before it was created."
-        );
-
-        return *mP_Api;
+        return GetApiInternal();
     }
 
     [[nodiscard]] bool Context::Create(
@@ -38,11 +31,10 @@ namespace Platform::Win32::Graphics
     {
         if (mP_Api.get() != nullptr)
         {
-            if (gP_ActiveLogger)
-                gP_ActiveLogger->LogWarning(
-                    "(Context_Win32) Attempted to create an instance of "
-                    "a graphics api while another instance is already active."
-                );
+            LogWarning(
+                "(Context_Win32) Attempted to create an instance of "
+                "a graphics api while another instance is already active."
+            );
 
             return false;
         }
@@ -71,6 +63,16 @@ namespace Platform::Win32::Graphics
         }
 
         return true;
+    }
+
+    [[nodiscard]] IApi& Context::GetApiInternal() noexcept
+    {
+        CONTEXT_FAILURE_IF(
+            mP_Api.get() == nullptr,
+            "(Context_Win32) Attempted to retrieve a reference to an instance of the graphics api before it was created."
+        );
+
+        return *mP_Api;
     }
 
     void Context::CreateDefaultApi(const PlatformSettings& settings, ::HWND hWnd) noexcept

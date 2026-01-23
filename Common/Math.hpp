@@ -102,7 +102,7 @@ struct Vector
 
 #pragma region Vector<T, Size>
 
-#pragma region Operator's
+#pragma region Operators
 template <typename T, size_t Size>
 	requires std::is_trivially_copyable_v<T>
 inline constexpr Vector<T, Size>& Vector<T, Size>::operator+=(const Self& rhs) noexcept

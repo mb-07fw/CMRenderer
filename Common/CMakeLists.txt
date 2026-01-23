@@ -6,9 +6,10 @@ set(Build_Files
     "Assert.hpp"
     "Cast.hpp"
     "Config.hpp"
+    "IBasicLogger.hpp"
     "Math.hpp"
     "RuntimeFailure.hpp"
-    "IBasicLogger.hpp"
+    "View.hpp"
 )
 
 add_library(Common STATIC ${Build_Files})

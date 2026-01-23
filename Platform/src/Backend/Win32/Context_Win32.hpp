@@ -1,18 +1,12 @@
 #pragma once
 
 #include "IContext.hpp"
-#include "Win32/PlatformFwd_Win32.hpp"
+#include "Backend/Win32/PlatformFwd_Win32.hpp"
 
 #include <memory>
 
-namespace Platform::Win32::Graphics
+namespace Platform::Backend::Win32
 {
-    namespace Gfx = ::Platform::Graphics;
-
-    using IContext = Gfx::IContext;
-    using IApi = Gfx::IApi;
-    using ApiType = Gfx::ApiType;
-
     class Context final : public IContext
     {
     public:
@@ -32,6 +26,8 @@ namespace Platform::Win32::Graphics
             const PlatformSettings& settings,
             void* pOSWindowHandle
         ) noexcept override;
+
+        [[nodiscard]] IApi& GetApiInternal() noexcept;
 
         void CreateDefaultApi(const PlatformSettings& settings, ::HWND hWnd) noexcept;
         void CreateDirect3D11Api(const PlatformSettings& settings, ::HWND hWnd) noexcept;
